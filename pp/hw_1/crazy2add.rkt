@@ -1,12 +1,12 @@
 #lang racket
-(define p0 '(z z z . p))
-(define p1 '(p . p))
+(define p0 '(z . z))
+(define p1 '(z . z))
 
 (define (val c)
   (cond ((equal? c 'z) 0)
         ((equal? c 'p) 1)
         ((equal? c 'n) -1)
-        (else 0)))
+        (else 0)));(val 0 is 0)
 
 (define (crazy2val p)
   (if (pair? p)
@@ -23,24 +23,26 @@
         ((equal? (+ (val c0) (val c1) (val crry)) -2) '(z . n))
         ((equal? (+ (val c0) (val c1) (val crry)) -3) '(n . n))))
 
-(define (c2add c0 c1 crry)
-  (cond  ((and (not (pair? c0)) (not (pair? c1))) 
-          (sum c0 c1 crry));check
-         ((and (not (pair? c0)) (pair? c1))
-          (let ([p (sum c0 (car c1) crry)]) p
-            (cons (car p) (c2add (cdr p)) (cdr c1) 0)))
-         ((and (pair? c0) (not (pair? c1))) 
-          (let ([p (sum c1 (car c0) crry)]) p
-            (cons (car p) (c2add (cdr c0) (cdr p) 0))))
-         (else 
-           (let ([p (sum (car c1) (car c0) crry)]) p
-             (cons (car p) (c2add (cdr c0) (cdr c1) (cdr p)))))))
+(define (f c)
+    (if (pair? c)
+      (car c)
+      c));for convenience
+
+(define (g c)
+    (if (pair? c)
+      (cdr c)
+      0));for convenience
+
+(define (c2add c0 c1 crry) ;new
+  (if (and (not (pair? c0)) (not (pair? c1)))
+          (sum c0 c1 crry) ;base case
+  (let ([p (sum (f c0) (f c1) crry)]) p
+    (cons (car p) (c2add (g c0) (g c1) (cdr p))))))
 
 (define (crazy2add c0 c1)
   ;carry is 0 at the beginning
   (c2add c0 c1 0))
 
-(+ 1 2 3)
-
 (crazy2add p0 p1)
 (crazy2val (crazy2add p0 p1))
+;(f '(z . p))
