@@ -33,14 +33,14 @@
       (cdr c)
       0));for convenience
 
-(define (c2add c0 c1 crry) ;new
+(define (c2add c0 c1 crry)
   (if (and (not (pair? c0)) (not (pair? c1)))
           (sum c0 c1 crry) ;base case
-  (let ([p (sum (f c0) (f c1) crry)]) p
+  (let ([p (sum (f c0) (f c1) crry)])
     (cons (car p) (c2add (g c0) (g c1) (cdr p))))))
 
 (define (crazy2add c0 c1)
-  ;carry is 0 at the beginning
+  ;;carry is 0 at the beginning
   (c2add c0 c1 0))
 
 (crazy2add p0 p1)
