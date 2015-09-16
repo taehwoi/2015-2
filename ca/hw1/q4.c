@@ -11,10 +11,13 @@ int f2(unsigned w)
 
 int main(void)
 {
-  const int w = 0xDEADBEEF;
+  const int w0 = 0xDEADBEEF;
+  const int w1 = 0xBADDCAFE;
+  const int w2 = 0x0D15ea5e;
+  const int w3 = 0xfee1dead;
 
-  printf("0x%08x\n", f1(w));
-  printf("0x%08x\n", f2(w));
+  printf("0x%08x\n", f1(w3));
+  printf("0x%08x\n", f2(w3));
   
   return 0;
 }
