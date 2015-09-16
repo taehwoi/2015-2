@@ -26,7 +26,7 @@
 (define (f c)
     (if (pair? c)
       (car c)
-      c));for convenience
+      c));for convenience but not very type-safe?
 
 (define (g c)
     (if (pair? c)
