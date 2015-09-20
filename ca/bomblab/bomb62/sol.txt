@@ -1,0 +1,5 @@
+You can Russia from land here in Alaska.
+3 6 12 24 48 96
+5 134
+100 3
+afoghi

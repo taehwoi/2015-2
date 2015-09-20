@@ -343,7 +343,7 @@ Disassembly of section .text:
  8048ba3:	8b 44 24 40          	mov    0x40(%esp),%eax
  8048ba7:	89 04 24             	mov    %eax,(%esp)
  8048baa:	e8 4c 07 00 00       	call   80492fb <read_six_numbers>
- 8048baf:	83 7c 24 18 03       	cmpl   $0x3,0x18(%esp)
+ 8048baf:	83 7c 24 18 03       	cmpl   $0x3,0x18(%esp) ;first number is 3?
  8048bb4:	74 05                	je     8048bbb <phase_2+0x2a>
  8048bb6:	e8 18 06 00 00       	call   80491d3 <explode_bomb>
  8048bbb:	8d 5c 24 1c          	lea    0x1c(%esp),%ebx
