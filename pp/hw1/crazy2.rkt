@@ -1,4 +1,6 @@
 #lang racket
+(provide crazy2val)
+(provide val)
 (define p0 '(p n z . n))
 
 (define (val c)
@@ -13,4 +15,4 @@
     (val p));base case
     )
 
-(crazy2val p0)
+;(crazy2val p0)

@@ -1,0 +1,309 @@
+tdX&
+/lib/ld-linux.so.2
+__gmon_start__
+libc.so.6
+_IO_stdin_used
+socket
+strcpy
+__printf_chk
+exit
+fopen
+__isoc99_sscanf
+connect
+signal
+puts
+stdin
+strtol
+fgets
+__errno_location
+read
+__fprintf_chk
+__memmove_chk
+__ctype_b_loc
+getenv
+stderr
+alarm
+gethostbyname
+gethostname
+__memcpy_chk
+close
+__sprintf_chk
+__libc_start_main
+write
+GLIBC_2.3
+GLIBC_2.1
+GLIBC_2.7
+GLIBC_2.3.4
+GLIBC_2.0
+PTRh
+|$(]
+|$(v
+b:D$'t
+ [^_
+UWVS
+<[^_]
+UWVS
+L$,+L$()
+<*t$<-t <.t
+X< u
+<	uO
+[^_]
+UWVS
+D$Pf
+<[^_]
+ [^_
+[^_]
+%s: Error: Couldn't open %s
+Usage: %s [<input_file>]
+That's number 2.  Keep going!
+Halfway there!
+Good work!  On to the next...
+Welcome to my fiendish little bomb. You have 6 phases with
+which to blow yourself up. Have a nice day!
+Phase 1 defused. How about the next one?
+So you got that one.  Try this one.
+Why make trillions when we could make... billions?
+Wow! You've defused the secret stage!
+%d %c %d
+flames
+dovmauiersnftbylNope. No ctrl-c to abort the bomb.
+Initialization error: Running on an illegal host [1]
+ERROR: Input string is too large.
+Curses, you've found the secret phase!
+But finding it and solving it are quite different...
+Congratulations! You've defused the bomb!
+Your instructor has been notified and will verify your solution.
+Invalid phase%s
+Initialization error:
+defused
+exploded
+%d:%s:%d:%s
+BOOM!!!
+The bomb has blown up.
+Error: Premature EOF on stdin
+GRADE_BOMB
+Error: Input line too long
+***truncated***
+%d %d %d %d %d %d
+%d %d %s
+EvilMaster
+Program timed out after %d seconds
+Error: Client unable to create socket
+Error: DNS is unable to resolve server address
+Error: Unable to connect to the server
+Error: Result string too large. Increase SUBMITR_MAXBUF
+Error: Result string contains an illegal or unprintable character.
+Error: Client unable to write to the server
+Error: Client unable to read first header from server
+Error: HTTP request failed with error %d: %s
+Error: Client unable to read headers from server
+Error: Client unable to read status message from server
+GET /%s/submitr.pl/?userid=%s&lab=%s&result=%s&submit=submit HTTP/1.0
+Error: Unable to connect to server %s
+No connection to server - not checking input string
+Error: Unable to connect to server
+%%%02X
+%s %d %[a-zA-z ]
+csap.snu.ac.kr
+(connection error: %s)
+AUTORESULT_STRING=%s
+bomblab
+4190.308
+;*2$" 
+2012-11114
+GCC: (Gentoo 4.5.4 p1.0, pie-0.4.7) 4.5.4
+GCC: (Gentoo 4.6.3 p1.11, pie-0.5.2) 4.6.3
+/usr/include/bits
+/usr/lib/gcc/x86_64-pc-linux-gnu/4.6.3/include
+/usr/include
+bomb.c
+stdio2.h
+stddef.h
+types.h
+stdio.h
+libio.h
+__off64_t
+_IO_read_end
+size_t
+_IO_FILE
+_IO_write_base
+_IO_buf_end
+__pad2
+__pad3
+_IO_read_ptr
+_mode
+_chain
+_IO_save_base
+unsigned char
+bomb.c
+__pad4
+short unsigned int
+stdin
+_IO_save_end
+_IO_lock_t
+GNU C 4.6.3
+_markers
+_pos
+/home/bernhard/teaching/2015.2.4109.308/01.bomblab/src
+main
+_flags2
+_sbuf
+__quad_t
+_old_offset
+_lock
+_IO_marker
+_cur_column
+long long unsigned int
+_fileno
+_IO_buf_base
+_next
+_vtable_offset
+argc
+__off_t
+_unused2
+long long int
+stdout
+printf
+_IO_write_end
+short int
+_IO_backup_base
+_flags
+argv
+__pad1
+_IO_write_ptr
+input
+__pad5
+__fmt
+_IO_read_base
+infile
+_shortbuf
+.symtab
+.strtab
+.shstrtab
+.interp
+.note.ABI-tag
+.gnu.hash
+.dynsym
+.dynstr
+.gnu.version
+.gnu.version_r
+.rel.dyn
+.rel.plt
+.init
+.text
+.fini
+.rodata
+.eh_frame_hdr
+.eh_frame
+.ctors
+.dtors
+.jcr
+.dynamic
+.got
+.got.plt
+.data
+.bss
+.comment
+.debug_aranges
+.debug_info
+.debug_abbrev
+.debug_line
+.debug_str
+.debug_loc
+bomb.c
+phases.c
+array.2975
+support.c
+sig_handler
+driverlib.c
+rio_readlineb
+__init_array_end
+_DYNAMIC
+__init_array_start
+_GLOBAL_OFFSET_TABLE_
+__libc_csu_fini
+skip
+phase_defused
+__i686.get_pc_thunk.bx
+read@@GLIBC_2.0
+data_start
+input_strings
+stderr@@GLIBC_2.0
+fgets@@GLIBC_2.0
+_edata
+signal@@GLIBC_2.0
+_fini
+alarm@@GLIBC_2.0
+num_input_strings
+phase_5
+initialize_bomb_solve
+blank_line
+submitr
+phase_3
+phase_1
+invalid_phase
+init_driver
+no_connection
+strcpy@@GLIBC_2.0
+__DTOR_END__
+node3
+explode_bomb
+gethostname@@GLIBC_2.0
+node1
+getenv@@GLIBC_2.0
+__data_start
+puts@@GLIBC_2.0
+node5
+__memmove_chk@@GLIBC_2.3.4
+__memcpy_chk@@GLIBC_2.3.4
+__gmon_start__
+exit@@GLIBC_2.0
+fun7
+__dso_handle
+_IO_stdin_used
+host_table
+func4
+__libc_start_main@@GLIBC_2.0
+write@@GLIBC_2.0
+string_length
+__libc_csu_init
+stdin@@GLIBC_2.0
+__isoc99_sscanf@@GLIBC_2.7
+fopen@@GLIBC_2.1
+_end
+__errno_location@@GLIBC_2.0
+_start
+secret_phase
+_fp_hw
+infile
+sigalrm_handler
+init_timeout
+__bss_start
+userid
+main
+__printf_chk@@GLIBC_2.3.4
+phase_init
+read_line
+strings_not_equal
+phase_4
+phase_6
+scratch
+_Jv_RegisterClasses
+driver_post
+send_msg
+phase_2
+bomb_id
+socket@@GLIBC_2.0
+__fprintf_chk@@GLIBC_2.3.4
+node2
+node4
+gethostbyname@@GLIBC_2.0
+strtol@@GLIBC_2.0
+node6
+connect@@GLIBC_2.0
+_init
+close@@GLIBC_2.0
+read_six_numbers
+initialize_bomb
+__ctype_b_loc@@GLIBC_2.3
+__sprintf_chk@@GLIBC_2.3.4

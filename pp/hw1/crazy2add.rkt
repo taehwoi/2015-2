@@ -2,17 +2,8 @@
 (define p0 '(z . z))
 (define p1 '(z . z))
 
-(define (val c)
-  (cond ((equal? c 'z) 0)
-        ((equal? c 'p) 1)
-        ((equal? c 'n) -1)
-        (else 0)));(val 0 is 0)
-
-(define (crazy2val p)
-  (if (pair? p)
-    (+ (* (crazy2val (cdr p)) 2) (val (car p)))
-    ;base case
-    (val p)))
+(provide crazy2add)
+(require "crazy2.rkt")
 
 (define (sum c0 c1 crry) ;sum of a digit
   (cond ((equal? (+ (val c0) (val c1) (val crry)) 3) '(p . p))
@@ -43,6 +34,6 @@
   ;;carry is 0 at the beginning
   (c2add c0 c1 0))
 
-(crazy2add p0 p1)
-(crazy2val (crazy2add p0 p1))
+;(crazy2add p0 p1)
+;(crazy2val (crazy2add p0 p1))
 ;(f '(z . p))

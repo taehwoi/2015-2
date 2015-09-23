@@ -1,3 +1,4 @@
+
 dovmauiersnftbyl
  abcdefghijklmno
 pqrstuvwxyz
@@ -11,4 +12,5 @@ p 4: same as 3, with the second input between 1 to 4
 p 5: two strings that can be found from strings.txt
     use the decipher rule to get the answer string
 p 6: time to rest
-
+    by looking at node size,
+    former is larger than latter
