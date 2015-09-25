@@ -1,8 +1,8 @@
 #lang racket
 
 (define (mymax l)
-  (if (null? l) 
-    -987654321 ;some random small number
+  (if (null? (cdr l)) 
+    (car l)
     (max (car l) (mymax (cdr l)))))
 
 (define (myabs n)
@@ -11,7 +11,7 @@
     n))
 
 
-(mymax '(1 6 2 4 3))
+(mymax '(1 6 2 4 9))
 (myabs -1)
 (myabs 1)
 (myabs 0)
