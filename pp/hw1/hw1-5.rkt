@@ -27,7 +27,8 @@
   (if (eq? 'model (car m)) 
     #t;a model is balanced
     (if (= (torque (car m)) (torque (car (cdr m))))
-      (and (is-balanced? (cdr (cdr (car m)))) (is-balanced? (cdr (cdr (car (cdr m))))))
-      #f;don't have to look deeper 
-    )))
+      (and 
+        (is-balanced? (cdr (cdr (car m)))) 
+        (is-balanced? (cdr (cdr (car (cdr m))))))
+      #f)));don't have to look deeper 
 

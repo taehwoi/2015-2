@@ -2,18 +2,15 @@
 (require "hw1-6.rkt")
 (provide output)
 
+(define (myand o1 o2)
+    (and o1 o2))
+
+(define (myor o1 o2)
+    (or o1 o2))
+
 (define (action o b0 b1) ;operation -> function
-  (cond  ((eq? o 'not) (not b0))
-         ((eq? o 'and) (and b0 b1))
+  (cond  ((eq? o 'and) (and b0 b1))
          ((eq? o 'or) (or b0 b1))))
-
-(define (myaction o) ;operation -> function
-  (cond  ((eq? o 'not) not)
-         ((eq? o 'and) (and))
-         ((eq? o 'ad) min)
-         ((eq? o 'or) xor)))
-
-((myaction 'or) #t #t)
 
 (define (output c)
   (if (boolval c)
@@ -36,4 +33,4 @@
 (define c6 (or-c c3 c5))
 ;c3
 ;(output c3)
-;(boolval c3)
+(boolval c6)
