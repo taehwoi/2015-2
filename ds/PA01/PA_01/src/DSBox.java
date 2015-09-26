@@ -5,8 +5,10 @@
  */
 public class DSBox {
 	private SingleLinkedList<String> list;
+  private final String ERROR = "BOX is empty";
 	
 	DSBox(){
+    list = new SingleLinkedList<>();
 	}
 	
 	/**
@@ -14,6 +16,8 @@ public class DSBox {
 	 * @param document
 	 */
 	public void submit(String document){
+    list.moveToStart();
+    list.insert(document);
 	}
 	
 	/**
@@ -21,7 +25,11 @@ public class DSBox {
 	 * @return
 	 */
 	public String get_top(){
-		return null;
+    String doc;
+    list.moveToStart();
+    doc = peek();
+    list.remove();
+		return doc;
 	}
 	
 	/**
@@ -29,7 +37,11 @@ public class DSBox {
 	 * @return
 	 */
 	public String get_bottom(){
-		return null;
+    String doc;
+    list.moveToEnd();
+    doc = peek();
+    list.remove();
+		return doc;
 	}
 	
 	/**
@@ -37,7 +49,9 @@ public class DSBox {
 	 * @return
 	 */
 	public String view_top(){
-		return null;
+    list.moveToStart();
+
+		return peek();
 	}
 	
 	/**
@@ -45,7 +59,8 @@ public class DSBox {
 	 * @return
 	 */
 	public String view_bottom(){
-		return null;
+    list.moveToEnd();
+		return peek();
 	}
 	
 	/**
@@ -53,6 +68,14 @@ public class DSBox {
 	 * @return
 	 */
 	public int size(){
-		return 0;
+		return list.length();
 	}
+
+  private String peek()
+  {
+    if(size()>0)
+      return list.getValue();
+    else
+      return ERROR;
+  }
 }

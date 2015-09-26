@@ -42,8 +42,9 @@ class SingleLinkedList<E> implements List<E> {
     Node<E> tmp;
     tmp = curr;
 
-    curr = tail.getNext(); //insert() at end
-    insert(item);
+
+    curr = tail.getNext();//move current to end
+    insert(item);//insert() at tail
 
     curr = tmp; //restore curr position
 	}
@@ -53,8 +54,9 @@ class SingleLinkedList<E> implements List<E> {
     if (curr == tail) 
     {
       tail=getPrev();
-      tail.getNext().setNext(null);
+      tail.setNext(null);
       curr = tail;
+      currpos--;
     }
     else
       curr.setNext(curr.getNext().getNext());
@@ -93,7 +95,7 @@ class SingleLinkedList<E> implements List<E> {
     curr = dummyH;
 
     //use error catch instead?
-    if (pos < 0 || pos > cnt)
+    if (pos < 0 || pos >= cnt)
     {//no access to dummyH, and out of bounds
       pos = 0;
     }
@@ -126,8 +128,9 @@ class SingleLinkedList<E> implements List<E> {
   private Node<E> getPrev()
   {//returns the node previous current.
     Node<E> it = dummyH;
-    while (it.getNext() != curr)
-      it = it.getNext();
+    if (it != curr) 
+      while (it.getNext() != curr)
+        it = it.getNext();
     return it;
   }
 
