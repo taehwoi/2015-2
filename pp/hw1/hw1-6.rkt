@@ -4,26 +4,34 @@
 (provide is-zero? is-one? is-not? is-and? is-or? sub-circuit)
 
 (define zero
-  'TODO)
+  #f)
 (define one
-  'TODO)
+  #t)
 (define (not-c c)
-  'TODO)
+  (cons 'not (list c)))
 (define (and-c c1 c2)
-  'TODO)
+  (cons 'and (list c1 c2)))
+
 (define (or-c c1 c2)
-  'TODO)
+  (cons 'or (list c1 c2)))
 
 (define (is-zero? c)
-  'TODO)
+  (if (not (pair? c));0 or 1
+    (not c)
+    #f))
 (define (is-one? c)
-  'TODO)
+  (if (not (list? c));0 or 1
+    c
+    #f))
+
 (define (is-not? c)
-  'TODO)
+  (eq? (car c) 'not))
 (define (is-and? c)
-  'TODO)
+  (eq? (car c) 'and))
 (define (is-or? c)
-  'TODO)
+  (eq? (car c) 'or))
 
 (define (sub-circuit c n)
-  'TODO)
+  (if (= n 0)
+    (car (cdr c))
+    (sub-circuit (cdr c) (- n 1)) ))
