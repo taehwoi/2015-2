@@ -3,7 +3,7 @@
 (define p1 '(z . z))
 
 (provide crazy2add)
-(require "crazy2.rkt")
+(require "hw1-1.rkt")
 
 (define (sum c0 c1 crry) ;sum of a digit
   (cond ((equal? (+ (val c0) (val c1) (val crry)) 3) '(p . p))
