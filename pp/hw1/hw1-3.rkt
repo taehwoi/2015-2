@@ -4,7 +4,6 @@
 (require "hw1-2.rkt")
 (provide crazy2mul)
 
-
 (define (mull d l);digit * list -> list
   (define (mul c0 c1);digit * digit -> digit
     (cond ((equal? (* (val c0) (val c1) ) 0) 'z)

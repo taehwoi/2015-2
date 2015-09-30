@@ -19,10 +19,6 @@
 (define b6 (make-branch 3 mbl2))
 (define mbl3 (make-mobile b5 b6))
 
-(define my 
-  '((branch 10 (branch 14 model . 1) (branch 7 model . 2)) (branch 3 (branch 15 model . 4) (branch 10 model . 6))))
-
-
 (define (mobileGrade)
   (begin
     (printf "mobile\n")
@@ -31,7 +27,6 @@
     (sgoutput (lambda () (equal? 13 (weight mbl3)) ))
     (sgoutput (lambda () (equal? #t (is-balanced? mdl1)) ))
     (sgoutput (lambda () (equal? #f (is-balanced? mbl3)) ))
-    (sgoutput (lambda () (equal? #t (is-balanced? my)) ))
 ))
 
 (mobileGrade)

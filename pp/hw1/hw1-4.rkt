@@ -14,6 +14,9 @@
 (define (is-leaf? t)
   (equal? 'leaf (car t)))
 
+(define (is-tree t)
+  (equal? 'tree (car t)))
+
 (define (leaf-val t)
   (cdr t))
 
