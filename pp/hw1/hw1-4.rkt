@@ -5,7 +5,7 @@
 (define (leaf n);leaf-tree
   (cons 'leaf n))
 
-(define (node l)
+(define (node l);list -> tree
   (cons 'tree l))
 
 (define (is-empty-tree? t)
@@ -14,7 +14,7 @@
 (define (is-leaf? t)
   (equal? 'leaf (car t)))
 
-(define (is-tree t)
+(define (is-tree? t)
   (equal? 'tree (car t)))
 
 (define (leaf-val t)
