@@ -38,9 +38,3 @@
            (else (nth-child (cdr c) 0))); and, or is binary op.
     (nth-child (cdr (cdr c)) (- n 1)) ))
 
-(define c1 zero)
-(define c2 one)
-(define c3 (not-c c1))
-(define c4 (and-c c2 c3))
-(define c5 (not-c c4))
-(define c6 (or-c c3 c5))

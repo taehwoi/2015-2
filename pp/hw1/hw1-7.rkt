@@ -18,11 +18,3 @@
     (if (is-not? c)
       (not (boolval (sub-circuit c 0)))
       (action c (boolval (sub-circuit c 0)) (boolval (sub-circuit c 1))))))
-
-
-(define c1 zero)
-(define c2 one)
-(define c3 (not-c c1))
-(define c4 (and-c c2 c3))
-(define c5 (not-c c4))
-(define c6 (or-c c3 c5))
