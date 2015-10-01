@@ -22,5 +22,7 @@
 
 (define (nth-child t n)
   (if (= n 0)
-    (car (cdr t))
-    (nth-child (cdr t) (- n 1))))
+    (if (is-leaf? t)
+      t
+      (car (cdr t)))
+      (nth-child (cdr t) (- n 1))))
