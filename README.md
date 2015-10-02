@@ -7,5 +7,7 @@
 *ca* :
   computer architecture
 
+*dm* :
+  discrete mathematics
 
 

@@ -1,0 +1,8 @@
+#lang racket
+
+(define (sumupto n);add up to n without tails recursion
+  (if (= n 0)
+    0
+    (+ n (sumupto (- n 1)))))
+
+(sumupto 3)
