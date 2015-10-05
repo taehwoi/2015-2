@@ -41,21 +41,22 @@ class SingleLinkedList<E> implements List<E> {
 	public void append(E item) {
     Node<E> tmp;
     tmp = curr;
-
-
-    curr = tail.getNext();//move current to end
-    insert(item);//insert() at tail
+    if (cnt == 0) 
+      insert(item);
+    else {
+      curr = tail.getNext();//move current to end
+      insert(item);//insert() at tail
+    }
 
     curr = tmp; //restore curr position
 	}
 	@Override
 	public E remove() {
     E r = getValue();
-    if (curr == tail) 
-    {
-      System.out.println("here");
-      tail=getPrev();
+    if (curr == tail) {
       tail.setNext(null);
+      tail=getPrev();
+      tail.setNext(curr);
       curr = tail;
       currpos--;
     }
@@ -94,13 +95,13 @@ class SingleLinkedList<E> implements List<E> {
 	@Override
 	public void moveToPos(int pos) {
     curr = dummyH;
-    //assert(pos>=0 && pos < cnt) : "Position out of range.";
+    assert(pos>=0 && pos < cnt) : "Position out of range.";
 
     //use error catch instead?
-    if (pos < 0 || pos >= cnt)
-    {//no access to dummyH, and out of bounds
-      pos = 0;
-    }
+    //if (pos < 0 || pos >= cnt)
+    //{//no access to dummyH, and out of bounds
+      //pos = 0;
+    //}
 
     for (int i = 0; i < pos; i++) {
       next();
