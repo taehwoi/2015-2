@@ -40,7 +40,7 @@ public class DSBox {
     String doc;
     list.moveToEnd();
     doc = peek();
-    list.remove();
+    doc = list.remove();
 		return doc;
 	}
 	

@@ -53,6 +53,7 @@ class SingleLinkedList<E> implements List<E> {
     E r = getValue();
     if (curr == tail) 
     {
+      System.out.println("here");
       tail=getPrev();
       tail.setNext(null);
       curr = tail;
@@ -93,6 +94,7 @@ class SingleLinkedList<E> implements List<E> {
 	@Override
 	public void moveToPos(int pos) {
     curr = dummyH;
+    //assert(pos>=0 && pos < cnt) : "Position out of range.";
 
     //use error catch instead?
     if (pos < 0 || pos >= cnt)

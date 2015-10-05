@@ -3,7 +3,7 @@
 (require "hw1-6.rkt")
 (provide output)
 
-(define (action c b0 b1) ;curcuit -> procedure
+(define (action c b0 b1) ;circuit -> procedure
   (cond  ((is-and? c) (and b0 b1))
          ((is-or? c) (or b0 b1))))
 

@@ -13,7 +13,7 @@
 
 (define (crazy2mul c0 c1)
   (if (> (length c0) (length c1))
-    (crazy2mul c1 c0);multiply long num shorter times->small optmz.
+    (crazy2mul c1 c0);multiply long num shorter times for small optmz.
     (if (null? c0)
       'z
       (crazy2add (mull (car c0) c1) (cons 'z (crazy2mul (cdr c0) c1))))))
