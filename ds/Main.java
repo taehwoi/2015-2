@@ -8,16 +8,19 @@ public class Main {
 	private final static int GET_TOP = 5;
 	private final static int GET_BOTTOM = 6; 
 	private final static int ERROR = 7;
+  private final static String ERRORSTRING = "Box is empty";
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		Scanner scanner = new Scanner(System.in);
 		DSBox box = new DSBox();
-		String document;
+		String document="";
+    int cmd;
 		
 		while(scanner.hasNext()){
 			String command = scanner.next();
-			switch(getCommandNum(command)){
+      cmd = getCommandNum(command);
+			switch(cmd){
 			case SUBMIT:
 				document = scanner.next();
 				box.submit(document);
@@ -46,8 +49,10 @@ public class Main {
 				if(document!=null)
 					System.out.println("GET: " + document);
 				break;
-			
 			}
+      if (document==null) 
+        if (cmd > 2 && cmd < 7) 
+          System.out.println(ERRORSTRING);
 		}
 	}
 	

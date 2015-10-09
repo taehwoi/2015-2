@@ -7,10 +7,10 @@
 /** Linked list implementation */
 class SingleLinkedList<E> implements List<E> {
 	private Node<E> dummyH;         // Pointer to list dummyH
-	private Node<E> tail;         // Pointer to last element
+	private Node<E> dummyTail;         // Pointer to last element
 	protected Node<E> curr;       // Access to current element
 	int cnt;		      // Size of list
-  int currpos;
+  int currpos; //current position.
 
 	/** Constructors */
 	SingleLinkedList(int size) { this(); }   // Constructor -- Ignore size
@@ -23,17 +23,13 @@ class SingleLinkedList<E> implements List<E> {
     dummyH = new Node<E>();
     cnt = 0;
     curr = dummyH;
-    tail = dummyH;
+    curr.setNext(dummyTail);
 	}
 
 	@Override
 	public void insert(E item) {
-    Node<E> l = new Node<E>(item,curr.getNext());
-    curr.setNext(l);
-    if (tail.getNext().getNext() != null) 
-    {//if not a tail anymore
-      tail = tail.getNext();
-    }
+    Node<E> n = new Node<E>(item,curr.getNext());
+    curr.setNext(n);
     cnt++;
 	}
 
@@ -44,7 +40,8 @@ class SingleLinkedList<E> implements List<E> {
     if (cnt == 0) 
       insert(item);
     else {
-      curr = tail.getNext();//move current to end
+      curr = dummyTail;
+      curr = getPrev();//move current to end
       insert(item);//insert() at tail
     }
 
@@ -53,15 +50,10 @@ class SingleLinkedList<E> implements List<E> {
 	@Override
 	public E remove() {
     E r = getValue();
-    if (curr == tail) {
-      tail.setNext(null);
-      tail=getPrev();
-      tail.setNext(curr);
-      curr = tail;
+    if (curr.getNext().getNext() == dummyTail) {
       currpos--;
     }
-    else
-      curr.setNext(curr.getNext().getNext());
+    curr.setNext(curr.getNext().getNext());
     cnt--;
 		return r;
 	}
@@ -72,7 +64,7 @@ class SingleLinkedList<E> implements List<E> {
 	}
 	@Override
 	public void moveToEnd() {
-    curr = tail;
+    moveToPos(cnt-1);
     currpos = cnt;
 	}
 	@Override
@@ -92,27 +84,26 @@ class SingleLinkedList<E> implements List<E> {
 	public int currPos() {
 		return currpos;
 	}
-	@Override
+  @Override
 	public void moveToPos(int pos) {
     curr = dummyH;
-    assert(pos>=0 && pos < cnt) : "Position out of range.";
-
-    //use error catch instead?
-    //if (pos < 0 || pos >= cnt)
-    //{//no access to dummyH, and out of bounds
-      //pos = 0;
-    //}
-
-    for (int i = 0; i < pos; i++) {
-      next();
+    if (pos <0 || pos > cnt) {
+      pos = 0;
     }
-    currpos = pos;
-	}
-	@Override
-	public E getValue() {
-		//curr actually points to one prev node before current.
+    else 
+    {
+      for (int i = 0; i < pos; i++) {
+        next();
+      }
+      currpos = pos;
+    }
+
+  }
+  @Override
+  public E getValue() {
+    //curr actually points to one prev node before current.
     return curr.getNext().getElement();
-	}
+  }
 
   public String toString()
   {
@@ -129,13 +120,11 @@ class SingleLinkedList<E> implements List<E> {
   }
 
   private Node<E> getPrev()
-  {//returns the node previous current.
+  {//returns the node previous to current.
     Node<E> it = dummyH;
     if (it != curr) 
       while (it.getNext() != curr)
         it = it.getNext();
     return it;
   }
-
-
 }

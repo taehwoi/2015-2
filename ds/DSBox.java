@@ -28,7 +28,8 @@ public class DSBox {
     String doc;
     list.moveToStart();
     doc = peek();
-    list.remove();
+    if (doc !=null) 
+      list.remove();
 		return doc;
 	}
 	
@@ -40,7 +41,8 @@ public class DSBox {
     String doc;
     list.moveToEnd();
     doc = peek();
-    doc = list.remove();
+    if (doc !=null) 
+      list.remove();
 		return doc;
 	}
 	
@@ -72,10 +74,10 @@ public class DSBox {
 	}
 
   private String peek()
-  {
+  {//does all the error checking -> good?bad?
     if(size()>0)
       return list.getValue();
     else
-      return ERROR;
+      return null;
   }
 }
