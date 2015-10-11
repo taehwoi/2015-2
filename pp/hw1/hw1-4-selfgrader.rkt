@@ -19,5 +19,4 @@
     (sgoutput (lambda () (equal? 'val (leaf-val (leaf 'val))) ))
     (sgoutput (lambda () (equal? (leaf 6) (nth-child testtree2 3)) ))
 ))
-
 (treeGrade)

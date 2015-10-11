@@ -1,8 +1,13 @@
 #lang racket
 
-(require "hw1-1.rkt")
 (require "hw1-2.rkt")
 (provide crazy2mul)
+
+(define (val c)
+  (cond ((equal? c 'z) 0)
+        ((equal? c 'p) 1)
+        ((equal? c 'n) -1)
+        (else 0)))
 
 (define (mull d l);digit * list -> list
   (define (mul c0 c1);digit * digit -> digit

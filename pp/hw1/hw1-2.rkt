@@ -3,8 +3,12 @@
 (define p1 '(z . z))
 
 (provide crazy2add)
-(require "hw1-1.rkt")
 
+(define (val c)
+  (cond ((equal? c 'z) 0)
+        ((equal? c 'p) 1)
+        ((equal? c 'n) -1)
+        (else 0)))
 (define (sum c0 c1 crry) ;sum of a digit
   (cond ((equal? (+ (val c0) (val c1) (val crry)) 3) '(p . p))
         ((equal? (+ (val c0) (val c1) (val crry)) 2) '(z . p))
@@ -33,7 +37,3 @@
 (define (crazy2add c0 c1)
   ;;carry is 0 at the beginning
   (c2add c0 c1 0))
-
-;(crazy2add p0 p1)
-;(crazy2val (crazy2add p0 p1))
-;(f '(z . p))

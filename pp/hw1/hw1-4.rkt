@@ -2,26 +2,24 @@
 (provide leaf node)
 (provide is-empty-tree? is-leaf? leaf-val nth-child)
 
-(define (leaf n)
-  (list 'leaf n))
+(define (leaf n);leaf-tree
+  (cons 'leaf n))
 
-(define (node l)
-  (cons 'node l))
+(define (node l);list -> tree
+  (cons 'tree l))
 
 (define (is-empty-tree? t)
-  (if (null? (cdr t))
-      #t
-      #f))
+  (null? (cdr t)))
 
 (define (is-leaf? t)
-  (if (equal? (car t) 'leaf)
-      #t
-      #f))
+  (equal? 'leaf (car t)))
 
 (define (leaf-val t)
-  (cadr t))
+  (cdr t))
 
 (define (nth-child t n)
-  (if (= n -1)
-      (car t)
+  (if (= n 0)
+    (if (is-leaf? t)
+      t
+      (car (cdr t)))
       (nth-child (cdr t) (- n 1))))
