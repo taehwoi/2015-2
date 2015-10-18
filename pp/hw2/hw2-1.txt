@@ -1,0 +1,8 @@
+#lang racket
+
+(provide zipper)
+
+(define (zipper l1 l2)
+  (cond ((null? l1) l2)
+        ((null? l2) l1)
+        (else (append (list (car l1) (car l2)) (zipper (cdr l1) (cdr l2) )))))

@@ -1,0 +1,16 @@
+#lang racket
+(require "hw1-6.rkt")
+(provide output)
+
+(define (output c) ;boolean -> int
+  (if (boolval c)
+    1
+    0))
+
+(define (boolval c)
+  (cond  ((is-zero? c) #f)
+         ((is-one? c) #t)
+         ((is-not? c) (not (boolval (sub-circuit c 0))))
+         ((is-and? c) (and (boolval (sub-circuit c 0)) (boolval (sub-circuit c 1))))
+         ((is-or? c) (or (boolval (sub-circuit c 0)) (boolval (sub-circuit c 1))))
+         (else #f)))
