@@ -2,7 +2,7 @@
 
 (provide can-enter same-room? empty-set add-element is-member? is-subset?)
 
-(define (can-enter maze room) 
+(define (can-enter room maze) 
   (list-ref (cdr maze) room)) 
 
 (define same-room? equal?) 
@@ -17,4 +17,4 @@
 (define (is-subset? rs1 rs2) 
   (cond ((null? rs1) #t) 
         ((is-member? (car rs1) rs2) (is-subset? (cdr rs1) rs2)) 
-        (else #f)))
+        (else #f))) 
