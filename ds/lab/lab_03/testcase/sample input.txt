@@ -1,0 +1,14 @@
+insert 10 10
+insert 3 3
+insert 15 15
+insert 17 17
+insert 11 11
+insert 2 2
+insert 7 7
+insert 19 19
+insert 4 4
+insert 5 5
+preorder
+inorder
+postorder
+size

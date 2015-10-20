@@ -32,7 +32,15 @@
 (define (diff-set next-rooms visited-rooms) ;list * roomset -> list
   (filter (lambda (x) (not (is-member? x visited-rooms))) next-rooms))
 
+(define (newdiff-set next-rooms visited-rooms) ;list * list -> list
+  (filter (lambda (x) (not (has? x visited-rooms))) next-rooms))
 
 ;add to set, the elements in a list
 (define (add-set roomset roomlist) ;list * set -> set
   (foldl add-element roomset roomlist))
+
+;Elem * list -> bool
+(define (has? E l) 
+  (cond ((null? l) #f) 
+        ((equal? E (car l)) #t) 
+        (else (has? E (cdr l))))) 

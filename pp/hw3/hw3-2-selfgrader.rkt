@@ -33,11 +33,11 @@
 (define room2 15)
 (define room3 7)
 
-;(sgoutput (lambda () (equal? #t (maze-check maze1 room1 room1))))
-;(sgoutput (lambda () (equal? #f (maze-check maze1 room2 room3))))
-;(sgoutput (lambda () (equal? #t (maze-check maze1 room2 room2))))
-;(sgoutput (lambda () (equal? #t (maze-check maze2 0 7))))
-(sgoutput (lambda () (equal? #t (maze-check maze2 0 224))))
+(sgoutput (lambda () (equal? #t (maze-check maze1 room1 room2))))
+(sgoutput (lambda () (equal? #f (maze-check maze1 room2 room3))))
+(sgoutput (lambda () (equal? #t (maze-check maze1 room2 room2))))
+(sgoutput (lambda () (equal? #t (maze-check maze2 0 7))))
+(sgoutput (lambda () (equal? #f (maze-check maze2 0 224))))
 (define (upto n)
   (if (< n 0)
   #t
