@@ -108,7 +108,7 @@
   (begin
     (display "%!PS\n" file)
     (display "%%Creator: Jin Yung Kim\n" file)
-    (display "[7 0 0 -7 230 700] concat\n" file)
+    (display "[7 0 0 -7 100 700] concat\n" file)
     (display "0.10 setlinewidth\n" file)
     (for-each draw (all2 n m))
     (display "stroke\n" file)

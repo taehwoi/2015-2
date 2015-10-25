@@ -185,9 +185,8 @@
 (define mz1 (mazeGen 3 3))
 (define mz2 (mazeGen 8 5))
 (define mz3 (mazeGen 15 15))
-(define mz4 (mazeGen 30 30))
 
 (evaluate mz1)
 (evaluate mz2)
 (evaluate mz3)
-(evaluate mz4)
+;(evaluate mz4)

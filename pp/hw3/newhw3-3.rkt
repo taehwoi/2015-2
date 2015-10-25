@@ -10,7 +10,7 @@
 ;  - GhostScript: http://www.ghostscript.com/download/gsdnld.html
 ;  - Ghostview: http://pages.cs.wisc.edu/~ghost/gsview/ ; some test code: ;(define maze1 (init-maze 3 5)) ;(define maze2 (open-s 2 1 maze1))
 ;(maze-pp maze2)
-(define dirs '(n ne se s sw nw)) ;make going downwards harder -> more steps
+(define dirs '(n ne se s sw nw))
 
 (define (room i j)
   (list i j))
@@ -32,7 +32,7 @@
       (define half2 (cons (list x (sub1 y)) (helper x (sub1 y))))
       (append half2 half1)
       )))
-  (remove-duplicates (cons (list x y) (helper x y))))
+  (remove-duplicates (cons (list (sub1 x) (sub1 y)) (helper (sub1 x) (sub1 y)))))
 
 (define (det-next-i i j n)
   (if (even? j)
@@ -78,30 +78,34 @@
   (let ((maze (init-maze n m)))
     (define start (room 0 0))
     (define _maze (open-s (- n 1) (- m 1) (open-n 0 0 maze)))
-    (if (and (= n 1) (= m 1))
-      maze ;handle speacial case here
-      (maze-helper start _maze (addroom start '()) n m 0 #f))))
+    (maze-helper start _maze (addroom start '()) n m (all-rooms n m))))
 
 ;maze * stack -> maze
-(define (maze-helper cur maze visited n m cnt done?)
-  (if done? ;reached end
-    (if (> cnt (* m n 8)) ;if made with enough steps
+(define (maze-helper cur maze visited n m ar)
+  (if (and (= (room-x cur) (- n 1)) (= (room-y cur) (- m 1))) ;reached end
+    (if (null? ar) ;if made with enough complexity
       maze 
       (let ()
-        ;open more walls
-        (maze-helper (random-element visited) maze visited n m (add1 cnt) #f)))
-    (let () ;not done
+        ;(write ar)
+        ;(newline)
+        ;(write visited)
+        ;(newline)
+        (define randroom (random-element ar))
+        ;(define unvisited (diff-set (all-rooms n m) visited))
+        (maze-helper randroom maze (addroom randroom visited) n m (remove randroom ar))));make more
+    (let ()
       (define dir (random-element dirs))
       (define nextroom (get-room cur dir))
       (define i (room-x cur))
       (define j (room-y cur))
-      (define r (equal? nextroom (list (- n 1) (- m 1))))
       ;(define unvisited (diff-set (all-rooms n m) visited))
       (if (or (outofmaze? nextroom n m) (is-member? nextroom visited))
-        (maze-helper (random-element visited) maze visited n m (add1 cnt) r)
+        (let ()
+          (define randroom (random-element visited))
+        (maze-helper randroom maze visited n m ar))
         (let ()
           (define nv (addroom nextroom visited))
-          (maze-helper nextroom ((rand-open dir) i j maze) nv n m (add1 cnt) r))))))
+          (maze-helper nextroom ((rand-open dir) i j maze) nv n m (remove nextroom ar)))))))
 
-(define mz1 (mazeGen 15 15))
+(define mz1 (mazeGen 9 9))
 (maze-pp mz1)
