@@ -1,0 +1,91 @@
+first
+last
+size
+order
+add burn ellie_1
+add arise flyleaf_1
+add badboy razihel_1
+add scary_monsters skrillex_1
+add bangarang skrillex_2
+remove oasis
+add tribute lorenzo
+add vivid glencheck
+add okay shibasan
+add house houserulez
+add surrender cashcash_1
+remove surrender
+size
+first
+add overtime cashcash_2
+add takemehome cashcash_3
+add lightning cashcash_4
+add comeandgetit crystalcastles
+add animals martin
+add staythenight zedd
+add killbot devin
+add surrender cashcash_1
+add devils_den skrillex_3
+order
+size
+first
+last
+get surrender
+get mynumber
+add everythingisembarassing sky
+remove killbot
+remove overtime
+remove vivid
+get vivid
+size
+order
+range animals arise
+range a badboy
+range a t
+range a z
+remove okay
+remove arise
+first
+remove animals
+first
+size
+remove takemehome
+get lightning
+remove lightning
+remove tribute
+last
+size
+order
+remove devils_den
+range d ho
+range b c
+remove house
+remove house
+remove bangarang
+range b c
+range a y
+remove staythenight
+remove comeandgetit
+size
+remove burn
+order
+remove badboy
+add arise flyleaf
+first
+last
+remove surrender
+remove arise
+size
+order
+range e f
+range a b
+remove scary_monsters
+first
+last
+size
+remove everythingisembarassing
+first
+last
+size
+add iblamemyself sky
+size
+order
