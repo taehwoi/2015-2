@@ -69,7 +69,6 @@ implements Dictionary<Key, E> {
   }
 	public void inorder() { 
 		inorderHelper(root); 
-    System.out.println(""); //insert newline
 	}
 	public int rangeSearch(Key from, Key to) { 
 		return rangeSearchHelper(root, from, to, 0); 
@@ -105,7 +104,7 @@ implements Dictionary<Key, E> {
     if (rt == null)
       return;
     inorderHelper(rt.left());
-    System.out.print(rt.key() + " "); //TODO: to linkedlist
+    System.out.println("ORDER" + rt.key()); //TODO: to linkedlist
     inorderHelper(rt.right());
 	}
 	

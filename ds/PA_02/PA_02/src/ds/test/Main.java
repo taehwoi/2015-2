@@ -1,4 +1,4 @@
-package ds.bst;
+package ds.test;
 import java.io.StringReader;
 import java.util.Scanner;
 
@@ -13,59 +13,62 @@ public class Main {
 	private static final int FIRST = 5;
 	private static final int LAST = 6;
 	private static final int RANGE = 7;
-	private static final int DELMIN = 8;
-	private static final int ERROR = 9;
+	private static final int ERROR = 8;
 
 	public static void main(String[] args){
 		Scanner scanner = new Scanner(System.in);
-		BST<Integer,Integer> bookSearch = new BST<>();
+		BookSearch bookSearch = new BookSearch();
 		
 		while(scanner.hasNext()){
 			String line = scanner.nextLine();
 			Scanner i_scanner = new Scanner(new StringReader(line));
 			String cmd = i_scanner.next();
-			int name = 0;
-			int location = 0;
+			String name = null;
+			String location = null;
 			
 			switch(getCommandNum(cmd)){
 			case ADD:
-				name = i_scanner.nextInt();
-				location = i_scanner.nextInt();
-				bookSearch.insert(name, location);
+				name = i_scanner.next();
+				location = i_scanner.next();
+				bookSearch.add(name, location);
 				
 				// fill your code
 			
 				break;
 			case REMOVE:
-        name = i_scanner.nextInt();
+				name = i_scanner.next();
 				name = bookSearch.remove(name);
+				
+				// fill your code
         break;
-				// fill your code
 			case GET:
-        name = i_scanner.nextInt();
-				System.out.println(bookSearch.find(name));
-				// fill your code
-				break;
-			case SIZE:	
+				name = i_scanner.next();
+				location = bookSearch.get(name);
 
 				// fill your code
-				
+			
+				break;
+			case SIZE:	
+        System.out.println(bookSearch.size());
 				break;
 			case ORDER:
-        bookSearch.inorder();
+        bookSearch.order();
 				break;
 			case FIRST:
-        System.out.println(bookSearch.min().element());
+				name = bookSearch.first();
+        System.out.println(name);
 				break;
 			case LAST:
-        System.out.println(bookSearch.max().element());
+				name = bookSearch.last();
+        System.out.println(name);
 				break;
 			case RANGE:
-				int from = i_scanner.nextInt();
-				int to = i_scanner.nextInt();
-        System.out.println(bookSearch.rangeSearch(from,to));
-				break;
-			case DELMIN:
+				String from = i_scanner.next();
+				String to = i_scanner.next();
+        System.out.println();
+
+				// fill your code
+			
 				break;
 			case ERROR:
 				break;
@@ -79,6 +82,7 @@ public class Main {
 	}
 	
 	private static int getCommandNum(String cmd){
+		//System.out.println(cmd);
 		if(cmd.equals("add"))
 			return ADD;
 		else if(cmd.equals("remove"))
@@ -95,8 +99,6 @@ public class Main {
 			return LAST;
 		else if(cmd.equals("range"))
 			return RANGE;
-		else if(cmd.equals("delmin"))
-			return DELMIN;
 		return ERROR;
 	}
 

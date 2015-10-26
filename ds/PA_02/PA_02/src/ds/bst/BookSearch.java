@@ -2,66 +2,46 @@ package ds.bst;
 
 public class BookSearch {
 	private BST<String, String> bst;
+  private static final String ERRORMSG_find
+    = "BookSearch can not find the book.";
+  private static final String ERRORMSG_order
+    = "BookSearch does not have any book.";
 	
 	public BookSearch(){
-		
-		// fill your code
-
+    bst = new BST<>();
 	}
 	
 	public void add(String name, String location){
-		
-		// fill your code
-
+    bst.insert(name,location);
 	}
 	
 	public String remove(String name){
-		
-		// fill your code
-		
-		return null;
-
+		return bst.remove(name);
 	}
 	
 	public String get(String name){
-		
-		// fill your code
-
-		return null;
+    return bst.find(name);
 	}
 	
 	public int size(){
-		
-		// fill your code
-
-		return 0;
+		return bst.size();
 	}
 	
 	public void order(){
-		
-		// fill your code
-
+    bst.inorder();
+    return;
 	}
 	
 	public String first(){
-		
-		// fill your code
-
-		return null;
+    return bst.min().key();
 	}
 	
 	public String last(){
-		
-		// fill your code
-
-		return null;
+    return bst.max().key();
 	}
 	
 	public int range(String from, String to){
-		
-		// fill your code
-
-		return 0;
+    return bst.rangeSearch(from,to);
 	}
 	
 }
