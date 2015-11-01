@@ -1,6 +1,9 @@
 #lang racket
 
 (provide vlencode)
+
+ 
+#| utility functions |#
 (define (leaf str val) ; leaf: string * value -> tree
   (cons 'leaf (list str val)))
 
@@ -28,39 +31,38 @@
 (define freq0 (list (cons "a" 5) (cons "b" 1) (cons "c" 1) (cons "d" 1)))
 (define freq-tiny (list (cons "a" 1) (cons "b" 1)))
 
+(define (sort-by-frequency l)
+  (sort l #:key cdr <))
+#| utility functions |#
+
+(define freq1 '(("a" . 1) ("b" . 5)))
 ;TODO 1) make a huffman tree
-;     2) make vlencode from that tree
+;     2) make vlencode from that tree (done)
 
 (define (vlencode frequencies) ; vlencode: (string X int) list -> (string X (int list)) list
   'TODO
-  (define hftree (hfman frequencies))
-  (encode hftree))
+  (define hufftree (hfman frequencies))
+  (encode hufftree))
 
-(define (sort-by-frequency l)
-  (sort l #:key cdr <))
-
-(define freq1 '(("a" . 1) ("b" . 5)))
 (define (hfman freq) ;hfman (string X int) list -> tree
   (define l (sort-by-frequency freq)) ;sort the list by frequency
-  (define leaf0 (leaf (car (car l)) (cdr (car l))))
+  ;should pick two smallest from the list & current tree.
+    ;-> smallest one is ALWAYS chosen, compare second element with tree's rootval
+  ;merge the two tree, remove element from list, and go on.
+  (define leaf0 (leaf (car (list-ref l 0)) (cdr (list-ref l 0))));smallest one is ALWAYS chosen
   (define leaf1 (leaf (car (cadr l)) (cdr (cadr l))))
   (define tree (node leaf0 (+ (leafval leaf0) (leafval leaf1)) leaf1))
   tree)
-(define mytree2 '(tree 6 (tree 5 (leaf "a" 2) (leaf "b" 3)) (tree 7 (leaf "c" 2) (leaf "d" 5))) )
 
 (define (encode tree) ;encode: tree -> (string X (int list)) list
-  (define (helper tree upto) 
+  (define (helper tree path) ;helper: tree * (int list) -> (string X (int list)) list
     (if (null? tree)
       '()
       (if (isleaf? tree)
-        (list (cons (leafstr tree) upto))
+        (list (cons (leafstr tree) path))
         (append 
-          (helper (leftsub tree) (append upto (list 0)))
-          (helper (rightsub tree) (append upto (list 1)))))))
+          (helper (leftsub tree) (append path (list 0)))
+          (helper (rightsub tree) (append path (list 1)))))))
+
   (helper tree '()))
-(encode mytree2)
-
-(list (cons "a" (list 0 0)) (cons "b" (list 0 1)) (cons "c" (list 1 0)) (cons "d" (list 1 1)))
-  
-
-;TODO choose two smallest value and make tree.
+(vlencode freq1)
