@@ -18,5 +18,7 @@
         (sgoutput (lambda () (equal? -683 (crazy2val (crazy2add '(n z z z) '(z p p z n p p z p z n))))))
 ))
 
+        (sgoutput (lambda () (equal? -683 (crazy2val (crazy2add `(z p p z n p p z p z n)'(n z z z) )))))
+
 (crazy2addGrade)
 

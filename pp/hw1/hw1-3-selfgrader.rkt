@@ -17,6 +17,7 @@
         (sgoutput (lambda () (equal? 3 (crazy2val (crazy2mul '(p p) '(p))))))
         (sgoutput (lambda () (equal? 682 (crazy2val (crazy2mul '(n z z z) '(z p p z n p p z p z n))))))
 ))
+        (sgoutput (lambda () (equal? 682 (crazy2val (crazy2mul  '(z p p z n p p z p z n)`(n z z z))))))
+(crazy2val (crazy2mul '(p p) '(p p)))
 
 (crazy2mulGrade)
-
