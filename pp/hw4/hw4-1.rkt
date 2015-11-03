@@ -44,10 +44,13 @@
                     (cons "f" 1) (cons "g" 1) (cons "h" 1)))
 
 (define (vlencode frequencies) ; vlencode: (string X int) list -> (string X (int list)) list
+  (if (null? frequencies)
+    '()
+    (let ()
   (define sorted-freq (sort-by-frequency (remove-unused frequencies))) ;sort the list by frequency
   (define hufftree (hfman sorted-freq)) ;build a huffman tree
-  (encode hufftree) ;assign code to the huffman tree
-  )
+  (encode hufftree)) ;assign code to the huffman tree
+  ))
 
 ;TODO: refactoring
 (define (hfman freq) ;hfman (string X int) list -> tree
@@ -63,7 +66,7 @@
           (helper freq (append (cddr treelist) (list newtree)))))
       (if (= (length freq) 1)
         (if (= (length treelist) 0)
-          (node '() 0 (list-ref freq 0)) ;dummy tree
+          (node (list-ref freq 0) 0 '()) ;dummy tree
           (if (= (length treelist) 1)
             (let () ;(= (length treelist) 1)
               (define leaf0 (list-ref freq 0))
@@ -116,5 +119,4 @@
         (append 
           (helper (leftsub tree) (append path (list 0)))
           (helper (rightsub tree) (append path (list 1)))))))
-
   (helper tree '()))
