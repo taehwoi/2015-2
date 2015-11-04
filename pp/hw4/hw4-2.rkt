@@ -14,64 +14,65 @@
   (list 'a lhs rhs))
 
 (define (isS? e) ; isS?: solution -> bool
-  (eq? 'S e))
+  (equal? 'S e))
 (define (isK? e) ; isS?: solution -> bool
-  (eq? 'K e))
+  (equal? 'K e))
 (define (isI? e) ; isS?: solution -> bool
-  (eq? 'I e))
+  (equal? 'I e))
 (define (isv? e) ; isv?: solution -> bool
   (if (or (null? e) (not (list? e)))
     #f
-    (eq? 'v (car e))))
+    (equal? 'v (car e))))
 (define (isa? e) ; isa?: solution -> bool
   (if (or (null? e) (not (list? e)))
     #f
-    (eq? (car e) 'a)))
+    (equal? (car e) 'a)))
 (define (var e) ; var: solution -> string
   (cadr e))
 
 (define (al e) ; al: solution -> solution
-  (if (or (not (list? e)) (null? e))
+  (if (not (isa? e))
     '()
     (cadr e)))
 
 (define (ar e) ; ar: solution -> solution
-  (if (or (not (list? e)) (null? e))
+  (if (not (isa? e))
     '()
     (caddr e)))
 
+;(define SII (a (a (a S I) I) (a (a S I) I)))
 (define (pprint e) ; pprint: solution -> string
   (cond  ((isS? e) "S")
          ((isK? e) "K")
          ((isI? e) "I")
-         ((isa? e) (string-append "(" (pprint (al e)) " " (pprint (ar e))  ")"))
-         ((isv? e) (cadr e))))
-
-(define (s-react e)
-  (a (a (ar (al (al e))) (ar e)) (a (ar (al e)) (ar e))))
-; In short,
-; S prints "S";
-; K prints "K";
-; I prints "I";
-; variable x prints "x";
-; tuple (E F) prints "(" + E + " " + F + ")".
+         ((isa? e) (string-append"("(pprint (al e))" "(pprint (ar e))")"))
+         ((isv? e) (cadr e))
+         ))
 
 (define (react e)
-  (pprint (cover e)))
-
-(define (cover e)
-  (write e)
-  (newline)
-  (define (react-helper e) ; execute: solution -> string
+  #| util func. |#
+  (define (react-type e) ; react-type: solution -> symbol
     (cond 
-      ((eq? (al e) 'I) (ar e))
-      ((eq? (al (al e)) 'K) (ar (al e)))
-      ((eq? (al (al e)) 'K) (ar (al e)))
-      ((eq? (al (al (al e))) 'S) (s-react e))
-      ((isa? e) (a (react-helper (al e)) (react-helper (ar e))))
-      (else e)))
+      ((equal? (al (al (al e))) 'S) 'S)
+      ((equal? (al (al e)) 'K) 'K)
+      ((equal? (al e) 'I) 'I)
+      (else 'NO))) ;can't react
+  (define (S-react e) ; solution -> solution
+    (a (a (ar (al (al e))) (ar e)) (a (ar (al e)) (ar e))))
+  (define (K-react e); solution -> solution
+    (ar (al e)))
+  (define (I-react e); solution -> solution
+    (ar e))
+  #| end of util func. |#
 
-  (if (eq? e (react-helper e))
-    e
-    (react-helper (react-helper e))))
-(react (a (a (a (v "x") (v "y")) (v "z")) (v "w")))
+  (define (react-helper e) 
+    (define rule (react-type e))
+    (cond 
+      ((equal? rule 'S) (S-react e))
+      ((equal? rule 'K) (K-react e))
+      ((equal? rule 'I) (I-react e))
+      ((isa? e) (a (react-helper (al e)) (react-helper (ar e)))) ;check this last to avoid errors.
+      (else e)))
+  (if (equal? e (react-helper e)) 
+    (pprint e);can't react more
+    (react (react-helper e)))) ;keep going on

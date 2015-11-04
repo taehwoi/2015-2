@@ -883,3 +883,35 @@
          [wf? (wellformed? frequencies codes)]
          [score (compute-score frequencies codes)])
          (and wf? (equal? 13213 score)))))
+
+(sgoutput
+ (lambda ()
+   (let* ([frequencies (list (cons "a" 5) (cons "b" 1) (cons "c" 1) (cons "d" 1))]
+          [codes (vlencode frequencies)]
+          [wf? (wellformed? frequencies codes)]
+          [score (compute-score frequencies codes)])
+     (and wf? (equal? 13 score)))))
+
+(sgoutput
+ (lambda ()
+   (let* ([frequencies (list (cons "a" 3) (cons "b" 4) (cons "c" 5) (cons "d" 6))]
+          [codes (vlencode frequencies)]
+          [wf? (wellformed? frequencies codes)]
+          [score (compute-score frequencies codes)])
+     (and wf? (equal? 36 score)))))
+
+(sgoutput
+ (lambda ()
+   (let* ([frequencies (list (cons "a" 3) (cons "b" 4) (cons "c" 5) (cons "d" 6) (cons "e" 0))]
+          [codes (vlencode frequencies)]
+          [wf? (wellformed? frequencies codes)]
+          [score (compute-score frequencies codes)])
+     (and wf? (equal? 36 score)))))
+
+(sgoutput
+ (lambda ()
+   (let* ([frequencies '()]
+          [codes (vlencode frequencies)]
+          [wf? (wellformed? frequencies codes)]
+          [score (compute-score frequencies codes)])
+     (and wf? (equal? 0 score)))))
