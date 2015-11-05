@@ -3,10 +3,12 @@
 (provide empty link case-list)
 
 (define empty
-  'TODO)
+  '())
 
 (define (link v l)
-  'TODO)
+  (append (list v) l))
 
 (define (case-list f1 f2 l)
-  'TODO)
+  (if (equal? l empty)
+    (f1 empty)
+    (f2 (car l) (cdr l))))
