@@ -6,13 +6,25 @@
 (provide is-empty? fst rest length nth-elmt map reduce)
 
 (define (is-empty? l)
-  'TODO)
+  (equal? l empty))
 
 (define (fst l)
-  'TODO)
+  (define safe-car
+    (lambda (l)
+      (case-list
+        (lambda (u) (cons u empty))
+        (lambda (h t) h)
+        l)))
+  (safe-car l))
 
 (define (rest l)
-  'TODO)
+  (define safe-cdr
+    (lambda (l)
+      (case-list
+        (lambda (u) empty)
+        (lambda (h t) t)
+        l)))
+  (safe-cdr l))
 
 (define (length l)
   'TODO)
@@ -25,3 +37,15 @@
 
 (define (reduce l f s)
   'TODO)
+
+(define unit '())
+
+(define (right-unit? s)
+  (case-sum
+   (lambda (v) #f)
+   (lambda (v) (equal? v '()))
+   s))
+(define l1 empty)
+(define l2 (link 1 (link 2 empty)))
+;(equal? (right-unit? (fst l1)) #t)
+(fst l1)
