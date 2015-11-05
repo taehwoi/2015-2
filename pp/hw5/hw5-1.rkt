@@ -3,10 +3,16 @@
 (provide inl inr case-sum)
 
 (define (inl v)
-  'TODO)
+  (cons 'left v))
 
 (define (inr v)
-  'TODO)
+  (cons 'right v))
+(define (is-left? t)
+  (equal? (car t) 'left))
+(define (is-right? t)
+  (equal? (car t) 'right))
 
 (define (case-sum f1 f2 s)
-  'TODO)
+  (if (is-left? s)
+    (f1 (cdr s))
+    (f2 (cdr s))))
