@@ -1,0 +1,38 @@
+#lang racket
+; not for execution
+; write a type of each expression after the closing parenthesis
+
+(define (sigma #| int*int-> f(below) |#  lower #|int|# upper #|int|# )
+  (lambda (f) #| f->E(below) |#
+    (define (loop n) #| int->((X->Y)->val) |#
+      (if (> #| int*int->bool |# n #|int|# upper #|int|#);bool
+        0 ;int
+        (+ #| n*n->n |# (f n)#| int->((X->Y)->n) |# (loop (+ n 1) #|int|# ) #| int->((X->Y)->n) |#)))
+    (loop #|int->proc|# lower #|int|#); proc:((X->Y) -> n)
+    )
+  )
+
+        #|t * t * (t->t) * (t*t->bool) * t * (t*t->t) * (t->t) -> t |#
+(define (generic-sum lower #|t|# upper #|t|# f #|t->t|# larger #|t*t->bool|# base #|t|# op #|t*t->t|# inc #|t->t|#)#|t|#
+  (if (larger lower #|t1|# upper #|t1|#) #|bool|#
+    base #| t |#
+    (op #|t*t->t|# (f #|t->t|# lower #|t|# ) #| t |#
+        (generic-sum (inc #|t->t|# lower #|t|#)#|t|# upper #|t|# f #|t->t|# larger #|t*t->bool|# base #|t|# op #|t*t->t|# inc #| t->t |#)) #|t|#
+    ) #|t|#
+  )
+
+(define (map #|(X->Y)*Xlist-> Ylist |# f #|proc(X->Y)|# l #|list|#); (X -> Y) * X list -> Y list
+  (if (null? #|list->bool|# l #|list|# )#|bool|# 
+    '() #|list|#
+    (cons (f #|X->Y|# (car l)#|element(X)|#)#|Y|# (map f #|(X->Y)|#(cdr l)#|Xlist|#)#|Ylist|#))) #|list|#
+
+(define (reduce #| list*(X*Y->Y)*Y->Y |#l #|list|# op #|(X*Y->Y)|# init #|Y|#)
+  (if (null? #|proc(list->bool)|# l #|list|#)#|bool|# 
+    init #|Y|#
+    (op #|proc(X*Y->Y)|# (car l)#|X|# (reduce (cdr l)#|list|# op init)#|Y|#) #|Y|#
+    )
+  )
+
+(define (map-reduce #|((X->Y)*list)#|list|# * (X*Y->Y) * T |# f #|(X->Y)|# l #|list|# op #|X*Y->Y|# init #|T|#)
+  (reduce #| list*(X*Y->Y)*T->T |# (map f l)#|list|# op #|X*Y->Y|# init #|T|#) #|T|#
+  )
