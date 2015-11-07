@@ -124,9 +124,27 @@
 
 
 ;;; conversions 
+;use list-tail and take
 
+;TODO: cleanup boilerplates
 (define (array-to-tree f) ; array-to-tree: form -> form
-  'TODO)
+  (define (to-tree f) ;to-tree: (array) form * (tree) form -> (tree) form
+    (write f)
+    (newline)
+    (if (not (list? f)) 
+      f ;base case (white,black)
+      (if (= (length f) 2) 
+        (if (= (length (car f)) 2);basic 2*2 tiletree
+          (append (car f) (reverse (car (cdr f))))
+          (list (append (take (car f) 2) (reverse (take (cadr f) 2)))
+                (append (drop (car f) 2) (reverse (drop (cadr f) 2)))
+                ))
+        (let ()
+          (define mid (/ (length f) 2))
+          (append (to-tree (take f mid)) (reverse (to-tree (drop f mid)))))
+        )))
+
+  (cons 'tree (to-tree (cdr f))))
 
 (define (tree-to-array f) ; tree-to-array: form -> form
   'TODO)
