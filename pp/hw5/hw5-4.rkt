@@ -81,6 +81,7 @@
 (define (glue-tree-from-tree nw ne se sw) ; glue-tree-from-tree: form * form * form * form -> form
   'TODO)
 
+
 (define (glue-tree-from-array nw ne se sw) ; glue-tree-from-array: form * form * form * form -> form
   'TODO)
 
