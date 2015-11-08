@@ -5,31 +5,8 @@
 (require "hw5-4.rkt")
 
 (printf "1. Internal Representations\n")
-; In this homework, we strictly guide the internal structure of tiles.
-; This auto-grader should results in "O" (rather than "X") for the
-; following test cases.
-;
-;
-(printf "1) Basic Representations\n")
-; First of all, black tile should be 'B.
-(sgoutput (lambda () (equal? 'B black)))
-; Likewise, white tile should be 'W.
-(sgoutput (lambda () (equal? 'W white)))
-; Note that these two basic tile should be both array and tree:
-(sgoutput (lambda () (equal? #t (is-tree? black))))
-(sgoutput (lambda () (equal? #t (is-tree? white))))
-(sgoutput (lambda () (equal? #t (is-array? black))))
-(sgoutput (lambda () (equal? #t (is-array? white))))
-;
-;
-; These are for ease of reading this grader.
 (define B black)
 (define W white)
-;
-;
-; Tiles are of two kinds: arrays and trees.
-; These are constructed by: glue-*-from-*.
-;
 (printf "2) Array Representations\n")
 ; Array tile should look like:
 (define basic-array (glue-array-from-array B B B W))
