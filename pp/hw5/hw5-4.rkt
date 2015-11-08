@@ -24,16 +24,14 @@
 (provide rotate)
 (provide neighbor)
 (provide pprint)
+
 (define (half l p)
   (define mid (/ (length l) 2))
   (cond  ((equal? 'f p) (take l mid)) ;front
          ((equal? 'r p) (drop l mid)))) ;rear
 
 (define test '(array (B B B B B B B B)(W B B B B B B B)(B B B B B B B B)(B B B B B B B B)(B B B B B B B B)(B B B B B B B B)(B B B B B B B B)(B B B B B B B W)))
-;(array-to-tree '(array (B W B W) (B W B W) (B W B W) (B W B W)))
-;(array-to-tree '(array (B W) (B B)))
-;(array-to-tree test)
-
+(define test2 '(array (B W B W B W B W) (B W B W B W B W) (B W B W B W B W) (B W B W B W B W)(B W B W B W B W)(B W B W B W B W)(B W B W B W B W)(B W B W B W B W)))
 ;;; primitive tile
 
 (define black ; black: form
@@ -44,47 +42,10 @@
 (define B black)
 (define W white)
 
-;;; complex tile
-;
-; An array tile looks like:
-; (cons 'array (list row_1 row_2 ... row_n)),
-; for each row_i = (list cell_i1 ... cell_in).
-;
-; Examples:
-; 1.
-; (cons 'array (list (list 'B 'B) (list 'W 'W)))
-; BB
-; WW
-;
-; 2.
-; (cons 'array (list (list 'B 'B 'B 'B) (list 'B 'B 'B 'B) (list 'W 'W 'B 'B) (list 'W 'W 'B 'B)))
-; BBBB
-; BBBB
-; WWBB
-; WWBB
-;
-;
-; An tree tile looks like:
-; (cons 'tree (list subtree_nw subtree_ne subtree_se subtree_sw)).
-;
-; Examples:
-; 1.
-; (cons 'tree (list 'B 'B 'W 'B))
-; BB
-; BW
-;
-; 2.
-; (cons 'tree (list (list 'B 'B 'B 'W) (list 'B 'B 'W 'B) (list 'B 'W 'B 'B) (list 'W 'B 'B 'B)))
-; BBBB
-; WBBW
-; WBBW
-; BBBB
-;
-; See hw5-4-selfgrader.rkt for more details on grading array and tree representation.
-
-(define (glue-array-from-tree nw ne se sw) ; glue-array-from-tree: form * form * form * form -> form
+(define (glue-array-from-tree nw ne se sw) ;form * form * form * form -> form
   'TODO)
 
+;DONE
 (define (glue-array-from-array nw ne se sw) ;form * form * form * form -> form
   (define (sum w e)
     (if (null? w)
@@ -95,12 +56,11 @@
                          (sum (cdr sw) (cdr se))))
     (cons 'array (list (list nw ne) (list sw se)))))
 (define basic(glue-array-from-array B B B W))
-basic
 
-(define (glue-tree-from-tree nw ne se sw) ; glue-tree-from-tree: form * form * form * form -> form
-  'TODO)
+(define (glue-tree-from-tree nw ne se sw) ; form * form * form * form -> form
+  (cons 'tree (list (cdr nw) (cdr ne) (cdr se) (cdr sw))))
 
-(define (glue-tree-from-array nw ne se sw) ; glue-tree-from-array: form * form * form * form -> form
+(define (glue-tree-from-array nw ne se sw) ; form * form * form * form -> form
   'TODO)
 
 (define (rotate-array f) ; rotate-array: form -> form
@@ -115,8 +75,7 @@ basic
 
 (define (list-to-str l)
   (define (sym-to-str l)
-    (cond  ((null? l) "\n")
-           ((equal? B l) "B")
+    (cond  ((equal? B l) "B")
            ((equal? W l) "W")))
   (string-append (foldr string-append "" (map sym-to-str l)) "\n"))
 
@@ -126,9 +85,6 @@ basic
       ""
       (string-append (list-to-str (car f)) (helper (cdr f)))))
   (helper (cdr f)))
-
-(write-string (pprint-array test))
-
 
 (define (is-array? f) ; is-array?: form -> bool
   (cond [(equal? 'B f) #t]
@@ -147,8 +103,9 @@ basic
 
 ; In the document, it is said to have type form -> void, but implement
 ; as form -> string.
+
 (define (pprint-tree f) ; pprint-tree: form -> string
-  'TODO)
+  (pprint-array (tree-to-array f)))
 
 (define (is-tree? f) ; is-tree?: form -> bool
   (cond [(equal? 'B f) #t]
@@ -175,11 +132,13 @@ basic
   (if (list? f)
     (cons 'tree (to-tree (cdr f)))
     f))
+
 (define testtree
   (array-to-tree 
     '(array (B W B W B W B W) (B W B W B W B W)(B W B W B W B W)(B W B W B W B W)
             (W B W B W B W B)(W B W B W B W B)(W B W B W B W B)(W B W B W B W B))))
 
+;TODO
 (define (tree-to-array f) ; tree-to-array: form -> form
   (define (to-array f)
     (write f)
@@ -195,10 +154,6 @@ basic
                 (to-array (half f 'r)))
           ))))
   (cons 'array (to-array (cdr f))))
-;(tree-to-array '(tree B B W B))
-;(cons 'array (list (list 'B 'B 'B 'B) (list 'B 'B 'B 'B) (list 'W 'W 'B 'B) (list 'W 'W 'B 'B)))
-;(tree-to-array testtree)
-
 
 ;;; interfaces
 
@@ -221,3 +176,11 @@ basic
   (if (is-array? f)
     (pprint-array f)
     (pprint-tree f)))
+
+(write-string (pprint-array basic))
+(write-string (pprint-array (glue-array-from-array basic basic basic basic)))
+(write-string (pprint-array test))
+(write-string (pprint-array (glue-array-from-array test test test test)))
+(write-string (pprint-array test2))
+
+(write-string (pprint-array (cons 'array (list (list 'B 'B 'B 'B) (list 'B 'B 'B 'B) (list 'W 'W 'B 'B) (list 'W 'W 'B 'B)))))
