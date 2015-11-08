@@ -114,6 +114,15 @@
 
   (cons 'tree (helper (cdr f))))
 
+;use tree to locate -> easier to locate
+;once located, use array to count blocks
+(define (loc-to-coord loc) ;location -> (i,j)
+  (define (int-to-coord n)
+    (cond  ((= n 0) (list 1 1)) ;NW
+           ((= n 1) (list 1 2));NE
+           ((= n 2) (list 2 1));SE
+           ((= n 3) (list 2 2))));SW
+  'TODO)
 (define (neighbor-tree loc f) ; neighbor-tree: location * form -> int
   'TODO)
 
@@ -167,8 +176,13 @@
 
 ;;; interfaces
 
+;always return tree implmentation
 (define (glue nw ne se sw) ; glue: form * form * form * form -> form
-  'TODO)
+  (define (new t)
+    (if (is-tree? t)
+      t
+      (array-to-tree t)))
+  (glue-tree-from-tree (new nw) (new ne) (new se) (new sw)))
 
 (define (rotate f) ; rotate: form -> form
   (if (is-array? f)
@@ -186,3 +200,5 @@
   (if (is-array? f)
     (pprint-array f)
     (pprint-tree f)))
+(write-string (pprint test))
+(write-string (pprint (rotate test)))
