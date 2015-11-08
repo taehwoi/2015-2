@@ -10,18 +10,10 @@
 (printf "2) Array Representations\n")
 ; Array tile should look like:
 (define basic-array (glue-array-from-array B B B W))
-(sgoutput (lambda () (equal? '(array (B B) (W B))
-                           basic-array)))
-(sgoutput (lambda () (equal? '(array (B B) (W B))
-                           (glue-array-from-tree B B B W))))
 ;
 (printf "3) Tree Representations\n")
 ; Tree tile should look like:
 (define basic-tree (glue-tree-from-tree B B B W))
-(sgoutput (lambda () (equal? '(tree B B B W)
-                           basic-tree)))
-(sgoutput (lambda () (equal? '(tree B B B W)
-                           (glue-tree-from-array B B B W))))
 ;
 (printf "4) Bigger Examples\n")
 ; Try bigger ones.
@@ -133,3 +125,19 @@
 (sgoutput (lambda () (equal? 3 (neighbor (list 0 3) compound2))))
 (sgoutput (lambda () (equal? 4 (neighbor (list 1 3) compound2))))
 (sgoutput (lambda () (equal? 2 (neighbor (list 2 2) compound2))))
+
+;(write-string (pprint testtree))
+;(write-string (pprint (rotate-tree testtree)))
+;(write-string (pprint-array basic))
+;(array-to-tree basic)
+;(array-to-tree test)
+;(write-string (pprint-array (glue-array-from-array basic basic basic basic)))
+;(write-string (pprint-array test))
+;(write-string (pprint-array (glue-array-from-array test test test test)))
+;(write-string (pprint-array test2))
+
+;(write-string (pprint-array (cons 'array (list (list 'B 'B 'B 'B) (list 'B 'B 'B 'B) (list 'W 'W 'B 'B) (list 'W 'W 'B 'B)))))
+#;(define testtree
+  (array-to-tree 
+    '(array (B W B W B W B W)(B W B W B W B W)(B W B W B W B W)(B W B W B W B W)
+            (W B W B W B W B)(W B W B W B W B)(W B W B W B W B)(W B W B W B W B))))

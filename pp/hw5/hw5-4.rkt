@@ -43,7 +43,7 @@
 (define W white)
 
 (define (glue-array-from-tree nw ne se sw) ;form * form * form * form -> form
-  'TODO)
+  (tree-to-array (glue-tree-from-tree nw ne se sw)))
 
 ;DONE
 (define (glue-array-from-array nw ne se sw) ;form * form * form * form -> form
@@ -56,27 +56,29 @@
                          (sum (cdr sw) (cdr se))))
     (cons 'array (list (list nw ne) (list sw se)))))
 
-(define basic(glue-array-from-array B B B W))
+(define basic-array (glue-array-from-array B B B W))
 
 (define (glue-tree-from-tree nw ne se sw) ; form * form * form * form -> form
-  (cons 'tree (list (cdr nw) (cdr ne) (cdr se) (cdr sw))))
+  (if (list? nw)
+    (cons 'tree (list (cdr nw) (cdr ne) (cdr se) (cdr sw)))
+    (cons 'tree (list nw ne se sw))))
 
 (define (glue-tree-from-array nw ne se sw) ; form * form * form * form -> form
-  (cons 'tree (list 
-                (cdr (array-to-tree nw))
-                (cdr (array-to-tree ne))
-                (cdr (array-to-tree se))
-                (cdr (array-to-tree sw)))))
+  (if (list? nw)
+    (cons 'tree (list 
+                  (cdr (array-to-tree nw))
+                  (cdr (array-to-tree ne))
+                  (cdr (array-to-tree se))
+                  (cdr (array-to-tree sw))))
+    (cons 'tree (list nw ne se sw))
+    ))
 
 (define (rotate-array f) ; rotate-array: form -> form
-  'TODO)
+  (define f-tree (array-to-tree f))
+  (tree-to-array (rotate-tree f-tree)))
 
 (define (neighbor-array location f) ; neighbor-array: location * form -> int
   'TODO)
-
-; In the document, it is said to have type form -> void, but implement
-; as form -> string.
-; Read hw5-4-selfgrader.rkt for formatting.
 
 (define (list-to-str l)
   (define (sym-to-str l)
@@ -101,13 +103,19 @@
 ;;; implementation with tree
 
 (define (rotate-tree f) ; rotate-tree: form -> form
-  'TODO)
+  (define (helper f)
+    (if (not (list? (car f)))
+      (append (drop f 3) (take f 3))
+      (list 
+        (helper (list-ref f 3))
+        (helper (list-ref f 0))
+        (helper (list-ref f 1))
+        (helper (list-ref f 2)))))
+
+  (cons 'tree (helper (cdr f))))
 
 (define (neighbor-tree loc f) ; neighbor-tree: location * form -> int
   'TODO)
-
-; In the document, it is said to have type form -> void, but implement
-; as form -> string.
 
 (define (pprint-tree f) ; pprint-tree: form -> string
   (pprint-array (tree-to-array f)))
@@ -120,7 +128,6 @@
 
 
 ;;; conversions 
-;use list-tail and take
 
 (define (array-to-tree f) ; array-to-tree: form -> form
   (define (to-tree f) ;to-tree: (array) form * (tree) form -> (tree) form
@@ -138,16 +145,10 @@
     (cons 'tree (to-tree (cdr f)))
     f))
 
-(define testtree
-  (array-to-tree 
-    '(array (B W B W B W B W)(B W B W B W B W)(B W B W B W B W)(B W B W B W B W)
-            (W B W B W B W B)(W B W B W B W B)(W B W B W B W B)(W B W B W B W B))))
 
 ;TODO
 (define (tree-to-array f) ; tree-to-array: form -> form
   (define (to-array f)
-    (write f)
-    (newline)
     (if (not (list? f))
       f;base case
       (if (= (length f) 1)  ;default 2*2 tree
@@ -163,8 +164,6 @@
 ;(cdr testtree)
 ;(list-ref (cdr testtree) 0)
 ;(list-ref (list-ref (cdr testtree) 0) 0)
-(tree-to-array testtree)
-(equal? (tree-to-array (array-to-tree basic)) basic)
 
 ;;; interfaces
 
@@ -187,13 +186,3 @@
   (if (is-array? f)
     (pprint-array f)
     (pprint-tree f)))
-
-;(write-string (pprint-array basic))
-;(array-to-tree basic)
-;(array-to-tree test)
-;(write-string (pprint-array (glue-array-from-array basic basic basic basic)))
-;(write-string (pprint-array test))
-;(write-string (pprint-array (glue-array-from-array test test test test)))
-;(write-string (pprint-array test2))
-
-;(write-string (pprint-array (cons 'array (list (list 'B 'B 'B 'B) (list 'B 'B 'B 'B) (list 'W 'W 'B 'B) (list 'W 'W 'B 'B)))))
