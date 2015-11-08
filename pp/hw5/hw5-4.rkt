@@ -55,13 +55,18 @@
     (cons 'array (append (sum (cdr nw) (cdr ne)) 
                          (sum (cdr sw) (cdr se))))
     (cons 'array (list (list nw ne) (list sw se)))))
+
 (define basic(glue-array-from-array B B B W))
 
 (define (glue-tree-from-tree nw ne se sw) ; form * form * form * form -> form
   (cons 'tree (list (cdr nw) (cdr ne) (cdr se) (cdr sw))))
 
 (define (glue-tree-from-array nw ne se sw) ; form * form * form * form -> form
-  'TODO)
+  (cons 'tree (list 
+                (cdr (array-to-tree nw))
+                (cdr (array-to-tree ne))
+                (cdr (array-to-tree se))
+                (cdr (array-to-tree sw)))))
 
 (define (rotate-array f) ; rotate-array: form -> form
   'TODO)
@@ -126,8 +131,8 @@
         (let ()
           (list (to-tree (map (lambda (x) (half x 'f)) (half f 'f))) ;NW
                 (to-tree (map (lambda (x) (half x 'r)) (half f 'f))) ;NE
-                (to-tree (map (lambda (x) (half x 'r)) (half f 'r))) ;NE
-                (to-tree (map (lambda (x) (half x 'f)) (half f 'r))) ;NE
+                (to-tree (map (lambda (x) (half x 'r)) (half f 'r))) ;SE
+                (to-tree (map (lambda (x) (half x 'f)) (half f 'r))) ;SW
                 )))))
   (if (list? f)
     (cons 'tree (to-tree (cdr f)))
@@ -135,7 +140,7 @@
 
 (define testtree
   (array-to-tree 
-    '(array (B W B W B W B W) (B W B W B W B W)(B W B W B W B W)(B W B W B W B W)
+    '(array (B W B W B W B W)(B W B W B W B W)(B W B W B W B W)(B W B W B W B W)
             (W B W B W B W B)(W B W B W B W B)(W B W B W B W B)(W B W B W B W B))))
 
 ;TODO
@@ -145,15 +150,21 @@
     (newline)
     (if (not (list? f))
       f;base case
-      (if (= (length f) 2)  ;default 2*2 tree
-        (list 
-          (append (half (car (half f 'f)) 'f) (half (car (half f 'r)) 'f))
-          (append(reverse(half(car(half f 'f))'r))(reverse(half(car (half f 'r))'r))))
+      (if (= (length f) 1)  ;default 2*2 tree
+        (append (half (car (half f 'f)) 'f) (half (car (half f 'r)) 'f))
         (let ()
-          (list (to-array (half f 'f)) ;N
-                (to-array (half f 'r)))
+          (glue-array-from-array (to-array (list-ref f 0)) ;NW
+                                 (to-array (list-ref f 1)) ;NE
+                                 (to-array (list-ref f 2)) ;SE
+                                 (to-array (list-ref f 3))) ;SW
           ))))
-  (cons 'array (to-array (cdr f))))
+
+  (to-array (cdr f)))
+;(cdr testtree)
+;(list-ref (cdr testtree) 0)
+;(list-ref (list-ref (cdr testtree) 0) 0)
+(tree-to-array testtree)
+(equal? (tree-to-array (array-to-tree basic)) basic)
 
 ;;; interfaces
 
@@ -177,10 +188,12 @@
     (pprint-array f)
     (pprint-tree f)))
 
-(write-string (pprint-array basic))
-(write-string (pprint-array (glue-array-from-array basic basic basic basic)))
-(write-string (pprint-array test))
-(write-string (pprint-array (glue-array-from-array test test test test)))
-(write-string (pprint-array test2))
+;(write-string (pprint-array basic))
+;(array-to-tree basic)
+;(array-to-tree test)
+;(write-string (pprint-array (glue-array-from-array basic basic basic basic)))
+;(write-string (pprint-array test))
+;(write-string (pprint-array (glue-array-from-array test test test test)))
+;(write-string (pprint-array test2))
 
-(write-string (pprint-array (cons 'array (list (list 'B 'B 'B 'B) (list 'B 'B 'B 'B) (list 'W 'W 'B 'B) (list 'W 'W 'B 'B)))))
+;(write-string (pprint-array (cons 'array (list (list 'B 'B 'B 'B) (list 'B 'B 'B 'B) (list 'W 'W 'B 'B) (list 'W 'W 'B 'B)))))
