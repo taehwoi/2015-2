@@ -25,13 +25,36 @@
 (provide neighbor)
 (provide pprint)
 
+#| util functions |#
 (define (half l p)
   (define mid (/ (length l) 2))
   (cond  ((equal? 'f p) (take l mid)) ;front
          ((equal? 'r p) (drop l mid)))) ;rear
 
-(define test '(array (B B B B B B B B)(W B B B B B B B)(B B B B B B B B)(B B B B B B B B)(B B B B B B B B)(B B B B B B B B)(B B B B B B B B)(B B B B B B B W)))
-(define test2 '(array (B W B W B W B W) (B W B W B W B W) (B W B W B W B W) (B W B W B W B W)(B W B W B W B W)(B W B W B W B W)(B W B W B W B W)(B W B W B W B W)))
+(define (sf-list-ref lst pos)
+  (if (or (< pos 0) (<= (length lst) pos))
+    'NIL
+    (list-ref lst pos)))
+
+
+(define (loc-to-coord loc) ;location -> (i,j)
+  (define (helper loc row col)
+    (if (null? loc)
+      (list (car row) (car col)) ;(= (car row) (cdr row))
+      (let ()
+        (define offset (expt 2 (sub1 (length loc))))
+        (define floor-up-row (cons (+ offset (car row)) (cdr row)))
+        (define floor-up-col (cons (+ offset (car col)) (cdr col)))
+        (define ceiling-down-row (cons (car row) (- (cdr row) offset)))
+        (define ceiling-down-col (cons (car col) (- (cdr col) offset)))
+        (cond  ((= (car loc) 0) (helper (cdr loc) ceiling-down-row ceiling-down-col))
+               ((= (car loc) 1) (helper (cdr loc) ceiling-down-row floor-up-col))
+               ((= (car loc) 2) (helper (cdr loc) floor-up-row floor-up-col))
+               ((= (car loc) 3) (helper (cdr loc) floor-up-row ceiling-down-col))))))
+  (define size (expt 2 (length loc)))
+  (helper loc (cons 1 size) (cons 1 size))); row & col: 1 ~ size 
+
+#| util functions |#
 ;;; primitive tile
 
 (define black ; black: form
@@ -39,8 +62,6 @@
 (define white ; white: form
   'W)
 
-(define B black)
-(define W white)
 
 (define (glue-array-from-tree nw ne se sw) ;form * form * form * form -> form
   (tree-to-array (glue-tree-from-tree nw ne se sw)))
@@ -55,8 +76,6 @@
     (cons 'array (append (sum (cdr nw) (cdr ne)) 
                          (sum (cdr sw) (cdr se))))
     (cons 'array (list (list nw ne) (list sw se)))))
-
-(define basic-array (glue-array-from-array B B B W))
 
 (define (glue-tree-from-tree nw ne se sw) ; form * form * form * form -> form
   (if (list? nw)
@@ -76,10 +95,6 @@
 (define (rotate-array f) ; rotate-array: form -> form
   (define f-tree (array-to-tree f))
   (tree-to-array (rotate-tree f-tree)))
-(define (sf-list-ref lst pos)
-  (if (or (< pos 0) (<= (length lst) pos))
-    'NIL
-    (list-ref lst pos)))
 
 (define (neighbor-array location f) ; neighbor-array: location * form -> int
   (if (list? f)
@@ -113,8 +128,8 @@
 
 (define (list-to-str l)
   (define (sym-to-str l)
-    (cond  ((equal? B l) "B")
-           ((equal? W l) "W")))
+    (cond  ((equal? black l) "B")
+           ((equal? white l) "W")))
   (string-append (foldr string-append "" (map sym-to-str l)) "\n"))
 
 (define (pprint-array f) ; pprint-array: form -> string
@@ -123,13 +138,13 @@
       ""
       (string-append (list-to-str (car f)) (helper (cdr f)))))
 
-  (cond [(equal? 'B f) "B"]
-        [(equal? 'W f) "W"]
+  (cond [(equal? black f) "B"]
+        [(equal? white f) "W"]
         [(helper (cdr f))]))
 
 (define (is-array? f) ; is-array?: form -> bool
-  (cond [(equal? 'B f) #t]
-        [(equal? 'W f) #t]
+  (cond [(equal? black f) #t]
+        [(equal? white f) #t]
         [(equal? 'array (car f)) #t]
         [else #f]))
 
@@ -150,24 +165,6 @@
 
 
 ;narrow down coord by deviding by two
-(define (loc-to-coord loc) ;location -> (i,j)
-  (define (helper loc row col)
-    (if (null? loc)
-      (list (car row) (car col)) ;(= (car row) (cdr row))
-      (let ()
-        (define offset (expt 2 (sub1 (length loc))))
-        (define floor-up-row (cons (+ offset (car row)) (cdr row)))
-        (define floor-up-col (cons (+ offset (car col)) (cdr col)))
-        (define ceiling-down-row (cons (car row) (- (cdr row) offset)))
-        (define ceiling-down-col (cons (car col) (- (cdr col) offset)))
-        (cond  ((= (car loc) 0) (helper (cdr loc) ceiling-down-row ceiling-down-col))
-               ((= (car loc) 1) (helper (cdr loc) ceiling-down-row floor-up-col))
-               ((= (car loc) 2) (helper (cdr loc) floor-up-row floor-up-col))
-               ((= (car loc) 3) (helper (cdr loc) floor-up-row ceiling-down-col))))))
-  (define size (expt 2 (length loc)))
-  (helper loc (cons 1 size) (cons 1 size))); row & col: 1 ~ size 
-(loc-to-coord '(2 0))
-
 
 (define (neighbor-tree loc f) ; neighbor-tree: location * form -> int
   (neighbor-array loc (tree-to-array f)))
@@ -176,8 +173,8 @@
   (pprint-array (tree-to-array f)))
 
 (define (is-tree? f) ; is-tree?: form -> bool
-  (cond [(equal? 'B f) #t]
-        [(equal? 'W f) #t]
+  (cond [(equal? black f) #t]
+        [(equal? white f) #t]
         [(equal? 'tree (car f)) #t]
         [else #f]))
 
@@ -217,9 +214,6 @@
   (if (list? f)
     (to-array (cdr f))
     f))
-;(cdr testtree)
-;(list-ref (cdr testtree) 0)
-;(list-ref (list-ref (cdr testtree) 0) 0)
 
 ;;; interfaces
 
@@ -250,15 +244,3 @@
   (if (is-array? f)
     (pprint-array f)
     (pprint-tree f)))
-;(write-string (pprint test))
-;(write-string (pprint (rotate test)))
-(define newtest
-  (glue-tree-from-array test test test test))
-(define newtest2
-  (glue-array-from-tree newtest newtest newtest newtest))
-
-;(write-string (pprint (array-to-tree newtest2)))
-;(write-string (pprint newtest2))
-;(neighbor-tree (list 0 0 0 0) newtest)
-;(neighbor-tree (list 0) 'B)
-;(array-to-tree 'B)
