@@ -16,6 +16,7 @@
 (require "hw5-4.rkt")
 
 
+
 ;;; interfaces
 (define (equal f g) ; equal: form * form -> form
   'TODO)
