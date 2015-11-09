@@ -76,9 +76,37 @@
 (define (rotate-array f) ; rotate-array: form -> form
   (define f-tree (array-to-tree f))
   (tree-to-array (rotate-tree f-tree)))
+(define (sf-list-ref lst pos)
+  (if (or (< pos 0) (<= (length lst) pos))
+    'NIL
+    (list-ref lst pos)))
 
 (define (neighbor-array location f) ; neighbor-array: location * form -> int
-  'TODO)
+  (define coord (loc-to-coord location)); int list
+  (define row (car (loc-to-coord location))); int list
+  (define col (cadr (loc-to-coord location))); int list
+  (define f-array (cdr f))
+  (define size (length f-array))
+  (define row-up 
+    (if (= row 1)
+      '()
+      (list-ref f-array (- row 2)))); list-ref start from 0
+  (define row-down
+    (if (= row size)
+      '()
+      (list-ref f-array row)))
+  (define row-cur (list-ref f-array (- row 1)))
+  (define res 
+    (list ;just count the 8 tiles heh heh
+      (sf-list-ref row-up (- col 2))
+      (sf-list-ref row-up (- col 1))
+      (sf-list-ref row-up col)
+      (sf-list-ref row-cur (- col 2))
+      (sf-list-ref row-cur col)
+      (sf-list-ref row-down (- col 2))
+      (sf-list-ref row-down (- col 1))
+      (sf-list-ref row-down col)))
+  (count (lambda (x) (equal? x black)) res))
 
 (define (list-to-str l)
   (define (sym-to-str l)
@@ -114,17 +142,27 @@
 
   (cons 'tree (helper (cdr f))))
 
-;use tree to locate -> easier to locate
-;once located, use array to count blocks
+
+;narrow down coord by deviding by two
 (define (loc-to-coord loc) ;location -> (i,j)
-  (define (int-to-coord n)
-    (cond  ((= n 0) (list 1 1)) ;NW
-           ((= n 1) (list 1 2));NE
-           ((= n 2) (list 2 1));SE
-           ((= n 3) (list 2 2))));SW
-  'TODO)
+  (define (helper loc row col)
+    (if (null? loc)
+      (list (car row) (car col)) ;(= (car row) (cdr row))
+      (let ()
+        (define floor-up-row (cons (* 2 (car row)) (cdr row)))
+        (define floor-up-col (cons (* 2 (car col)) (cdr col)))
+        (define ceiling-down-row (cons (car row) (/ (cdr row) 2)))
+        (define ceiling-down-col (cons (car col) (/ (cdr col) 2)))
+      (cond  ((= (car loc) 0) (helper (cdr loc) ceiling-down-row ceiling-down-col))
+             ((= (car loc) 1) (helper (cdr loc) ceiling-down-row floor-up-col))
+             ((= (car loc) 2) (helper (cdr loc) floor-up-row floor-up-col))
+             ((= (car loc) 3) (helper (cdr loc) floor-up-row ceiling-down-col))))))
+  (define size (expt 2 (length loc)))
+  (helper loc (cons 1 size) (cons 1 size))); row & col: 1 ~ size 
+
+
 (define (neighbor-tree loc f) ; neighbor-tree: location * form -> int
-  'TODO)
+  (neighbor-array loc (tree-to-array f)))
 
 (define (pprint-tree f) ; pprint-tree: form -> string
   (pprint-array (tree-to-array f)))
@@ -200,5 +238,7 @@
   (if (is-array? f)
     (pprint-array f)
     (pprint-tree f)))
+;(write-string (pprint test))
+;(write-string (pprint (rotate test)))
+(write-string (pprint (tree-to-array (array-to-tree test))))
 (write-string (pprint test))
-(write-string (pprint (rotate test)))
