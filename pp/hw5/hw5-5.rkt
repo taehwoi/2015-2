@@ -2,6 +2,7 @@
 
 ;;; If these statements are omitted, your submission will be graded 0.
 
+
 (provide equal)
 (provide size)
 (provide beautiful)
@@ -18,10 +19,8 @@
 
 
 ;;; interfaces
-(define (equal f g) ; equal: form * form -> form
-  (equal? (pprint f) (pprint g))) ;for ease, get two strings and compare them
-(equal black white)
-
+(define (equal f g) ; equal: form * form -> bool
+  (string=? (pprint f) (pprint g))) ;get strings that represent tile and compare them
 
 #;(define (size f) ; size: form -> int
   (if (not (list? f))
