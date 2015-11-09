@@ -42,8 +42,3 @@
   (if (is-empty? l)
     s
     (reduce (get-left (rest l)) f (f (get-left (fst l)) s))))
-
-
-
-(define l1 empty)
-(define l2 (link 1 (link 2 empty)))
