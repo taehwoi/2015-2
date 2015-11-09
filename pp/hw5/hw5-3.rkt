@@ -5,6 +5,7 @@
 
 (provide is-empty? fst rest length nth-elmt map reduce)
 
+(define unit '())
 (define (is-empty? l)
   (equal? l empty))
 
@@ -27,7 +28,7 @@
 
 (define (nth-elmt l i)
   (if (or (< 0 i) (< (length l) i))
-    (inr '())
+    (inr unit) ;unit
     (if (= i 0)
       (fst l)
       (nth-elmt (get-left (rest l)) (sub1 i)))))
@@ -43,7 +44,6 @@
     (reduce (get-left (rest l)) f (f (get-left (fst l)) s))))
 
 
-(define unit '())
 
 (define l1 empty)
 (define l2 (link 1 (link 2 empty)))
