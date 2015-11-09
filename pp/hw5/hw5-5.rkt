@@ -21,8 +21,25 @@
 (define (equal f g) ; equal: form * form -> form
   'TODO)
 
-(define (size f) ; size: form -> int
-  'TODO)
+#;(define (size f) ; size: form -> int
+  (if (not (list? f))
+    0 ;one tile
+    (if (is-array? f) 
+      (/ (log (length (cdr f))) (log 2)) ; width = height #| to integer? |#
+      (size (tree-to-array f)))))
+
+; tree: size(F) = 1 + size(subF) 
+(define (size f) ; form -> int
+  (define (helper f) ;(tree)form -> int
+    (if (not (list? f))
+      0 ;one tile
+      (+ 1 (helper (car f))); subtree
+      ))
+  (if (not (list? f))
+    0 ;one tile
+    (if (is-array? f) 
+      (helper (cdr (array-to-tree f))) ;cdr to remove tag
+      (helper (cdr f)))))
 
 (define (beautiful f) ; beautiful: form -> bool
   (define (beautiful-sym f)

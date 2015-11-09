@@ -253,3 +253,4 @@
 (write-string (pprint newtest2))
 (neighbor-tree (list 0 0 0 0) newtest)
 ;(neighbor-tree (list 0) 'B)
+(array-to-tree 'B)
