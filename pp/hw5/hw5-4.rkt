@@ -248,3 +248,4 @@
 (write-string (pprint (array-to-tree newtest2)))
 (write-string (pprint newtest2))
 (neighbor-tree (list 0 0 0 0) newtest)
+(neighbor (list 0) 'B)
