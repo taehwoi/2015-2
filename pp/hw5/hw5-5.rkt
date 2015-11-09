@@ -21,13 +21,6 @@
 (define (equal f g) ; equal: form * form -> bool
   (string=? (pprint f) (pprint g))) ;get strings that represent tile and compare them
 
-#;(define (size f) ; size: form -> int
-  (if (not (list? f))
-    0 ;one tile
-    (if (is-array? f) 
-      (/ (log (length (cdr f))) (log 2)) ; width = height #| to integer? |#
-      (size (tree-to-array f)))))
-
 ; tree: size(F) = 1 + size(subF) 
 (define (size f) ; form -> int
   (define (helper f) ;(tree)form -> int
