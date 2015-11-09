@@ -122,7 +122,11 @@
     (if (null? f)
       ""
       (string-append (list-to-str (car f)) (helper (cdr f)))))
-  (helper (cdr f)))
+
+  
+  (cond [(equal? 'B f) "B"]
+        [(equal? 'W f) "W"]
+        [(helper (cdr f))]))
 
 (define (is-array? f) ; is-array?: form -> bool
   (cond [(equal? 'B f) #t]
