@@ -2,7 +2,6 @@
 
 ;;; If these statements are omitted, your submission will be graded 0.
 
-
 (provide equal)
 (provide size)
 (provide beautiful)
@@ -44,7 +43,7 @@
 
 (define (beautiful f) ; beautiful: form -> bool
   (define (beautiful-sym f)
-    'TODO)
+    (equal f (rotate (rotate f))))
   (define (beautiful-neighbor f)
     'TODO)
   (or (beautiful-sym f) (beautiful-neighbor f)))
