@@ -85,19 +85,19 @@
   (if (list? f)
     (let ()
       (define coord (loc-to-coord location)); int list
-      (define row (car (loc-to-coord location))); int list
-      (define col (cadr (loc-to-coord location))); int list
+      (define row (car (loc-to-coord location))); int
+      (define col (cadr (loc-to-coord location))); int
       (define f-array (cdr f))
       (define size (length f-array))
       (define row-up 
         (if (= row 1)
           '()
           (list-ref f-array (- row 2)))); list-ref start from 0
+      (define row-cur (list-ref f-array (- row 1)))
       (define row-down
         (if (= row size)
           '()
           (list-ref f-array row)))
-      (define row-cur (list-ref f-array (- row 1)))
       (define res 
         (list ;just count the 8 tiles heh heh
           (sf-list-ref row-up (- col 2))
@@ -155,16 +155,18 @@
     (if (null? loc)
       (list (car row) (car col)) ;(= (car row) (cdr row))
       (let ()
-        (define floor-up-row (cons (* 2 (car row)) (cdr row)))
-        (define floor-up-col (cons (* 2 (car col)) (cdr col)))
-        (define ceiling-down-row (cons (car row) (/ (cdr row) 2)))
-        (define ceiling-down-col (cons (car col) (/ (cdr col) 2)))
+        (define offset (expt 2 (sub1 (length loc))))
+        (define floor-up-row (cons (+ offset (car row)) (cdr row)))
+        (define floor-up-col (cons (+ offset (car col)) (cdr col)))
+        (define ceiling-down-row (cons (car row) (- (cdr row) offset)))
+        (define ceiling-down-col (cons (car col) (- (cdr col) offset)))
         (cond  ((= (car loc) 0) (helper (cdr loc) ceiling-down-row ceiling-down-col))
                ((= (car loc) 1) (helper (cdr loc) ceiling-down-row floor-up-col))
                ((= (car loc) 2) (helper (cdr loc) floor-up-row floor-up-col))
                ((= (car loc) 3) (helper (cdr loc) floor-up-row ceiling-down-col))))))
   (define size (expt 2 (length loc)))
   (helper loc (cons 1 size) (cons 1 size))); row & col: 1 ~ size 
+(loc-to-coord '(2 0))
 
 
 (define (neighbor-tree loc f) ; neighbor-tree: location * form -> int
