@@ -19,6 +19,10 @@
 (define compound3
   (glue compound1 compound2 (turn compound1 2) (turn compound2 2)))
 
+(define foo (rotate (array-to-tree (tree-to-array compound1))))
+(define bar (rotate compound1))
+(equal (rotate compound1) (rotate (array-to-tree (tree-to-array compound1))))
+(equal (glue foo bar foo bar) (glue bar bar foo foo))
 
 ;;; beautiful test
 
