@@ -240,5 +240,11 @@
     (pprint-tree f)))
 ;(write-string (pprint test))
 ;(write-string (pprint (rotate test)))
-(write-string (pprint (tree-to-array (array-to-tree test))))
-(write-string (pprint test))
+(define newtest
+    (glue-tree-from-array test test test test))
+(define newtest2
+    (glue-array-from-tree newtest newtest newtest newtest))
+
+(write-string (pprint (array-to-tree newtest2)))
+(write-string (pprint newtest2))
+(neighbor-tree (list 0 0 0 0) newtest)
