@@ -19,7 +19,9 @@
 
 ;;; interfaces
 (define (equal f g) ; equal: form * form -> form
-  'TODO)
+  (equal? (pprint f) (pprint g))) ;for ease, get two strings and compare them
+(equal black white)
+
 
 #;(define (size f) ; size: form -> int
   (if (not (list? f))
@@ -33,8 +35,8 @@
   (define (helper f) ;(tree)form -> int
     (if (not (list? f))
       0 ;one tile
-      (+ 1 (helper (car f))); subtree
-      ))
+      (+ 1 (helper (car f))))); subtree
+
   (if (not (list? f))
     0 ;one tile
     (if (is-array? f) 
