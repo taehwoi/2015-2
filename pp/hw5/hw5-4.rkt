@@ -123,7 +123,6 @@
       ""
       (string-append (list-to-str (car f)) (helper (cdr f)))))
 
-  
   (cond [(equal? 'B f) "B"]
         [(equal? 'W f) "W"]
         [(helper (cdr f))]))
@@ -231,9 +230,12 @@
   (glue-tree-from-tree (new nw) (new ne) (new se) (new sw)))
 
 (define (rotate f) ; rotate: form -> form
-  (if (is-array? f)
-    (rotate-array f)
-    (rotate-tree f)))
+  (if (list? f)
+    (if (is-array? f)
+      (rotate-array f)
+      (rotate-tree f))
+    f)) ;1*1 tile
+
 
 (define (neighbor loc f) ; neighbor: location * form -> int
   (if (is-array? f)
@@ -253,8 +255,8 @@
 (define newtest2
   (glue-array-from-tree newtest newtest newtest newtest))
 
-(write-string (pprint (array-to-tree newtest2)))
-(write-string (pprint newtest2))
-(neighbor-tree (list 0 0 0 0) newtest)
+;(write-string (pprint (array-to-tree newtest2)))
+;(write-string (pprint newtest2))
+;(neighbor-tree (list 0 0 0 0) newtest)
 ;(neighbor-tree (list 0) 'B)
-(array-to-tree 'B)
+;(array-to-tree 'B)
