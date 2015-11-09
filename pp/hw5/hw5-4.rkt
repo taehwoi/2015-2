@@ -54,6 +54,11 @@
   (define size (expt 2 (length loc)))
   (helper loc (cons 1 size) (cons 1 size))); row & col: 1 ~ size 
 
+(define (list-to-str l)
+  (define (sym-to-str l)
+    (cond  ((equal? black l) "B")
+           ((equal? white l) "W")))
+  (string-append (foldr string-append "" (map sym-to-str l)) "\n"))
 #| util functions |#
 ;;; primitive tile
 
@@ -126,11 +131,6 @@
       (count (lambda (x) (equal? x black)) res))
     0))
 
-(define (list-to-str l)
-  (define (sym-to-str l)
-    (cond  ((equal? black l) "B")
-           ((equal? white l) "W")))
-  (string-append (foldr string-append "" (map sym-to-str l)) "\n"))
 
 (define (pprint-array f) ; pprint-array: form -> string
   (define (helper f)
@@ -161,7 +161,9 @@
         (helper (list-ref f 1))
         (helper (list-ref f 2)))))
 
-  (cons 'tree (helper (cdr f))))
+  (if (list? f)
+    (cons 'tree (helper (cdr f)))
+    f))
 
 
 ;narrow down coord by deviding by two
@@ -244,3 +246,17 @@
   (if (is-array? f)
     (pprint-array f)
     (pprint-tree f)))
+
+#| corner case tests |# 
+(glue-array-from-tree 'B 'B 'W 'W)
+(glue-array-from-array 'B 'B 'W 'W)
+(glue-tree-from-array 'B 'B 'W 'W)
+(glue-tree-from-tree 'B 'B 'W 'W)
+(rotate-array 'B) ;B
+(rotate-tree 'W) ;W
+(neighbor-array '() 'B) ;0
+(neighbor-tree '() 'W) ;0
+(pprint-array 'B)
+(pprint-tree 'W)
+(array-to-tree 'B)
+(tree-to-array 'W)
