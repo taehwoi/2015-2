@@ -38,5 +38,18 @@
   (define (beautiful-sym f)
     (equal f (rotate (rotate f))))
   (define (beautiful-neighbor f)
-    'TODO)
+    (andmap (lambda (x) (and (< 1 x) (< x 6))) (map (lambda (x) (neighbor x f)) (all-coord f))))
   (or (beautiful-sym f) (beautiful-neighbor f)))
+
+(define (all-coord f) ;form -> (coord) list
+  (define width (size f))
+  (permutations width '(0 1 2 3)))
+
+(define (permutations size elements)
+  (if (zero? size)
+      '(())
+      (append-map (lambda (p)
+                    (map (lambda (e)
+                           (cons e p))
+                         elements))
+                  (permutations (sub1 size) elements))))
