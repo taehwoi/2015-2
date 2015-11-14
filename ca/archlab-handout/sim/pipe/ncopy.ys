@@ -9,10 +9,14 @@
 # Describe how and why you modified the baseline code.
 # 0. pushl %ebp once again to utilize 1 more registers
 # 1. since looping is expensive, move 8 elements at once.
-# 1. since looping is expensive, move 8 elements at once.
 # --2. use cmove to add cnt.--
 # 2. apparently, using cmove is expensive due to resetting inc to 0 everytime
 #   just use jump-ifs -> no need to pushl %ebp??
+#   or think of a way to use cmove efficiently
+# 3. use a helper register to check even/odd of length -> this way, you don't have to check for array range every single time; twice.
+# 4. what about cmove once and jump-if once?
+# 5. TODO: check for mod 4 and deal cases smaller than 4 seperately
+#   for cases bigger than 4, but not mod, subtract until mod 4 == 0
 ##################################################################
 # Do not modify this portion
 # Function prologue.
@@ -29,25 +33,21 @@ ncopy:
 ##################################################################
 # You can modify this portion
 # small cases -> hard coding??
-# 1 elements
 # Loop header
   irmovl $1, %edi #useful helper reg
   xorl %eax, %eax #cnt = 0
-  #xorl %edi, %edi #inc = 0
   andl %edx, %edx		# len <= 0?
   jle Done		# if so, goto Done:
   andl %edx, %edi		# len even?
-  #irmovl $1, %ebp #restore ebp
   je Loop0 #is even (%ebp == 0)
 
-  iaddl $-1,%edx
+  iaddl $-1,%edx # len==1?
   je One
   #odd length & more than 1
   mrmovl (%ebx), %esi #%esi = tmp
   rmmovl %esi, (%ecx)
   iaddl $4, %ebx
   iaddl $4, %ecx
-
   andl %esi, %esi #esi <= 0?
   jle Loop0
   iaddl $1, %eax
@@ -76,7 +76,7 @@ Loop0half:
   iaddl $1, %eax
 Loop0check:
   iaddl $-2, %edx #len-=2
-  jg Loop1 #edx >=2
+  jg Loop1 #edx >=2 more likely to continue
   je Done #edx ==0
 
 Loop1:
@@ -99,7 +99,7 @@ Loop1half:
   #xorl %edi, %edi #inc = 0
 Loop1check:
   iaddl $-2, %edx #len-=2
-  jg Loop2 #edx >=2
+  jg Loop2 #edx >=2 
   je Done #edx ==0
 
 Loop2:
