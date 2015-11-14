@@ -4,52 +4,91 @@
 # Return the number of positive ints (>0) contained in src.
 #
 # Include your name and ID here.
+# 2012-11114 TAEHWOI OUM.
 #
 # Describe how and why you modified the baseline code.
-#
+# 1. since looping is expensive, move two elements at once.
+# 2. use cmove to add cnt. -TODO
 ##################################################################
 # Do not modify this portion
 # Function prologue.
-ncopy:	pushl %ebp		# Save old frame pointer
+ncopy:	
+  pushl %ebp		# Save old frame pointer
 	rrmovl %esp,%ebp	# Set up new frame pointer
 	pushl %esi		# Save callee-save regs
 	pushl %ebx
 	pushl %edi
 	mrmovl 8(%ebp),%ebx	# src
-	mrmovl 16(%ebp),%edx	# len
 	mrmovl 12(%ebp),%ecx	# dst
+	mrmovl 16(%ebp),%edx	# len
 
 ##################################################################
 # You can modify this portion
-	# Loop header
-	xorl %eax,%eax		# count = 0;
-	andl %edx,%edx		# len <= 0?
-	jle Done		# if so, goto Done:
+# small cases -> hard coding
+# 1 elements
+# Loop header
+  pushl %ebp
+  irmovl $1, %ebp #useful helper
+  xorl %edi, %edi #inc = 0
+  xorl %eax, %eax #cnt = 0
+  andl %edx, %edx		# len <= 0?
+  jle Done		# if so, goto Done:
+  andl %edx, %ebp		# len even?
+  irmovl $1, %ebp #useful helper
+  je Loop #is even (%ebp == 0)
 
-Loop:	mrmovl (%ebx), %esi	# read val from src...
-	rmmovl %esi, (%ecx)	# ...and store it to dst
-	andl %esi, %esi		# val <= 0?
-	jle Npos		# if so, goto Npos:
-	irmovl $1, %edi
-	addl %edi, %eax		# count++
-Npos:	irmovl $1, %edi
-	subl %edi, %edx		# len--
-	irmovl $4, %edi
-	addl %edi, %ebx		# src++
-	addl %edi, %ecx		# dst++
-	andl %edx,%edx		# len > 0?
-	jg Loop			# if so, goto Loop:
+  iaddl $-1,%edx
+  je One
+
+  #odd length & more than 1
+  mrmovl (%ebx), %esi #%esi = tmp
+  rmmovl %esi, (%ecx)
+  andl %esi, %esi #esi <= 0?
+  cmovg %ebp, %edi # inc = 1
+  addl %edi, %eax
+  iaddl $4, %ebx
+  iaddl $4, %ecx
+
+Loop: #sub by 2
+  xorl %edi, %edi #inc = 0
+  mrmovl (%ebx), %esi #tmp
+  rmmovl %esi, (%ecx)
+  andl %esi, %esi # esi > 0?
+  cmovg %ebp, %edi # inc = 1
+  addl %edi, %eax
+
+  xorl %edi, %edi #inc = 0
+  mrmovl 4(%ebx), %esi #tmp
+  rmmovl %esi, 4(%ecx)
+  iaddl $8, %ebx
+  iaddl $8, %ecx
+  andl %esi, %esi 
+  cmovg %ebp, %edi # inc = 1
+  addl %edi, %eax
+  #jle Check #esi <= 0?
+  #iaddl $1, %eax
+Check:
+  iaddl $-2, %edx #len-=2
+  jg Loop #edx > 2
+  je Done #edx ==0
+
+One: #no need to handle length
+  mrmovl (%ebx), %esi #%esi = tmp
+  rmmovl %esi, (%ecx)
+  andl %esi, %esi #esi <= 0?
+  jle Done
+  iaddl $1, %eax
 ##################################################################
 # Do not modify the following section of code
 # Function epilogue.
-Done:
-	popl %edi               # Restore callee-save registers
-	popl %ebx
-	popl %esi
-	rrmovl %ebp, %esp
-	popl %ebp
-	ret
+  Done:
+  popl %ebp
+  popl %edi               # Restore callee-save registers
+  popl %ebx
+  popl %esi
+  leave
+  ret
 ##################################################################
 # Keep the following label at the end of your function
-End:
+  End:
 #/* $end ncopy-ys */
