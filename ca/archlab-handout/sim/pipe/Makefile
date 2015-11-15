@@ -1,6 +1,6 @@
 # Modify this line to indicate the default version to build
 
-VERSION=std
+VERSION=full
 
 # Comment this out if you don't have Tcl/Tk on your system
 
@@ -17,7 +17,7 @@ TKLIBS=-L/usr/lib -ltk -ltcl
 # header files on your system. Comment this out if you don't have
 # Tcl/Tk.
 
-TKINC=-isystem /usr/include
+TKINC=-isystem /usr/include/tcl8.5/
 
 # Modify these two lines to choose your compiler and compile time
 # flags.

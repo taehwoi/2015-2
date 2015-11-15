@@ -33,5 +33,3 @@ int main()
     printf ("count=%d\n", count);
     exit(0);
 }
-
-

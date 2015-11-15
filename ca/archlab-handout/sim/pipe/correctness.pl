@@ -18,7 +18,7 @@ $gendriver = "./gen-driver.pl";
 $fname = "cdriver";
 $verbose = 1;
 # Maximum allowable code length
-$bytelim = 1000;
+$bytelim = 100000000;
 
 #
 # usage - Print the help message and terminate

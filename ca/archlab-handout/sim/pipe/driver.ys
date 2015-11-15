@@ -1,0 +1,585 @@
+#######################################################################
+# Test for copying block of size 0;
+#######################################################################
+	.pos 0
+main:	irmovl Stack, %esp  	# Set up stack pointer
+	irmovl Stack, %ebp  	# Set up base pointer
+
+	# Set up arguments for copy function and then invoke it
+	irmovl $0, %eax		# src and dst have 0 elements
+	pushl %eax
+	irmovl dest, %eax	# dst array
+	pushl %eax
+	irmovl src, %eax	# src array
+	pushl %eax
+	call ncopy		 
+	halt			# should halt with num nonzeros in %eax
+StartFun:
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len ints to dst.
+# Return the number of positive ints (>0) contained in src.
+#
+# My student ID is 09302010035.
+# My name is Wu Yanhong.
+#
+# 1. I use the iaddl instruction instead of the opl and irmovl instruction.
+# 2. Because the 'iaddl' instruction also sets the CC. There is no need to 'andl' one register.
+#    We can jump after the iaddl instruction immediately.
+# 3. By some tests, there may be more positive integers in the test cases. So I modified the jump condition to cater for such case.
+#    In the hcl file, we know the prediction strategy is that it always chooses to jump when the jump instruction is met.
+#    I suppose all the integers are positive firstly, the counter will be decreased dy 1 when a negative integers read.
+# 4. In the beginning, I tried the 'Loop Spiltting'. I attempted the method of 'Unroll*2', 'Unroll*4', 'Unroll*8'.
+#    Also, I tried 'Unroll*8+Unroll*2' and 'Unroll*16+Unroll*4+Unroll*2'. It is hardly to make the CPE be less than 8.00.
+#    At last, I use the jump table method. This can reduce the CPE by about 1.00.
+# 5. Because of the 'Load/Use Hazard', I have to add a register to load data from the memory alternately. 
+#    After I implemented the 'Load Forward' method and delete the useless instructions, the CPE is less than 7.2.
+# 6. Add some judging branch, so that this file can deal with the data less than 1 or larger than 64 correctly.
+# 
+# Final CPE: 7.04.
+##################################################################
+# Function prologue. Do not modify.
+ncopy:  pushl %ebp    # Save old frame pointer
+  rrmovl %esp,%ebp  # Set up new frame pointer
+  pushl %esi    # Save callee-save regs
+  pushl %ebx
+  mrmovl 16(%ebp),%edx    # len
+  mrmovl 8(%ebp),%ebx # src
+  mrmovl 12(%ebp),%ecx  # dst 
+# Loop header
+  mrmovl 16(%ebp),%eax  # count
+  
+# Loop body.
+  iaddl $-64, %edx
+  jg Large
+  iaddl $64, %edx 
+  addl %edx, %edx
+  addl %edx, %edx
+  mrmovl Jump(%edx), %edx 
+  pushl %edx
+  ret
+Large:
+  mrmovl (%ebx),%esi
+  rmmovl %esi, (%ecx)
+  andl %esi, %esi
+  jg Nodless
+  iaddl $-1, %eax
+Nodless:iaddl $4, %ebx
+  iaddl $4, %ecx
+  iaddl $-1, %edx
+  jg Large
+  jmp Done  
+Nod64:
+  mrmovl 0xfc(%ebx), %esi 
+  rmmovl %esi, 0xfc(%ecx)
+  andl %esi, %esi
+  jg Nod63
+  iaddl $-1, %eax
+#.pos 140
+Nod63:    
+  mrmovl 0xf8(%ebx), %esi 
+  rmmovl %esi, 0xf8(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod62      # if so, goto Npos:
+  iaddl $-1, %eax
+#.pos 160
+Nod62:
+  mrmovl 0xf4(%ebx), %esi 
+  rmmovl %esi, 0xf4(%ecx)
+  andl %esi, %esi
+  jg Nod61
+  iaddl $-1, %eax
+#.pos 180
+Nod61:    
+  mrmovl 0xf0(%ebx), %esi 
+  rmmovl %esi, 0xf0(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod60    # if so, goto Npos:
+  iaddl $-1, %eax
+#.pos 200
+Nod60:
+  mrmovl 0xec(%ebx), %esi 
+  rmmovl %esi, 0xec(%ecx)
+  andl %esi, %esi
+  jg Nod59
+  iaddl $-1, %eax
+#.pos 220
+Nod59:    
+  mrmovl 0xe8(%ebx), %esi 
+  rmmovl %esi, 0xe8(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod58    # if so, goto Npos:
+  iaddl $-1, %eax
+#.pos 240
+Nod58:
+  mrmovl 0xe4(%ebx), %esi 
+  rmmovl %esi, 0xe4(%ecx)
+  andl %esi, %esi
+  jg Nod57
+  iaddl $-1, %eax
+#.pos 260
+Nod57:    
+  mrmovl 0xe0(%ebx), %esi 
+  rmmovl %esi, 0xe0(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod56    # if so, goto Npos:
+  iaddl $-1, %eax
+#.pos 280
+Nod56:
+  mrmovl 0xdc(%ebx), %esi 
+  rmmovl %esi, 0xdc(%ecx)
+  andl %esi, %esi
+  jg Nod55
+  iaddl $-1, %eax
+#.pos 300
+Nod55:    
+  mrmovl 0xd8(%ebx), %esi 
+  rmmovl %esi, 0xd8(%ecx)# ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod54    # if so, goto Npos:
+  iaddl $-1, %eax
+#.pos 320
+Nod54:
+  mrmovl 0xd4(%ebx), %esi 
+  rmmovl %esi, 0xd4(%ecx)
+  andl %esi, %esi
+  jg Nod53
+  iaddl $-1, %eax
+#.pos 340
+Nod53:    
+  mrmovl 0xd0(%ebx), %esi 
+  rmmovl %esi, 0xd0(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod52    # if so, goto Npos:
+  iaddl $-1, %eax
+#.pos 360
+Nod52:
+  mrmovl 0xcc(%ebx), %esi 
+  rmmovl %esi, 0xcc(%ecx)
+  andl %esi, %esi
+  jg Nod51
+  iaddl $-1, %eax
+#.pos 380
+Nod51:    
+  mrmovl 0xc8(%ebx), %esi 
+  rmmovl %esi, 0xc8(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod50    # if so, goto Npos:
+  iaddl $-1, %eax
+#.pos 400
+Nod50:
+  mrmovl 0xc4(%ebx), %esi 
+  rmmovl %esi, 0xc4(%ecx)
+  andl %esi, %esi
+  jg Nod49
+  iaddl $-1, %eax
+#.pos 420
+Nod49:    
+  mrmovl 0xc0(%ebx), %esi 
+  rmmovl %esi, 0xc0(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod48    # if so, goto Npos:
+  iaddl $-1, %eax
+#.pos 440
+Nod48:
+  mrmovl 0xbc(%ebx), %esi 
+  rmmovl %esi, 0xbc(%ecx)
+  andl %esi, %esi
+  jg Nod47
+  iaddl $-1, %eax
+#.pos 480
+Nod47:    
+  mrmovl 0xb8(%ebx), %esi 
+  rmmovl %esi, 0xb8(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod46    # if so, goto Npos:
+  iaddl $-1, %eax
+#.pos 500
+Nod46:
+  mrmovl 0xb4(%ebx), %esi 
+  rmmovl %esi, 0xb4(%ecx)
+  andl %esi, %esi
+  jg Nod45
+  iaddl $-1, %eax
+#.pos 520
+Nod45:    
+  mrmovl 0xb0(%ebx), %esi 
+  rmmovl %esi, 0xb0(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod44    # if so, goto Npos:
+  iaddl $-1, %eax
+#.pos 540
+Nod44:
+  mrmovl 0xac(%ebx), %esi 
+  rmmovl %esi, 0xac(%ecx)
+  andl %esi, %esi
+  jg Nod43
+  iaddl $-1, %eax
+Nod43:    
+  mrmovl 0xa8(%ebx), %esi 
+  rmmovl %esi, 0xa8(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod42    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod42:
+  mrmovl 0xa4(%ebx), %esi 
+  rmmovl %esi, 0xa4(%ecx)
+  andl %esi, %esi
+  jg Nod41
+  iaddl $-1, %eax
+Nod41:    
+  mrmovl 0xa0(%ebx), %esi 
+  rmmovl %esi, 0xa0(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod40    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod40:
+  mrmovl 0x9c(%ebx), %esi 
+  rmmovl %esi, 0x9c(%ecx)
+  andl %esi, %esi
+  jg Nod39
+  iaddl $-1, %eax
+Nod39:    
+  mrmovl 0x98(%ebx), %esi
+  rmmovl %esi, 0x98(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod38    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod38:
+  mrmovl 0x94(%ebx), %esi 
+  rmmovl %esi, 0x94(%ecx)
+  andl %esi, %esi
+  jg Nod37
+  iaddl $-1, %eax
+Nod37:    
+  mrmovl 0x90(%ebx), %esi 
+  rmmovl %esi, 0x90(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod36    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod36:
+  mrmovl 0x8c(%ebx), %esi 
+  rmmovl %esi, 0x8c(%ecx)
+  andl %esi, %esi
+  jg Nod35
+  iaddl $-1, %eax
+Nod35:    
+  mrmovl 0x88(%ebx), %esi 
+  rmmovl %esi, 0x88(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod34    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod34:
+  mrmovl 0x84(%ebx), %esi 
+  rmmovl %esi, 0x84(%ecx)
+  andl %esi, %esi
+  jg Nod33
+  iaddl $-1, %eax
+Nod33:    
+  mrmovl 0x80(%ebx), %esi 
+  rmmovl %esi, 0x80(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod32    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod32:
+  mrmovl 0x7c(%ebx), %esi 
+  rmmovl %esi, 0x7c(%ecx)
+  andl %esi, %esi
+  jg Nod31
+  iaddl $-1, %eax
+Nod31:    
+  mrmovl 0x78(%ebx), %esi 
+  rmmovl %esi, 0x78(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod30    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod30:
+  mrmovl 0x74(%ebx), %esi 
+  rmmovl %esi, 0x74(%ecx)
+  andl %esi, %esi
+  jg Nod29
+  iaddl $-1, %eax
+Nod29:    
+  mrmovl 0x70(%ebx), %esi 
+  rmmovl %esi, 0x70(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod28    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod28:
+  mrmovl 0x6c(%ebx), %esi 
+  rmmovl %esi, 0x6c(%ecx)
+  andl %esi, %esi
+  jg Nod27
+  iaddl $-1, %eax
+Nod27:    
+  mrmovl 0x68(%ebx), %esi 
+  rmmovl %esi, 0x68(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod26    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod26:
+  mrmovl 0x64(%ebx), %esi 
+  rmmovl %esi, 0x64(%ecx)
+  andl %esi, %esi
+  jg Nod25
+  iaddl $-1, %eax
+Nod25:    
+  mrmovl 0x60(%ebx), %esi 
+  rmmovl %esi, 0x60(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod24    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod24:
+  mrmovl 0x5c(%ebx), %esi 
+  rmmovl %esi, 0x5c(%ecx)
+  andl %esi, %esi
+  jg Nod23
+  iaddl $-1, %eax
+Nod23:    
+  mrmovl 0x58(%ebx), %esi 
+  rmmovl %esi, 0x58(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod22    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod22:
+  mrmovl 0x54(%ebx), %esi 
+  rmmovl %esi, 0x54(%ecx)
+  andl %esi, %esi
+  jg Nod21
+  iaddl $-1, %eax
+Nod21:    
+  mrmovl 0x50(%ebx), %esi 
+  rmmovl %esi, 0x50(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod20    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod20:
+  mrmovl 0x4c(%ebx), %esi 
+  rmmovl %esi, 0x4c(%ecx)
+  andl %esi, %esi
+  jg Nod19
+  iaddl $-1, %eax
+Nod19:    
+  mrmovl 0x48(%ebx), %esi 
+  rmmovl %esi, 0x48(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod18    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod18:
+  mrmovl 0x44(%ebx), %esi 
+  rmmovl %esi, 0x44(%ecx)
+  andl %esi, %esi
+  jg Nod17
+  iaddl $-1, %eax
+Nod17:    
+  mrmovl 0x40(%ebx), %esi 
+  rmmovl %esi, 0x40(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod16    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod16:
+  mrmovl 0x3c(%ebx), %esi 
+  rmmovl %esi, 0x3c(%ecx)
+  andl %esi, %esi
+  jg Nod15
+  iaddl $-1, %eax
+Nod15:    
+  mrmovl 0x38(%ebx), %esi 
+  rmmovl %esi, 0x38(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod14    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod14:
+  mrmovl 0x34(%ebx), %esi 
+  rmmovl %esi, 0x34(%ecx)
+  andl %esi, %esi
+  jg Nod13
+  iaddl $-1, %eax
+Nod13:    
+  mrmovl 0x30(%ebx), %esi
+  rmmovl %esi, 0x30(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod12    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod12:
+  mrmovl 0x2c(%ebx), %esi 
+  rmmovl %esi, 0x2c(%ecx)
+  andl %esi, %esi
+  jg Nod11
+  iaddl $-1, %eax
+Nod11:    
+  mrmovl 0x28(%ebx), %esi 
+  rmmovl %esi, 0x28(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod10    # if so, goto Npos:
+  iaddl $-1, %eax
+Nod10:
+  mrmovl 0x24(%ebx), %esi 
+  rmmovl %esi, 0x24(%ecx)
+  andl %esi, %esi
+  jg Nod9
+  iaddl $-1, %eax
+Nod9:   
+  mrmovl 0x20(%ebx), %esi 
+  rmmovl %esi, 0x20(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod8     # if so, goto Npos:
+  iaddl $-1, %eax
+Nod8:
+  mrmovl 0x1c(%ebx), %esi 
+  rmmovl %esi, 0x1c(%ecx)
+  andl %esi, %esi
+  jg Nod7
+  iaddl $-1, %eax
+Nod7:   
+  mrmovl 0x18(%ebx), %esi 
+  rmmovl %esi, 0x18(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod6     # if so, goto Npos:
+  iaddl $-1, %eax
+Nod6:
+  mrmovl 0x14(%ebx), %esi 
+  rmmovl %esi, 0x14(%ecx)
+  andl %esi, %esi
+  jg Nod5
+  iaddl $-1, %eax
+Nod5:   
+  mrmovl 0x10(%ebx), %esi 
+  rmmovl %esi, 0x10(%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod4     # if so, goto Npos:
+  iaddl $-1, %eax
+Nod4:
+  mrmovl 0xc(%ebx), %esi  
+  rmmovl %esi, 0xc(%ecx)
+  andl %esi, %esi
+  jg Nod3
+  iaddl $-1, %eax 
+Nod3:   
+  mrmovl 8(%ebx), %esi  
+  rmmovl %esi, 8(%ecx)  # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Nod2     # if so, goto Npos:
+  iaddl $-1, %eax
+Nod2: 
+  mrmovl 4(%ebx), %esi  
+  rmmovl %esi, 4(%ecx)
+  andl %esi, %esi
+  jg Nod1
+  iaddl $-1, %eax
+Nod1:   
+  mrmovl (%ebx), %esi 
+  rmmovl %esi, (%ecx) # ...and store it to dst
+  andl %esi, %esi   # val <= 0?
+  jg Done     # if so, goto Npos:
+  iaddl $-1, %eax
+# Function epilogue. Do not modify.
+  
+Done: 
+  popl %ebx
+  popl %esi
+  leave 
+  ret
+Jump: 
+  .long Done
+  .long Nod1
+  .long Nod2
+  .long Nod3
+  .long Nod4
+  .long Nod5
+  .long Nod6
+  .long Nod7
+  .long Nod8
+  .long Nod9
+  .long Nod10
+  .long Nod11
+  .long Nod12
+  .long Nod13
+  .long Nod14
+  .long Nod15
+  .long Nod16
+  .long Nod17
+  .long Nod18
+  .long Nod19
+  .long Nod20
+  .long Nod21
+  .long Nod22
+  .long Nod23
+  .long Nod24
+  .long Nod25
+  .long Nod26
+  .long Nod27
+  .long Nod28
+  .long Nod29
+  .long Nod30
+  .long Nod31
+  .long Nod32
+  .long Nod33
+  .long Nod34
+  .long Nod35
+  .long Nod36
+  .long Nod37
+  .long Nod38
+  .long Nod39
+  .long Nod40
+  .long Nod41
+  .long Nod42
+  .long Nod43
+  .long Nod44
+  .long Nod45
+  .long Nod46
+  .long Nod47
+  .long Nod48
+  .long Nod49
+  .long Nod50
+  .long Nod51
+  .long Nod52
+  .long Nod53
+  .long Nod54
+  .long Nod55
+  .long Nod56
+  .long Nod57
+  .long Nod58
+  .long Nod59
+  .long Nod60
+  .long Nod61
+  .long Nod62
+  .long Nod63
+  .long Nod64
+#/* $end ncopy-ys*/
+EndFun:
+
+###############################
+# Source and destination blocks 
+###############################
+	.align 4
+src:
+	.long 0xbcdefa # This shouldn't get moved
+
+	.align 16
+Predest:
+	.long 0xbcdefa
+dest:
+Postdest:
+	.long 0xdefabc
+
+.align 4
+# Run time stack
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+
+Stack:
