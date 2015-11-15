@@ -1,0 +1,7 @@
+LOGIN: 1
+LOGIN: 2
+LOGIN: 3
+MERGE: 1 2
+LEADER: 2
+POWER: 40
+Merge Failed

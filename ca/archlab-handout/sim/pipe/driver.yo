@@ -2,15 +2,15 @@
                       | # Test for copying block of size 0;
                       | #######################################################################
   0x000:              | 	.pos 0
-  0x000: 30f438080000 | main:	irmovl Stack, %esp  	# Set up stack pointer
-  0x006: 30f538080000 | 	irmovl Stack, %ebp  	# Set up base pointer
+  0x000: 30f418020000 | main:	irmovl Stack, %esp  	# Set up stack pointer
+  0x006: 30f518020000 | 	irmovl Stack, %ebp  	# Set up base pointer
                       | 
                       | 	# Set up arguments for copy function and then invoke it
   0x00c: 30f000000000 | 	irmovl $0, %eax		# src and dst have 0 elements
   0x012: a00f         | 	pushl %eax
-  0x014: 30f0f4070000 | 	irmovl dest, %eax	# dst array
+  0x014: 30f0d4010000 | 	irmovl dest, %eax	# dst array
   0x01a: a00f         | 	pushl %eax
-  0x01c: 30f0e8070000 | 	irmovl src, %eax	# src array
+  0x01c: 30f0c4010000 | 	irmovl src, %eax	# src array
   0x022: a00f         | 	pushl %eax
   0x024: 802a000000   | 	call ncopy		 
   0x029: 00           | 	halt			# should halt with num nonzeros in %eax
@@ -20,566 +20,184 @@
                       | # ncopy.ys - Copy a src block of len ints to dst.
                       | # Return the number of positive ints (>0) contained in src.
                       | #
-                      | # My student ID is 09302010035.
-                      | # My name is Wu Yanhong.
+                      | # Include your name and ID here.
+                      | # 2012-11114 TAEHWOI OUM.
                       | #
-                      | # 1. I use the iaddl instruction instead of the opl and irmovl instruction.
-                      | # 2. Because the 'iaddl' instruction also sets the CC. There is no need to 'andl' one register.
-                      | #    We can jump after the iaddl instruction immediately.
-                      | # 3. By some tests, there may be more positive integers in the test cases. So I modified the jump condition to cater for such case.
-                      | #    In the hcl file, we know the prediction strategy is that it always chooses to jump when the jump instruction is met.
-                      | #    I suppose all the integers are positive firstly, the counter will be decreased dy 1 when a negative integers read.
-                      | # 4. In the beginning, I tried the 'Loop Spiltting'. I attempted the method of 'Unroll*2', 'Unroll*4', 'Unroll*8'.
-                      | #    Also, I tried 'Unroll*8+Unroll*2' and 'Unroll*16+Unroll*4+Unroll*2'. It is hardly to make the CPE be less than 8.00.
-                      | #    At last, I use the jump table method. This can reduce the CPE by about 1.00.
-                      | # 5. Because of the 'Load/Use Hazard', I have to add a register to load data from the memory alternately. 
-                      | #    After I implemented the 'Load Forward' method and delete the useless instructions, the CPE is less than 7.2.
-                      | # 6. Add some judging branch, so that this file can deal with the data less than 1 or larger than 64 correctly.
-                      | # 
-                      | # Final CPE: 7.04.
+                      | # Describe how and why you modified the baseline code.
+                      | # 0. pushl %ebp once again to utilize 1 more registers
+                      | # 1. since looping is expensive, move 8 elements at once.
+                      | # --2. use cmove to add cnt.--
+                      | # 2. apparently, using cmove is expensive due to resetting inc to 0 everytime
+                      | #   just use jump-ifs -> no need to pushl %ebp??
+                      | #   or think of a way to use cmove efficiently
+                      | # 3. use a helper register to check even/odd of length -> this way, you don't have to check for array range every single time; twice.
+                      | # 4. what about cmove once and jump-if once?
+                      | # 5. TODO: check for mod 4 and deal cases smaller than 4 seperately
+                      | #   for cases bigger than 4, but not mod, subtract until mod 4 == 0
+                      | # 6. Not Do 5..? irmovl $1,R is much cheaper than $4,R .. wonder why
                       | ##################################################################
-                      | # Function prologue. Do not modify.
-  0x02a: a05f         | ncopy:  pushl %ebp    # Save old frame pointer
+                      | # Do not modify this portion
+                      | # Function prologue.
+  0x02a:              | ncopy:  
+  0x02a: a05f         |   pushl %ebp    # Save old frame pointer
   0x02c: 2045         |   rrmovl %esp,%ebp  # Set up new frame pointer
   0x02e: a06f         |   pushl %esi    # Save callee-save regs
   0x030: a03f         |   pushl %ebx
-  0x032: 502510000000 |   mrmovl 16(%ebp),%edx    # len
-  0x038: 503508000000 |   mrmovl 8(%ebp),%ebx # src
-  0x03e: 50150c000000 |   mrmovl 12(%ebp),%ecx  # dst 
+  0x032: a07f         |   pushl %edi
+  0x034: 503508000000 |   mrmovl 8(%ebp),%ebx # src
+  0x03a: 50150c000000 |   mrmovl 12(%ebp),%ecx  # dst
+  0x040: 502510000000 |   mrmovl 16(%ebp),%edx  # len
+                      | 
+                      | ##################################################################
+                      | # You can modify this portion
+                      | # small cases -> hard coding??
                       | # Loop header
-  0x044: 500510000000 |   mrmovl 16(%ebp),%eax  # count
-                      |   
-                      | # Loop body.
-  0x04a: c0f2c0ffffff |   iaddl $-64, %edx
-  0x050: 7668000000   |   jg Large
-  0x055: c0f240000000 |   iaddl $64, %edx 
-  0x05b: 6022         |   addl %edx, %edx
-  0x05d: 6022         |   addl %edx, %edx
-  0x05f: 5022e3060000 |   mrmovl Jump(%edx), %edx 
-  0x065: a02f         |   pushl %edx
-  0x067: 90           |   ret
-  0x068:              | Large:
-  0x068: 506300000000 |   mrmovl (%ebx),%esi
-  0x06e: 406100000000 |   rmmovl %esi, (%ecx)
-  0x074: 6266         |   andl %esi, %esi
-  0x076: 7681000000   |   jg Nodless
-  0x07b: c0f0ffffffff |   iaddl $-1, %eax
-  0x081: c0f304000000 | Nodless:iaddl $4, %ebx
-  0x087: c0f104000000 |   iaddl $4, %ecx
-  0x08d: c0f2ffffffff |   iaddl $-1, %edx
-  0x093: 7668000000   |   jg Large
-  0x098: 70dd060000   |   jmp Done  
-  0x09d:              | Nod64:
-  0x09d: 5063fc000000 |   mrmovl 0xfc(%ebx), %esi 
-  0x0a3: 4061fc000000 |   rmmovl %esi, 0xfc(%ecx)
-  0x0a9: 6266         |   andl %esi, %esi
-  0x0ab: 76b6000000   |   jg Nod63
-  0x0b0: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 140
-  0x0b6:              | Nod63:    
-  0x0b6: 5063f8000000 |   mrmovl 0xf8(%ebx), %esi 
-  0x0bc: 4061f8000000 |   rmmovl %esi, 0xf8(%ecx) # ...and store it to dst
-  0x0c2: 6266         |   andl %esi, %esi   # val <= 0?
-  0x0c4: 76cf000000   |   jg Nod62      # if so, goto Npos:
-  0x0c9: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 160
-  0x0cf:              | Nod62:
-  0x0cf: 5063f4000000 |   mrmovl 0xf4(%ebx), %esi 
-  0x0d5: 4061f4000000 |   rmmovl %esi, 0xf4(%ecx)
-  0x0db: 6266         |   andl %esi, %esi
-  0x0dd: 76e8000000   |   jg Nod61
-  0x0e2: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 180
-  0x0e8:              | Nod61:    
-  0x0e8: 5063f0000000 |   mrmovl 0xf0(%ebx), %esi 
-  0x0ee: 4061f0000000 |   rmmovl %esi, 0xf0(%ecx) # ...and store it to dst
-  0x0f4: 6266         |   andl %esi, %esi   # val <= 0?
-  0x0f6: 7601010000   |   jg Nod60    # if so, goto Npos:
-  0x0fb: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 200
-  0x101:              | Nod60:
-  0x101: 5063ec000000 |   mrmovl 0xec(%ebx), %esi 
-  0x107: 4061ec000000 |   rmmovl %esi, 0xec(%ecx)
-  0x10d: 6266         |   andl %esi, %esi
-  0x10f: 761a010000   |   jg Nod59
-  0x114: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 220
-  0x11a:              | Nod59:    
-  0x11a: 5063e8000000 |   mrmovl 0xe8(%ebx), %esi 
-  0x120: 4061e8000000 |   rmmovl %esi, 0xe8(%ecx) # ...and store it to dst
-  0x126: 6266         |   andl %esi, %esi   # val <= 0?
-  0x128: 7633010000   |   jg Nod58    # if so, goto Npos:
-  0x12d: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 240
-  0x133:              | Nod58:
-  0x133: 5063e4000000 |   mrmovl 0xe4(%ebx), %esi 
-  0x139: 4061e4000000 |   rmmovl %esi, 0xe4(%ecx)
-  0x13f: 6266         |   andl %esi, %esi
-  0x141: 764c010000   |   jg Nod57
-  0x146: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 260
-  0x14c:              | Nod57:    
-  0x14c: 5063e0000000 |   mrmovl 0xe0(%ebx), %esi 
-  0x152: 4061e0000000 |   rmmovl %esi, 0xe0(%ecx) # ...and store it to dst
-  0x158: 6266         |   andl %esi, %esi   # val <= 0?
-  0x15a: 7665010000   |   jg Nod56    # if so, goto Npos:
-  0x15f: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 280
-  0x165:              | Nod56:
-  0x165: 5063dc000000 |   mrmovl 0xdc(%ebx), %esi 
-  0x16b: 4061dc000000 |   rmmovl %esi, 0xdc(%ecx)
-  0x171: 6266         |   andl %esi, %esi
-  0x173: 767e010000   |   jg Nod55
-  0x178: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 300
-  0x17e:              | Nod55:    
-  0x17e: 5063d8000000 |   mrmovl 0xd8(%ebx), %esi 
-  0x184: 4061d8000000 |   rmmovl %esi, 0xd8(%ecx)# ...and store it to dst
-  0x18a: 6266         |   andl %esi, %esi   # val <= 0?
-  0x18c: 7697010000   |   jg Nod54    # if so, goto Npos:
-  0x191: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 320
-  0x197:              | Nod54:
-  0x197: 5063d4000000 |   mrmovl 0xd4(%ebx), %esi 
-  0x19d: 4061d4000000 |   rmmovl %esi, 0xd4(%ecx)
-  0x1a3: 6266         |   andl %esi, %esi
-  0x1a5: 76b0010000   |   jg Nod53
-  0x1aa: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 340
-  0x1b0:              | Nod53:    
-  0x1b0: 5063d0000000 |   mrmovl 0xd0(%ebx), %esi 
-  0x1b6: 4061d0000000 |   rmmovl %esi, 0xd0(%ecx) # ...and store it to dst
-  0x1bc: 6266         |   andl %esi, %esi   # val <= 0?
-  0x1be: 76c9010000   |   jg Nod52    # if so, goto Npos:
-  0x1c3: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 360
-  0x1c9:              | Nod52:
-  0x1c9: 5063cc000000 |   mrmovl 0xcc(%ebx), %esi 
-  0x1cf: 4061cc000000 |   rmmovl %esi, 0xcc(%ecx)
-  0x1d5: 6266         |   andl %esi, %esi
-  0x1d7: 76e2010000   |   jg Nod51
-  0x1dc: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 380
-  0x1e2:              | Nod51:    
-  0x1e2: 5063c8000000 |   mrmovl 0xc8(%ebx), %esi 
-  0x1e8: 4061c8000000 |   rmmovl %esi, 0xc8(%ecx) # ...and store it to dst
-  0x1ee: 6266         |   andl %esi, %esi   # val <= 0?
-  0x1f0: 76fb010000   |   jg Nod50    # if so, goto Npos:
-  0x1f5: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 400
-  0x1fb:              | Nod50:
-  0x1fb: 5063c4000000 |   mrmovl 0xc4(%ebx), %esi 
-  0x201: 4061c4000000 |   rmmovl %esi, 0xc4(%ecx)
-  0x207: 6266         |   andl %esi, %esi
-  0x209: 7614020000   |   jg Nod49
-  0x20e: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 420
-  0x214:              | Nod49:    
-  0x214: 5063c0000000 |   mrmovl 0xc0(%ebx), %esi 
-  0x21a: 4061c0000000 |   rmmovl %esi, 0xc0(%ecx) # ...and store it to dst
-  0x220: 6266         |   andl %esi, %esi   # val <= 0?
-  0x222: 762d020000   |   jg Nod48    # if so, goto Npos:
-  0x227: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 440
-  0x22d:              | Nod48:
-  0x22d: 5063bc000000 |   mrmovl 0xbc(%ebx), %esi 
-  0x233: 4061bc000000 |   rmmovl %esi, 0xbc(%ecx)
-  0x239: 6266         |   andl %esi, %esi
-  0x23b: 7646020000   |   jg Nod47
-  0x240: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 480
-  0x246:              | Nod47:    
-  0x246: 5063b8000000 |   mrmovl 0xb8(%ebx), %esi 
-  0x24c: 4061b8000000 |   rmmovl %esi, 0xb8(%ecx) # ...and store it to dst
-  0x252: 6266         |   andl %esi, %esi   # val <= 0?
-  0x254: 765f020000   |   jg Nod46    # if so, goto Npos:
-  0x259: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 500
-  0x25f:              | Nod46:
-  0x25f: 5063b4000000 |   mrmovl 0xb4(%ebx), %esi 
-  0x265: 4061b4000000 |   rmmovl %esi, 0xb4(%ecx)
-  0x26b: 6266         |   andl %esi, %esi
-  0x26d: 7678020000   |   jg Nod45
-  0x272: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 520
-  0x278:              | Nod45:    
-  0x278: 5063b0000000 |   mrmovl 0xb0(%ebx), %esi 
-  0x27e: 4061b0000000 |   rmmovl %esi, 0xb0(%ecx) # ...and store it to dst
-  0x284: 6266         |   andl %esi, %esi   # val <= 0?
-  0x286: 7691020000   |   jg Nod44    # if so, goto Npos:
-  0x28b: c0f0ffffffff |   iaddl $-1, %eax
-                      | #.pos 540
-  0x291:              | Nod44:
-  0x291: 5063ac000000 |   mrmovl 0xac(%ebx), %esi 
-  0x297: 4061ac000000 |   rmmovl %esi, 0xac(%ecx)
-  0x29d: 6266         |   andl %esi, %esi
-  0x29f: 76aa020000   |   jg Nod43
-  0x2a4: c0f0ffffffff |   iaddl $-1, %eax
-  0x2aa:              | Nod43:    
-  0x2aa: 5063a8000000 |   mrmovl 0xa8(%ebx), %esi 
-  0x2b0: 4061a8000000 |   rmmovl %esi, 0xa8(%ecx) # ...and store it to dst
-  0x2b6: 6266         |   andl %esi, %esi   # val <= 0?
-  0x2b8: 76c3020000   |   jg Nod42    # if so, goto Npos:
-  0x2bd: c0f0ffffffff |   iaddl $-1, %eax
-  0x2c3:              | Nod42:
-  0x2c3: 5063a4000000 |   mrmovl 0xa4(%ebx), %esi 
-  0x2c9: 4061a4000000 |   rmmovl %esi, 0xa4(%ecx)
-  0x2cf: 6266         |   andl %esi, %esi
-  0x2d1: 76dc020000   |   jg Nod41
-  0x2d6: c0f0ffffffff |   iaddl $-1, %eax
-  0x2dc:              | Nod41:    
-  0x2dc: 5063a0000000 |   mrmovl 0xa0(%ebx), %esi 
-  0x2e2: 4061a0000000 |   rmmovl %esi, 0xa0(%ecx) # ...and store it to dst
-  0x2e8: 6266         |   andl %esi, %esi   # val <= 0?
-  0x2ea: 76f5020000   |   jg Nod40    # if so, goto Npos:
-  0x2ef: c0f0ffffffff |   iaddl $-1, %eax
-  0x2f5:              | Nod40:
-  0x2f5: 50639c000000 |   mrmovl 0x9c(%ebx), %esi 
-  0x2fb: 40619c000000 |   rmmovl %esi, 0x9c(%ecx)
-  0x301: 6266         |   andl %esi, %esi
-  0x303: 760e030000   |   jg Nod39
-  0x308: c0f0ffffffff |   iaddl $-1, %eax
-  0x30e:              | Nod39:    
-  0x30e: 506398000000 |   mrmovl 0x98(%ebx), %esi
-  0x314: 406198000000 |   rmmovl %esi, 0x98(%ecx) # ...and store it to dst
-  0x31a: 6266         |   andl %esi, %esi   # val <= 0?
-  0x31c: 7627030000   |   jg Nod38    # if so, goto Npos:
-  0x321: c0f0ffffffff |   iaddl $-1, %eax
-  0x327:              | Nod38:
-  0x327: 506394000000 |   mrmovl 0x94(%ebx), %esi 
-  0x32d: 406194000000 |   rmmovl %esi, 0x94(%ecx)
-  0x333: 6266         |   andl %esi, %esi
-  0x335: 7640030000   |   jg Nod37
-  0x33a: c0f0ffffffff |   iaddl $-1, %eax
-  0x340:              | Nod37:    
-  0x340: 506390000000 |   mrmovl 0x90(%ebx), %esi 
-  0x346: 406190000000 |   rmmovl %esi, 0x90(%ecx) # ...and store it to dst
-  0x34c: 6266         |   andl %esi, %esi   # val <= 0?
-  0x34e: 7659030000   |   jg Nod36    # if so, goto Npos:
-  0x353: c0f0ffffffff |   iaddl $-1, %eax
-  0x359:              | Nod36:
-  0x359: 50638c000000 |   mrmovl 0x8c(%ebx), %esi 
-  0x35f: 40618c000000 |   rmmovl %esi, 0x8c(%ecx)
-  0x365: 6266         |   andl %esi, %esi
-  0x367: 7672030000   |   jg Nod35
-  0x36c: c0f0ffffffff |   iaddl $-1, %eax
-  0x372:              | Nod35:    
-  0x372: 506388000000 |   mrmovl 0x88(%ebx), %esi 
-  0x378: 406188000000 |   rmmovl %esi, 0x88(%ecx) # ...and store it to dst
-  0x37e: 6266         |   andl %esi, %esi   # val <= 0?
-  0x380: 768b030000   |   jg Nod34    # if so, goto Npos:
-  0x385: c0f0ffffffff |   iaddl $-1, %eax
-  0x38b:              | Nod34:
-  0x38b: 506384000000 |   mrmovl 0x84(%ebx), %esi 
-  0x391: 406184000000 |   rmmovl %esi, 0x84(%ecx)
-  0x397: 6266         |   andl %esi, %esi
-  0x399: 76a4030000   |   jg Nod33
-  0x39e: c0f0ffffffff |   iaddl $-1, %eax
-  0x3a4:              | Nod33:    
-  0x3a4: 506380000000 |   mrmovl 0x80(%ebx), %esi 
-  0x3aa: 406180000000 |   rmmovl %esi, 0x80(%ecx) # ...and store it to dst
-  0x3b0: 6266         |   andl %esi, %esi   # val <= 0?
-  0x3b2: 76bd030000   |   jg Nod32    # if so, goto Npos:
-  0x3b7: c0f0ffffffff |   iaddl $-1, %eax
-  0x3bd:              | Nod32:
-  0x3bd: 50637c000000 |   mrmovl 0x7c(%ebx), %esi 
-  0x3c3: 40617c000000 |   rmmovl %esi, 0x7c(%ecx)
-  0x3c9: 6266         |   andl %esi, %esi
-  0x3cb: 76d6030000   |   jg Nod31
-  0x3d0: c0f0ffffffff |   iaddl $-1, %eax
-  0x3d6:              | Nod31:    
-  0x3d6: 506378000000 |   mrmovl 0x78(%ebx), %esi 
-  0x3dc: 406178000000 |   rmmovl %esi, 0x78(%ecx) # ...and store it to dst
-  0x3e2: 6266         |   andl %esi, %esi   # val <= 0?
-  0x3e4: 76ef030000   |   jg Nod30    # if so, goto Npos:
-  0x3e9: c0f0ffffffff |   iaddl $-1, %eax
-  0x3ef:              | Nod30:
-  0x3ef: 506374000000 |   mrmovl 0x74(%ebx), %esi 
-  0x3f5: 406174000000 |   rmmovl %esi, 0x74(%ecx)
-  0x3fb: 6266         |   andl %esi, %esi
-  0x3fd: 7608040000   |   jg Nod29
-  0x402: c0f0ffffffff |   iaddl $-1, %eax
-  0x408:              | Nod29:    
-  0x408: 506370000000 |   mrmovl 0x70(%ebx), %esi 
-  0x40e: 406170000000 |   rmmovl %esi, 0x70(%ecx) # ...and store it to dst
-  0x414: 6266         |   andl %esi, %esi   # val <= 0?
-  0x416: 7621040000   |   jg Nod28    # if so, goto Npos:
-  0x41b: c0f0ffffffff |   iaddl $-1, %eax
-  0x421:              | Nod28:
-  0x421: 50636c000000 |   mrmovl 0x6c(%ebx), %esi 
-  0x427: 40616c000000 |   rmmovl %esi, 0x6c(%ecx)
-  0x42d: 6266         |   andl %esi, %esi
-  0x42f: 763a040000   |   jg Nod27
-  0x434: c0f0ffffffff |   iaddl $-1, %eax
-  0x43a:              | Nod27:    
-  0x43a: 506368000000 |   mrmovl 0x68(%ebx), %esi 
-  0x440: 406168000000 |   rmmovl %esi, 0x68(%ecx) # ...and store it to dst
-  0x446: 6266         |   andl %esi, %esi   # val <= 0?
-  0x448: 7653040000   |   jg Nod26    # if so, goto Npos:
-  0x44d: c0f0ffffffff |   iaddl $-1, %eax
-  0x453:              | Nod26:
-  0x453: 506364000000 |   mrmovl 0x64(%ebx), %esi 
-  0x459: 406164000000 |   rmmovl %esi, 0x64(%ecx)
-  0x45f: 6266         |   andl %esi, %esi
-  0x461: 766c040000   |   jg Nod25
-  0x466: c0f0ffffffff |   iaddl $-1, %eax
-  0x46c:              | Nod25:    
-  0x46c: 506360000000 |   mrmovl 0x60(%ebx), %esi 
-  0x472: 406160000000 |   rmmovl %esi, 0x60(%ecx) # ...and store it to dst
-  0x478: 6266         |   andl %esi, %esi   # val <= 0?
-  0x47a: 7685040000   |   jg Nod24    # if so, goto Npos:
-  0x47f: c0f0ffffffff |   iaddl $-1, %eax
-  0x485:              | Nod24:
-  0x485: 50635c000000 |   mrmovl 0x5c(%ebx), %esi 
-  0x48b: 40615c000000 |   rmmovl %esi, 0x5c(%ecx)
-  0x491: 6266         |   andl %esi, %esi
-  0x493: 769e040000   |   jg Nod23
-  0x498: c0f0ffffffff |   iaddl $-1, %eax
-  0x49e:              | Nod23:    
-  0x49e: 506358000000 |   mrmovl 0x58(%ebx), %esi 
-  0x4a4: 406158000000 |   rmmovl %esi, 0x58(%ecx) # ...and store it to dst
-  0x4aa: 6266         |   andl %esi, %esi   # val <= 0?
-  0x4ac: 76b7040000   |   jg Nod22    # if so, goto Npos:
-  0x4b1: c0f0ffffffff |   iaddl $-1, %eax
-  0x4b7:              | Nod22:
-  0x4b7: 506354000000 |   mrmovl 0x54(%ebx), %esi 
-  0x4bd: 406154000000 |   rmmovl %esi, 0x54(%ecx)
-  0x4c3: 6266         |   andl %esi, %esi
-  0x4c5: 76d0040000   |   jg Nod21
-  0x4ca: c0f0ffffffff |   iaddl $-1, %eax
-  0x4d0:              | Nod21:    
-  0x4d0: 506350000000 |   mrmovl 0x50(%ebx), %esi 
-  0x4d6: 406150000000 |   rmmovl %esi, 0x50(%ecx) # ...and store it to dst
-  0x4dc: 6266         |   andl %esi, %esi   # val <= 0?
-  0x4de: 76e9040000   |   jg Nod20    # if so, goto Npos:
-  0x4e3: c0f0ffffffff |   iaddl $-1, %eax
-  0x4e9:              | Nod20:
-  0x4e9: 50634c000000 |   mrmovl 0x4c(%ebx), %esi 
-  0x4ef: 40614c000000 |   rmmovl %esi, 0x4c(%ecx)
-  0x4f5: 6266         |   andl %esi, %esi
-  0x4f7: 7602050000   |   jg Nod19
-  0x4fc: c0f0ffffffff |   iaddl $-1, %eax
-  0x502:              | Nod19:    
-  0x502: 506348000000 |   mrmovl 0x48(%ebx), %esi 
-  0x508: 406148000000 |   rmmovl %esi, 0x48(%ecx) # ...and store it to dst
-  0x50e: 6266         |   andl %esi, %esi   # val <= 0?
-  0x510: 761b050000   |   jg Nod18    # if so, goto Npos:
-  0x515: c0f0ffffffff |   iaddl $-1, %eax
-  0x51b:              | Nod18:
-  0x51b: 506344000000 |   mrmovl 0x44(%ebx), %esi 
-  0x521: 406144000000 |   rmmovl %esi, 0x44(%ecx)
-  0x527: 6266         |   andl %esi, %esi
-  0x529: 7634050000   |   jg Nod17
-  0x52e: c0f0ffffffff |   iaddl $-1, %eax
-  0x534:              | Nod17:    
-  0x534: 506340000000 |   mrmovl 0x40(%ebx), %esi 
-  0x53a: 406140000000 |   rmmovl %esi, 0x40(%ecx) # ...and store it to dst
-  0x540: 6266         |   andl %esi, %esi   # val <= 0?
-  0x542: 764d050000   |   jg Nod16    # if so, goto Npos:
-  0x547: c0f0ffffffff |   iaddl $-1, %eax
-  0x54d:              | Nod16:
-  0x54d: 50633c000000 |   mrmovl 0x3c(%ebx), %esi 
-  0x553: 40613c000000 |   rmmovl %esi, 0x3c(%ecx)
-  0x559: 6266         |   andl %esi, %esi
-  0x55b: 7666050000   |   jg Nod15
-  0x560: c0f0ffffffff |   iaddl $-1, %eax
-  0x566:              | Nod15:    
-  0x566: 506338000000 |   mrmovl 0x38(%ebx), %esi 
-  0x56c: 406138000000 |   rmmovl %esi, 0x38(%ecx) # ...and store it to dst
-  0x572: 6266         |   andl %esi, %esi   # val <= 0?
-  0x574: 767f050000   |   jg Nod14    # if so, goto Npos:
-  0x579: c0f0ffffffff |   iaddl $-1, %eax
-  0x57f:              | Nod14:
-  0x57f: 506334000000 |   mrmovl 0x34(%ebx), %esi 
-  0x585: 406134000000 |   rmmovl %esi, 0x34(%ecx)
-  0x58b: 6266         |   andl %esi, %esi
-  0x58d: 7698050000   |   jg Nod13
-  0x592: c0f0ffffffff |   iaddl $-1, %eax
-  0x598:              | Nod13:    
-  0x598: 506330000000 |   mrmovl 0x30(%ebx), %esi
-  0x59e: 406130000000 |   rmmovl %esi, 0x30(%ecx) # ...and store it to dst
-  0x5a4: 6266         |   andl %esi, %esi   # val <= 0?
-  0x5a6: 76b1050000   |   jg Nod12    # if so, goto Npos:
-  0x5ab: c0f0ffffffff |   iaddl $-1, %eax
-  0x5b1:              | Nod12:
-  0x5b1: 50632c000000 |   mrmovl 0x2c(%ebx), %esi 
-  0x5b7: 40612c000000 |   rmmovl %esi, 0x2c(%ecx)
-  0x5bd: 6266         |   andl %esi, %esi
-  0x5bf: 76ca050000   |   jg Nod11
-  0x5c4: c0f0ffffffff |   iaddl $-1, %eax
-  0x5ca:              | Nod11:    
-  0x5ca: 506328000000 |   mrmovl 0x28(%ebx), %esi 
-  0x5d0: 406128000000 |   rmmovl %esi, 0x28(%ecx) # ...and store it to dst
-  0x5d6: 6266         |   andl %esi, %esi   # val <= 0?
-  0x5d8: 76e3050000   |   jg Nod10    # if so, goto Npos:
-  0x5dd: c0f0ffffffff |   iaddl $-1, %eax
-  0x5e3:              | Nod10:
-  0x5e3: 506324000000 |   mrmovl 0x24(%ebx), %esi 
-  0x5e9: 406124000000 |   rmmovl %esi, 0x24(%ecx)
-  0x5ef: 6266         |   andl %esi, %esi
-  0x5f1: 76fc050000   |   jg Nod9
-  0x5f6: c0f0ffffffff |   iaddl $-1, %eax
-  0x5fc:              | Nod9:   
-  0x5fc: 506320000000 |   mrmovl 0x20(%ebx), %esi 
-  0x602: 406120000000 |   rmmovl %esi, 0x20(%ecx) # ...and store it to dst
-  0x608: 6266         |   andl %esi, %esi   # val <= 0?
-  0x60a: 7615060000   |   jg Nod8     # if so, goto Npos:
-  0x60f: c0f0ffffffff |   iaddl $-1, %eax
-  0x615:              | Nod8:
-  0x615: 50631c000000 |   mrmovl 0x1c(%ebx), %esi 
-  0x61b: 40611c000000 |   rmmovl %esi, 0x1c(%ecx)
-  0x621: 6266         |   andl %esi, %esi
-  0x623: 762e060000   |   jg Nod7
-  0x628: c0f0ffffffff |   iaddl $-1, %eax
-  0x62e:              | Nod7:   
-  0x62e: 506318000000 |   mrmovl 0x18(%ebx), %esi 
-  0x634: 406118000000 |   rmmovl %esi, 0x18(%ecx) # ...and store it to dst
-  0x63a: 6266         |   andl %esi, %esi   # val <= 0?
-  0x63c: 7647060000   |   jg Nod6     # if so, goto Npos:
-  0x641: c0f0ffffffff |   iaddl $-1, %eax
-  0x647:              | Nod6:
-  0x647: 506314000000 |   mrmovl 0x14(%ebx), %esi 
-  0x64d: 406114000000 |   rmmovl %esi, 0x14(%ecx)
-  0x653: 6266         |   andl %esi, %esi
-  0x655: 7660060000   |   jg Nod5
-  0x65a: c0f0ffffffff |   iaddl $-1, %eax
-  0x660:              | Nod5:   
-  0x660: 506310000000 |   mrmovl 0x10(%ebx), %esi 
-  0x666: 406110000000 |   rmmovl %esi, 0x10(%ecx) # ...and store it to dst
-  0x66c: 6266         |   andl %esi, %esi   # val <= 0?
-  0x66e: 7679060000   |   jg Nod4     # if so, goto Npos:
-  0x673: c0f0ffffffff |   iaddl $-1, %eax
-  0x679:              | Nod4:
-  0x679: 50630c000000 |   mrmovl 0xc(%ebx), %esi  
-  0x67f: 40610c000000 |   rmmovl %esi, 0xc(%ecx)
-  0x685: 6266         |   andl %esi, %esi
-  0x687: 7692060000   |   jg Nod3
-  0x68c: c0f0ffffffff |   iaddl $-1, %eax 
-  0x692:              | Nod3:   
-  0x692: 506308000000 |   mrmovl 8(%ebx), %esi  
-  0x698: 406108000000 |   rmmovl %esi, 8(%ecx)  # ...and store it to dst
-  0x69e: 6266         |   andl %esi, %esi   # val <= 0?
-  0x6a0: 76ab060000   |   jg Nod2     # if so, goto Npos:
-  0x6a5: c0f0ffffffff |   iaddl $-1, %eax
-  0x6ab:              | Nod2: 
-  0x6ab: 506304000000 |   mrmovl 4(%ebx), %esi  
-  0x6b1: 406104000000 |   rmmovl %esi, 4(%ecx)
-  0x6b7: 6266         |   andl %esi, %esi
-  0x6b9: 76c4060000   |   jg Nod1
-  0x6be: c0f0ffffffff |   iaddl $-1, %eax
-  0x6c4:              | Nod1:   
-  0x6c4: 506300000000 |   mrmovl (%ebx), %esi 
-  0x6ca: 406100000000 |   rmmovl %esi, (%ecx) # ...and store it to dst
-  0x6d0: 6266         |   andl %esi, %esi   # val <= 0?
-  0x6d2: 76dd060000   |   jg Done     # if so, goto Npos:
-  0x6d7: c0f0ffffffff |   iaddl $-1, %eax
-                      | # Function epilogue. Do not modify.
-                      |   
-  0x6dd:              | Done: 
-  0x6dd: b03f         |   popl %ebx
-  0x6df: b06f         |   popl %esi
-  0x6e1: d0           |   leave 
-  0x6e2: 90           |   ret
-  0x6e3:              | Jump: 
-  0x6e3: dd060000     |   .long Done
-  0x6e7: c4060000     |   .long Nod1
-  0x6eb: ab060000     |   .long Nod2
-  0x6ef: 92060000     |   .long Nod3
-  0x6f3: 79060000     |   .long Nod4
-  0x6f7: 60060000     |   .long Nod5
-  0x6fb: 47060000     |   .long Nod6
-  0x6ff: 2e060000     |   .long Nod7
-  0x703: 15060000     |   .long Nod8
-  0x707: fc050000     |   .long Nod9
-  0x70b: e3050000     |   .long Nod10
-  0x70f: ca050000     |   .long Nod11
-  0x713: b1050000     |   .long Nod12
-  0x717: 98050000     |   .long Nod13
-  0x71b: 7f050000     |   .long Nod14
-  0x71f: 66050000     |   .long Nod15
-  0x723: 4d050000     |   .long Nod16
-  0x727: 34050000     |   .long Nod17
-  0x72b: 1b050000     |   .long Nod18
-  0x72f: 02050000     |   .long Nod19
-  0x733: e9040000     |   .long Nod20
-  0x737: d0040000     |   .long Nod21
-  0x73b: b7040000     |   .long Nod22
-  0x73f: 9e040000     |   .long Nod23
-  0x743: 85040000     |   .long Nod24
-  0x747: 6c040000     |   .long Nod25
-  0x74b: 53040000     |   .long Nod26
-  0x74f: 3a040000     |   .long Nod27
-  0x753: 21040000     |   .long Nod28
-  0x757: 08040000     |   .long Nod29
-  0x75b: ef030000     |   .long Nod30
-  0x75f: d6030000     |   .long Nod31
-  0x763: bd030000     |   .long Nod32
-  0x767: a4030000     |   .long Nod33
-  0x76b: 8b030000     |   .long Nod34
-  0x76f: 72030000     |   .long Nod35
-  0x773: 59030000     |   .long Nod36
-  0x777: 40030000     |   .long Nod37
-  0x77b: 27030000     |   .long Nod38
-  0x77f: 0e030000     |   .long Nod39
-  0x783: f5020000     |   .long Nod40
-  0x787: dc020000     |   .long Nod41
-  0x78b: c3020000     |   .long Nod42
-  0x78f: aa020000     |   .long Nod43
-  0x793: 91020000     |   .long Nod44
-  0x797: 78020000     |   .long Nod45
-  0x79b: 5f020000     |   .long Nod46
-  0x79f: 46020000     |   .long Nod47
-  0x7a3: 2d020000     |   .long Nod48
-  0x7a7: 14020000     |   .long Nod49
-  0x7ab: fb010000     |   .long Nod50
-  0x7af: e2010000     |   .long Nod51
-  0x7b3: c9010000     |   .long Nod52
-  0x7b7: b0010000     |   .long Nod53
-  0x7bb: 97010000     |   .long Nod54
-  0x7bf: 7e010000     |   .long Nod55
-  0x7c3: 65010000     |   .long Nod56
-  0x7c7: 4c010000     |   .long Nod57
-  0x7cb: 33010000     |   .long Nod58
-  0x7cf: 1a010000     |   .long Nod59
-  0x7d3: 01010000     |   .long Nod60
-  0x7d7: e8000000     |   .long Nod61
-  0x7db: cf000000     |   .long Nod62
-  0x7df: b6000000     |   .long Nod63
-  0x7e3: 9d000000     |   .long Nod64
-                      | #/* $end ncopy-ys*/
-  0x7e7:              | EndFun:
+  0x046: 30f701000000 |   irmovl $1, %edi #useful helper reg
+                      |   #xorl %edi, %edi
+                      |   #iaddl $3, %edi
+  0x04c: 6300         |   xorl %eax, %eax #cnt = 0
+  0x04e: 6222         |   andl %edx, %edx   # len <= 0?
+  0x050: 71b9010000   |   jle Done    # if so, goto Done:
+  0x055: 6227         |   andl %edx, %edi   # len even?
+  0x057: 738c000000   |   je Loop0 #is even (%ebp == 0)
+                      | 
+  0x05c: c0f2ffffffff |   iaddl $-1,%edx # len==1?
+  0x062: 73a0010000   |   je One
+                      |   #odd length & more than 1
+  0x067: 506300000000 |   mrmovl (%ebx), %esi #%esi = tmp
+  0x06d: 406100000000 |   rmmovl %esi, (%ecx)
+  0x073: c0f304000000 |   iaddl $4, %ebx
+  0x079: c0f104000000 |   iaddl $4, %ecx
+  0x07f: 6266         |   andl %esi, %esi #esi <= 0?
+  0x081: 718c000000   |   jle Loop0
+  0x086: c0f001000000 |   iaddl $1, %eax
+                      | 
+  0x08c:              | Loop0: #sub by 2
+  0x08c: 506300000000 |   mrmovl (%ebx), %esi #tmp
+  0x092: 406100000000 |   rmmovl %esi, (%ecx)
+  0x098: 6266         |   andl %esi, %esi # esi > 0?
+  0x09a: 71a5000000   |   jle Loop0half
+  0x09f: c0f001000000 |   iaddl $1, %eax
+                      | 
+  0x0a5:              | Loop0half:
+  0x0a5: 506304000000 |   mrmovl 4(%ebx), %esi #tmp
+  0x0ab: 406104000000 |   rmmovl %esi, 4(%ecx)
+  0x0b1: 6266         |   andl %esi, %esi
+  0x0b3: 71be000000   |   jle Loop0check
+  0x0b8: c0f001000000 |   iaddl $1, %eax
+  0x0be:              | Loop0check:
+  0x0be: c0f2feffffff |   iaddl $-2, %edx #len-=2
+  0x0c4: 76ce000000   |   jg Loop1 #edx >=2 more likely to continue
+  0x0c9: 73b9010000   |   je Done #edx ==0
+                      | 
+  0x0ce:              | Loop1:
+  0x0ce: 506308000000 |   mrmovl 8(%ebx), %esi #tmp
+  0x0d4: 406108000000 |   rmmovl %esi, 8(%ecx)
+  0x0da: 6266         |   andl %esi, %esi
+  0x0dc: 71e7000000   |   jle Loop1half
+  0x0e1: c0f001000000 |   iaddl $1, %eax
+  0x0e7:              | Loop1half:
+  0x0e7: 50630c000000 |   mrmovl 12(%ebx), %esi #tmp
+  0x0ed: 40610c000000 |   rmmovl %esi, 12(%ecx)
+  0x0f3: 6266         |   andl %esi, %esi
+  0x0f5: 7100010000   |   jle Loop1check
+  0x0fa: c0f001000000 |   iaddl $1, %eax
+  0x100:              | Loop1check:
+  0x100: c0f2feffffff |   iaddl $-2, %edx #len-=2
+  0x106: 7610010000   |   jg Loop2 #edx >=2 
+  0x10b: 73b9010000   |   je Done #edx ==0
+                      | 
+  0x110:              | Loop2:
+  0x110: 506310000000 |   mrmovl 16(%ebx), %esi #tmp
+  0x116: 406110000000 |   rmmovl %esi, 16(%ecx)
+  0x11c: 6266         |   andl %esi, %esi
+  0x11e: 7129010000   |   jle Loop2half
+  0x123: c0f001000000 |   iaddl $1, %eax
+  0x129:              | Loop2half:
+  0x129: 506314000000 |   mrmovl 20(%ebx), %esi #tmp
+  0x12f: 406114000000 |   rmmovl %esi, 20(%ecx)
+  0x135: 6266         |   andl %esi, %esi
+  0x137: 7142010000   |   jle Loop2check
+  0x13c: c0f001000000 |   iaddl $1, %eax
+  0x142:              | Loop2check:
+  0x142: c0f2feffffff |   iaddl $-2, %edx #len-=2
+  0x148: 7652010000   |   jg Loop3 #edx >=2
+  0x14d: 73b9010000   |   je Done #edx ==0
+                      | 
+  0x152:              | Loop3:
+  0x152: 506318000000 |   mrmovl 24(%ebx), %esi #tmp
+  0x158: 406118000000 |   rmmovl %esi, 24(%ecx)
+  0x15e: 6266         |   andl %esi, %esi
+  0x160: 716b010000   |   jle Loop3half
+  0x165: c0f001000000 |   iaddl $1, %eax
+  0x16b:              | Loop3half:
+  0x16b: 50631c000000 |   mrmovl 28(%ebx), %esi #tmp
+  0x171: 40611c000000 |   rmmovl %esi, 28(%ecx)
+  0x177: 6266         |   andl %esi, %esi
+  0x179: 7184010000   |   jle Loop3check
+  0x17e: c0f001000000 |   iaddl $1, %eax
+                      | 
+                      | 
+  0x184:              | Loop3check:
+  0x184: c0f320000000 |   iaddl $32, %ebx
+  0x18a: c0f120000000 |   iaddl $32, %ecx
+  0x190: c0f2feffffff |   iaddl $-2, %edx #len-=2
+                      | 
+  0x196: 768c000000   |   jg Loop0 #edx > 2
+  0x19b: 73b9010000   |   je Done #edx ==0
+                      | 
+  0x1a0:              | One: #no need to handle length
+  0x1a0: 506300000000 |   mrmovl (%ebx), %esi #%esi = tmp
+  0x1a6: 406100000000 |   rmmovl %esi, (%ecx)
+  0x1ac: 6266         |   andl %esi, %esi #esi <= 0?
+  0x1ae: 71b9010000   |   jle Done
+  0x1b3: c0f001000000 |   iaddl $1, %eax
+                      | ##################################################################
+                      | # Do not modify the following section of code
+                      | # Function epilogue.
+  0x1b9:              |   Done:
+  0x1b9: b07f         |   popl %edi               # Restore callee-save registers
+  0x1bb: b03f         |   popl %ebx
+  0x1bd: b06f         |   popl %esi
+  0x1bf: d0           |   leave
+  0x1c0: 90           |   ret
+                      | ##################################################################
+                      | # Keep the following label at the end of your function
+  0x1c1:              |   End:
+                      | #/* $end ncopy-ys */
+  0x1c1:              | EndFun:
                       | 
                       | ###############################
                       | # Source and destination blocks 
                       | ###############################
-  0x7e8:              | 	.align 4
-  0x7e8:              | src:
-  0x7e8: fadebc00     | 	.long 0xbcdefa # This shouldn't get moved
+  0x1c4:              | 	.align 4
+  0x1c4:              | src:
+  0x1c4: fadebc00     | 	.long 0xbcdefa # This shouldn't get moved
                       | 
-  0x7f0:              | 	.align 16
-  0x7f0:              | Predest:
-  0x7f0: fadebc00     | 	.long 0xbcdefa
-  0x7f4:              | dest:
-  0x7f4:              | Postdest:
-  0x7f4: bcfade00     | 	.long 0xdefabc
+  0x1d0:              | 	.align 16
+  0x1d0:              | Predest:
+  0x1d0: fadebc00     | 	.long 0xbcdefa
+  0x1d4:              | dest:
+  0x1d4:              | Postdest:
+  0x1d4: bcfade00     | 	.long 0xdefabc
                       | 
-  0x7f8:              | .align 4
+  0x1d8:              | .align 4
                       | # Run time stack
-  0x7f8: 00000000     | 	.long 0
-  0x7fc: 00000000     | 	.long 0
-  0x800: 00000000     | 	.long 0
-  0x804: 00000000     | 	.long 0
-  0x808: 00000000     | 	.long 0
-  0x80c: 00000000     | 	.long 0
-  0x810: 00000000     | 	.long 0
-  0x814: 00000000     | 	.long 0
-  0x818: 00000000     | 	.long 0
-  0x81c: 00000000     | 	.long 0
-  0x820: 00000000     | 	.long 0
-  0x824: 00000000     | 	.long 0
-  0x828: 00000000     | 	.long 0
-  0x82c: 00000000     | 	.long 0
-  0x830: 00000000     | 	.long 0
-  0x834: 00000000     | 	.long 0
+  0x1d8: 00000000     | 	.long 0
+  0x1dc: 00000000     | 	.long 0
+  0x1e0: 00000000     | 	.long 0
+  0x1e4: 00000000     | 	.long 0
+  0x1e8: 00000000     | 	.long 0
+  0x1ec: 00000000     | 	.long 0
+  0x1f0: 00000000     | 	.long 0
+  0x1f4: 00000000     | 	.long 0
+  0x1f8: 00000000     | 	.long 0
+  0x1fc: 00000000     | 	.long 0
+  0x200: 00000000     | 	.long 0
+  0x204: 00000000     | 	.long 0
+  0x208: 00000000     | 	.long 0
+  0x20c: 00000000     | 	.long 0
+  0x210: 00000000     | 	.long 0
+  0x214: 00000000     | 	.long 0
                       | 
-  0x838:              | Stack:
+  0x218:              | Stack:

@@ -2,15 +2,15 @@
                       | # Test for copying block of size 4;
                       | #######################################################################
   0x000:              | 	.pos 0
-  0x000: 30f418010000 | main:	irmovl Stack, %esp  	# Set up stack pointer
-  0x006: 30f518010000 | 	irmovl Stack, %ebp  	# Set up base pointer
+  0x000: 30f438020000 | main:	irmovl Stack, %esp  	# Set up stack pointer
+  0x006: 30f538020000 | 	irmovl Stack, %ebp  	# Set up base pointer
                       | 
                       | 	# Set up arguments for copy function and then invoke it
   0x00c: 30f004000000 | 	irmovl $4, %eax		# src and dst have 4 elements
   0x012: a00f         | 	pushl %eax
-  0x014: 30f0c4000000 | 	irmovl dest, %eax	# dst array
+  0x014: 30f0e4010000 | 	irmovl dest, %eax	# dst array
   0x01a: a00f         | 	pushl %eax
-  0x01c: 30f0ac000000 | 	irmovl src, %eax	# src array
+  0x01c: 30f0c4010000 | 	irmovl src, %eax	# src array
   0x022: a00f         | 	pushl %eax
   0x024: 802a000000   | 	call ncopy		 
   0x029: 00           | 	halt			# should halt with num nonzeros in %eax
@@ -24,104 +24,189 @@
                       | # 2012-11114 TAEHWOI OUM.
                       | #
                       | # Describe how and why you modified the baseline code.
-                      | # 1. since looping is expensive, move two elements at once.
-                      | # 2. use cmove to add cnt. -TODO
+                      | # 0. pushl %ebp once again to utilize 1 more registers
+                      | # 1. since looping is expensive, move 8 elements at once.
+                      | # --2. use cmove to add cnt.--
+                      | # 2. apparently, using cmove is expensive due to resetting inc to 0 everytime
+                      | #   just use jump-ifs -> no need to pushl %ebp??
+                      | #   or think of a way to use cmove efficiently
+                      | # 3. use a helper register to check even/odd of length -> this way, you don't have to check for array range every single time; twice.
+                      | # 4. what about cmove once and jump-if once?
+                      | # 5. TODO: check for mod 4 and deal cases smaller than 4 seperately
+                      | #   for cases bigger than 4, but not mod, subtract until mod 4 == 0
+                      | # 6. Not Do 5..? irmovl $1,R is much cheaper than $4,R .. wonder why
+                      | # 7. Use leave instead of two instructions
                       | ##################################################################
                       | # Do not modify this portion
                       | # Function prologue.
-  0x02a:              | ncopy:	
-  0x02a: a05f         |   pushl %ebp		# Save old frame pointer
-  0x02c: 2045         | 	rrmovl %esp,%ebp	# Set up new frame pointer
-  0x02e: a06f         | 	pushl %esi		# Save callee-save regs
-  0x030: a03f         | 	pushl %ebx
-  0x032: a07f         | 	pushl %edi
-  0x034: 503508000000 | 	mrmovl 8(%ebp),%ebx	# src
-  0x03a: 50150c000000 | 	mrmovl 12(%ebp),%ecx	# dst
-  0x040: 502510000000 | 	mrmovl 16(%ebp),%edx	# len
+  0x02a:              | ncopy:  
+  0x02a: a05f         |   pushl %ebp    # Save old frame pointer
+  0x02c: 2045         |   rrmovl %esp,%ebp  # Set up new frame pointer
+  0x02e: a06f         |   pushl %esi    # Save callee-save regs
+  0x030: a03f         |   pushl %ebx
+  0x032: a07f         |   pushl %edi
+  0x034: 503508000000 |   mrmovl 8(%ebp),%ebx # src
+  0x03a: 50150c000000 |   mrmovl 12(%ebp),%ecx  # dst
+  0x040: 502510000000 |   mrmovl 16(%ebp),%edx  # len
                       | 
                       | ##################################################################
                       | # You can modify this portion
-                      | # small cases -> hard coding
-                      | # 1 elements
+                      | # small cases -> hard coding??
                       | # Loop header
-  0x046: 6300         |   xorl %eax, %eax #cnt = 0
-  0x048: 6222         |   andl %edx,%edx		# len <= 0?
-  0x04a: 71a2000000   |   jle Done		# if so, goto Done:
-  0x04f: c0f2ffffffff |   iaddl $-1,%edx
-  0x055: 6222         |   andl %edx,%edx		# len == 1?
-  0x057: 7389000000   |   je One
-  0x05c: c0f201000000 |   iaddl $1,%edx
+  0x046: 30f764000000 |   irmovl $100, %edi #useful helper reg
+                      |   #xorl %edi, %edi
+                      |   #iaddl $3, %edi
+  0x04c: 6300         |   xorl %eax, %eax #cnt = 0
+  0x04e: 6222         |   andl %edx, %edx   # len <= 0?
+  0x050: 71b9010000   |   jle Done    # if so, goto Done:
+  0x055: 6227         |   andl %edx, %edi   # len even?
+  0x057: 738c000000   |   je Loop0 #is even (%ebp == 0)
                       | 
-  0x062:              | Loop:
-  0x062: 6222         |   andl %edx,%edx		# len <= 0?
-  0x064: 506300000000 |   mrmovl (%ebx), %esi #tmp
-  0x06a: 406100000000 |   rmmovl %esi, (%ecx)
-  0x070: 6266         |   andl %esi, %esi #esi > 0?
-                      |   #addl %edi, %eax #update count
-  0x072: c0f304000000 |   iaddl $4, %ebx
-  0x078: c0f104000000 |   iaddl $4, %ecx
-  0x07e: c0f2ffffffff |   iaddl $-1, %edx
-  0x084: 7562000000   |   jge Loop
+  0x05c: c0f2ffffffff |   iaddl $-1,%edx # len==1?
+  0x062: 73a0010000   |   je One
+                      |   #odd length & more than 1
+  0x067: 506300000000 |   mrmovl (%ebx), %esi #%esi = tmp
+  0x06d: 406100000000 |   rmmovl %esi, (%ecx)
+  0x073: c0f304000000 |   iaddl $4, %ebx
+  0x079: c0f104000000 |   iaddl $4, %ecx
+  0x07f: 6266         |   andl %esi, %esi #esi <= 0?
+  0x081: 718c000000   |   jle Loop0
+  0x086: c0f001000000 |   iaddl $1, %eax
                       | 
-  0x089:              | One:
-  0x089: 506300000000 |   mrmovl (%ebx), %esi #%esi = tmp
-  0x08f: 406100000000 |   rmmovl %esi, (%ecx)
-  0x095: 6266         |   andl %esi, %esi #esi <= 0?
-  0x097: 71a2000000   |   jle Done
-  0x09c: c0f001000000 |   iaddl $1, %eax
+  0x08c:              | Loop0: #sub by 2
+  0x08c: 506300000000 |   mrmovl (%ebx), %esi #tmp
+  0x092: 406100000000 |   rmmovl %esi, (%ecx)
+  0x098: 6266         |   andl %esi, %esi # esi > 0?
+  0x09a: 71a5000000   |   jle Loop0half
+  0x09f: c0f001000000 |   iaddl $1, %eax
+                      | 
+  0x0a5:              | Loop0half:
+  0x0a5: 506304000000 |   mrmovl 4(%ebx), %esi #tmp
+  0x0ab: 406104000000 |   rmmovl %esi, 4(%ecx)
+  0x0b1: 6266         |   andl %esi, %esi
+  0x0b3: 71be000000   |   jle Loop0check
+  0x0b8: c0f001000000 |   iaddl $1, %eax
+  0x0be:              | Loop0check:
+  0x0be: c0f2feffffff |   iaddl $-2, %edx #len-=2
+  0x0c4: 76ce000000   |   jg Loop1 #edx >=2 more likely to continue
+  0x0c9: 73b9010000   |   je Done #edx ==0
+                      | 
+  0x0ce:              | Loop1:
+  0x0ce: 506308000000 |   mrmovl 8(%ebx), %esi #tmp
+  0x0d4: 406108000000 |   rmmovl %esi, 8(%ecx)
+  0x0da: 6266         |   andl %esi, %esi
+  0x0dc: 71e7000000   |   jle Loop1half
+  0x0e1: c0f001000000 |   iaddl $1, %eax
+  0x0e7:              | Loop1half:
+  0x0e7: 50630c000000 |   mrmovl 12(%ebx), %esi #tmp
+  0x0ed: 40610c000000 |   rmmovl %esi, 12(%ecx)
+  0x0f3: 6266         |   andl %esi, %esi
+  0x0f5: 7100010000   |   jle Loop1check
+  0x0fa: c0f001000000 |   iaddl $1, %eax
+  0x100:              | Loop1check:
+  0x100: c0f2feffffff |   iaddl $-2, %edx #len-=2
+  0x106: 7610010000   |   jg Loop2 #edx >=2 
+  0x10b: 73b9010000   |   je Done #edx ==0
+                      | 
+  0x110:              | Loop2:
+  0x110: 506310000000 |   mrmovl 16(%ebx), %esi #tmp
+  0x116: 406110000000 |   rmmovl %esi, 16(%ecx)
+  0x11c: 6266         |   andl %esi, %esi
+  0x11e: 7129010000   |   jle Loop2half
+  0x123: c0f001000000 |   iaddl $1, %eax
+  0x129:              | Loop2half:
+  0x129: 506314000000 |   mrmovl 20(%ebx), %esi #tmp
+  0x12f: 406114000000 |   rmmovl %esi, 20(%ecx)
+  0x135: 6266         |   andl %esi, %esi
+  0x137: 7142010000   |   jle Loop2check
+  0x13c: c0f001000000 |   iaddl $1, %eax
+  0x142:              | Loop2check:
+  0x142: c0f2feffffff |   iaddl $-2, %edx #len-=2
+  0x148: 7652010000   |   jg Loop3 #edx >=2
+  0x14d: 73b9010000   |   je Done #edx ==0
+                      | 
+  0x152:              | Loop3:
+  0x152: 506318000000 |   mrmovl 24(%ebx), %esi #tmp
+  0x158: 406118000000 |   rmmovl %esi, 24(%ecx)
+  0x15e: 6266         |   andl %esi, %esi
+  0x160: 716b010000   |   jle Loop3half
+  0x165: c0f001000000 |   iaddl $1, %eax
+  0x16b:              | Loop3half:
+  0x16b: 50631c000000 |   mrmovl 28(%ebx), %esi #tmp
+  0x171: 40611c000000 |   rmmovl %esi, 28(%ecx)
+  0x177: 6266         |   andl %esi, %esi
+  0x179: 7184010000   |   jle Loop3check
+  0x17e: c0f001000000 |   iaddl $1, %eax
+                      | 
+                      | 
+  0x184:              | Loop3check:
+  0x184: c0f320000000 |   iaddl $32, %ebx
+  0x18a: c0f120000000 |   iaddl $32, %ecx
+  0x190: c0f2feffffff |   iaddl $-2, %edx #len-=2
+                      | 
+  0x196: 768c000000   |   jg Loop0 #edx > 2
+  0x19b: 73b9010000   |   je Done #edx ==0
+                      | 
+  0x1a0:              | One: #no need to handle length
+  0x1a0: 506300000000 |   mrmovl (%ebx), %esi #%esi = tmp
+  0x1a6: 406100000000 |   rmmovl %esi, (%ecx)
+  0x1ac: 6266         |   andl %esi, %esi #esi <= 0?
+  0x1ae: 71b9010000   |   jle Done
+  0x1b3: c0f001000000 |   iaddl $1, %eax
                       | ##################################################################
                       | # Do not modify the following section of code
                       | # Function epilogue.
-  0x0a2:              |   Done:
-  0x0a2: b07f         |   popl %edi               # Restore callee-save registers
-  0x0a4: b03f         |   popl %ebx
-  0x0a6: b06f         |   popl %esi
-  0x0a8: d0           |   leave
+  0x1b9:              |   Done:
+  0x1b9: b07f         |   popl %edi               # Restore callee-save registers
+  0x1bb: b03f         |   popl %ebx
+  0x1bd: b06f         |   popl %esi
+  0x1bf: d0           |   leave
+  0x1c0: 90           |   ret
                       | ##################################################################
                       | # Keep the following label at the end of your function
-  0x0a9:              |   End:
+  0x1c1:              |   End:
                       | #/* $end ncopy-ys */
-  0x0a9:              | EndFun:
+  0x1c1:              | EndFun:
                       | 
                       | ###############################
                       | # Source and destination blocks 
                       | ###############################
-  0x0ac:              | 	.align 4
-  0x0ac:              | src:
-  0x0ac: ffffffff     | 	.long -1
-  0x0b0: 02000000     | 	.long 2
-  0x0b4: fdffffff     | 	.long -3
-  0x0b8: 04000000     | 	.long 4
-  0x0bc: fadebc00     | 	.long 0xbcdefa # This shouldn't get moved
+  0x1c4:              | 	.align 4
+  0x1c4:              | src:
+  0x1c4: ffffffff     | 	.long -1
+  0x1c8: 02000000     | 	.long 2
+  0x1cc: fdffffff     | 	.long -3
+  0x1d0: 04000000     | 	.long 4
+  0x1d4: fadebc00     | 	.long 0xbcdefa # This shouldn't get moved
                       | 
-  0x0c0:              | 	.align 16
-  0x0c0:              | Predest:
-  0x0c0: fadebc00     | 	.long 0xbcdefa
-  0x0c4:              | dest:
-  0x0c4: abefcd00     | 	.long 0xcdefab
-  0x0c8: abefcd00     | 	.long 0xcdefab
-  0x0cc: abefcd00     | 	.long 0xcdefab
-  0x0d0: abefcd00     | 	.long 0xcdefab
-  0x0d4:              | Postdest:
-  0x0d4: bcfade00     | 	.long 0xdefabc
+  0x1e0:              | 	.align 16
+  0x1e0:              | Predest:
+  0x1e0: fadebc00     | 	.long 0xbcdefa
+  0x1e4:              | dest:
+  0x1e4: abefcd00     | 	.long 0xcdefab
+  0x1e8: abefcd00     | 	.long 0xcdefab
+  0x1ec: abefcd00     | 	.long 0xcdefab
+  0x1f0: abefcd00     | 	.long 0xcdefab
+  0x1f4:              | Postdest:
+  0x1f4: bcfade00     | 	.long 0xdefabc
                       | 
-  0x0d8:              | .align 4
+  0x1f8:              | .align 4
                       | # Run time stack
-  0x0d8: 00000000     | 	.long 0
-  0x0dc: 00000000     | 	.long 0
-  0x0e0: 00000000     | 	.long 0
-  0x0e4: 00000000     | 	.long 0
-  0x0e8: 00000000     | 	.long 0
-  0x0ec: 00000000     | 	.long 0
-  0x0f0: 00000000     | 	.long 0
-  0x0f4: 00000000     | 	.long 0
-  0x0f8: 00000000     | 	.long 0
-  0x0fc: 00000000     | 	.long 0
-  0x100: 00000000     | 	.long 0
-  0x104: 00000000     | 	.long 0
-  0x108: 00000000     | 	.long 0
-  0x10c: 00000000     | 	.long 0
-  0x110: 00000000     | 	.long 0
-  0x114: 00000000     | 	.long 0
+  0x1f8: 00000000     | 	.long 0
+  0x1fc: 00000000     | 	.long 0
+  0x200: 00000000     | 	.long 0
+  0x204: 00000000     | 	.long 0
+  0x208: 00000000     | 	.long 0
+  0x20c: 00000000     | 	.long 0
+  0x210: 00000000     | 	.long 0
+  0x214: 00000000     | 	.long 0
+  0x218: 00000000     | 	.long 0
+  0x21c: 00000000     | 	.long 0
+  0x220: 00000000     | 	.long 0
+  0x224: 00000000     | 	.long 0
+  0x228: 00000000     | 	.long 0
+  0x22c: 00000000     | 	.long 0
+  0x230: 00000000     | 	.long 0
+  0x234: 00000000     | 	.long 0
                       | 
-  0x118:              | Stack:
+  0x238:              | Stack:

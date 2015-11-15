@@ -327,18 +327,22 @@ int Stat = [
 # At most one of these can be true.
 bool F_bubble = 0;
 bool F_stall =
+  
 	# Conditions for a load/use hazard
 	## Set this to the new load/use condition
-	0 ||
+  E_icode in {IMRMOVL, IPOPL}
+    && E_dstM in {d_srcA, d_srcB} ||
 	# Stalling at fetch while ret passes through pipeline
 	IRET in { D_icode, E_icode, M_icode };
 
 # Should I stall or inject a bubble into Pipeline Register D?
 # At most one of these can be true.
 bool D_stall = 
+  E_icode in {IMRMOVL, IPOPL}
+    && E_dstM in {d_srcA, d_srcB};
 	# Conditions for a load/use hazard
 	## Set this to the new load/use condition
-	0; 
+	#0; 
 
 bool D_bubble =
 	# Mispredicted branch

@@ -24,46 +24,130 @@ StartFun:
 # 2012-11114 TAEHWOI OUM.
 #
 # Describe how and why you modified the baseline code.
-# 1. since looping is expensive, move two elements at once.
-# 2. use cmove to add cnt. -TODO
+# 0. pushl %ebp once again to utilize 1 more registers
+# 1. since looping is expensive, move 8 elements at once.
+# --2. use cmove to add cnt.--
+# 2. apparently, using cmove is expensive due to resetting inc to 0 everytime
+#   just use jump-ifs -> no need to pushl %ebp??
+#   or think of a way to use cmove efficiently
+# 3. use a helper register to check even/odd of length -> this way, you don't have to check for array range every single time; twice.
+# 4. what about cmove once and jump-if once?
+# 5. TODO: check for mod 4 and deal cases smaller than 4 seperately
+#   for cases bigger than 4, but not mod, subtract until mod 4 == 0
+# 6. Not Do 5..? irmovl $1,R is much cheaper than $4,R .. wonder why
+# 7. Use leave instead of two instructions
 ##################################################################
 # Do not modify this portion
 # Function prologue.
-ncopy:	
-  pushl %ebp		# Save old frame pointer
-	rrmovl %esp,%ebp	# Set up new frame pointer
-	pushl %esi		# Save callee-save regs
-	pushl %ebx
-	pushl %edi
-	mrmovl 8(%ebp),%ebx	# src
-	mrmovl 12(%ebp),%ecx	# dst
-	mrmovl 16(%ebp),%edx	# len
+ncopy:  
+  pushl %ebp    # Save old frame pointer
+  rrmovl %esp,%ebp  # Set up new frame pointer
+  pushl %esi    # Save callee-save regs
+  pushl %ebx
+  pushl %edi
+  mrmovl 8(%ebp),%ebx # src
+  mrmovl 12(%ebp),%ecx  # dst
+  mrmovl 16(%ebp),%edx  # len
 
 ##################################################################
 # You can modify this portion
-# small cases -> hard coding
-# 1 elements
+# small cases -> hard coding??
 # Loop header
+  irmovl $100, %edi #useful helper reg
+  #xorl %edi, %edi
+  #iaddl $3, %edi
   xorl %eax, %eax #cnt = 0
-  andl %edx,%edx		# len <= 0?
-  jle Done		# if so, goto Done:
-  iaddl $-1,%edx
-  andl %edx,%edx		# len == 1?
-  je One
-  iaddl $1,%edx
+  andl %edx, %edx   # len <= 0?
+  jle Done    # if so, goto Done:
+  andl %edx, %edi   # len even?
+  je Loop0 #is even (%ebp == 0)
 
-Loop:
-  andl %edx,%edx		# len <= 0?
-  mrmovl (%ebx), %esi #tmp
+  iaddl $-1,%edx # len==1?
+  je One
+  #odd length & more than 1
+  mrmovl (%ebx), %esi #%esi = tmp
   rmmovl %esi, (%ecx)
-  andl %esi, %esi #esi > 0?
-  #addl %edi, %eax #update count
   iaddl $4, %ebx
   iaddl $4, %ecx
-  iaddl $-1, %edx
-  jge Loop
+  andl %esi, %esi #esi <= 0?
+  jle Loop0
+  iaddl $1, %eax
 
-One:
+Loop0: #sub by 2
+  mrmovl (%ebx), %esi #tmp
+  rmmovl %esi, (%ecx)
+  andl %esi, %esi # esi > 0?
+  jle Loop0half
+  iaddl $1, %eax
+
+Loop0half:
+  mrmovl 4(%ebx), %esi #tmp
+  rmmovl %esi, 4(%ecx)
+  andl %esi, %esi
+  jle Loop0check
+  iaddl $1, %eax
+Loop0check:
+  iaddl $-2, %edx #len-=2
+  jg Loop1 #edx >=2 more likely to continue
+  je Done #edx ==0
+
+Loop1:
+  mrmovl 8(%ebx), %esi #tmp
+  rmmovl %esi, 8(%ecx)
+  andl %esi, %esi
+  jle Loop1half
+  iaddl $1, %eax
+Loop1half:
+  mrmovl 12(%ebx), %esi #tmp
+  rmmovl %esi, 12(%ecx)
+  andl %esi, %esi
+  jle Loop1check
+  iaddl $1, %eax
+Loop1check:
+  iaddl $-2, %edx #len-=2
+  jg Loop2 #edx >=2 
+  je Done #edx ==0
+
+Loop2:
+  mrmovl 16(%ebx), %esi #tmp
+  rmmovl %esi, 16(%ecx)
+  andl %esi, %esi
+  jle Loop2half
+  iaddl $1, %eax
+Loop2half:
+  mrmovl 20(%ebx), %esi #tmp
+  rmmovl %esi, 20(%ecx)
+  andl %esi, %esi
+  jle Loop2check
+  iaddl $1, %eax
+Loop2check:
+  iaddl $-2, %edx #len-=2
+  jg Loop3 #edx >=2
+  je Done #edx ==0
+
+Loop3:
+  mrmovl 24(%ebx), %esi #tmp
+  rmmovl %esi, 24(%ecx)
+  andl %esi, %esi
+  jle Loop3half
+  iaddl $1, %eax
+Loop3half:
+  mrmovl 28(%ebx), %esi #tmp
+  rmmovl %esi, 28(%ecx)
+  andl %esi, %esi
+  jle Loop3check
+  iaddl $1, %eax
+
+
+Loop3check:
+  iaddl $32, %ebx
+  iaddl $32, %ecx
+  iaddl $-2, %edx #len-=2
+
+  jg Loop0 #edx > 2
+  je Done #edx ==0
+
+One: #no need to handle length
   mrmovl (%ebx), %esi #%esi = tmp
   rmmovl %esi, (%ecx)
   andl %esi, %esi #esi <= 0?
@@ -77,6 +161,7 @@ One:
   popl %ebx
   popl %esi
   leave
+  ret
 ##################################################################
 # Keep the following label at the end of your function
   End:

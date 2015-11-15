@@ -18,6 +18,7 @@
 # 5. TODO: check for mod 4 and deal cases smaller than 4 seperately
 #   for cases bigger than 4, but not mod, subtract until mod 4 == 0
 # 6. Not Do 5..? irmovl $1,R is much cheaper than $4,R .. wonder why
+# 7. Use leave instead of two instructions
 ##################################################################
 # Do not modify this portion
 # Function prologue.

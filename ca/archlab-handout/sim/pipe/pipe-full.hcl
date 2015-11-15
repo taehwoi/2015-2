@@ -269,10 +269,15 @@ int alufun = [
 ## Should the condition codes be updated?
 bool set_cc = (E_icode == IOPL || E_icode == IIADDL) &&
 	# State changes only during normal operation
-	!m_stat in { SADR, SINS, SHLT } && !W_stat in { SADR, SINS, SHLT };
+  !m_stat in { SADR, SINS, SHLT } && !W_stat in { SADR, SINS, SHLT };
 
 ## Generate valA in execute stage
-int e_valA = E_valA;    # Pass valA through stage
+## modified here to implement data forwarding
+int e_valA = [
+  # if Exec stage source == M stage dst
+  (E_icode == IRMMOVL && E_srcA == M_dstM) : m_valM; 
+	1 : E_valA;  # Use valA from stage pipe register
+];
 
 ## Set dstE to RNONE in event of not-taken conditional move
 int e_dstE = [
@@ -323,22 +328,25 @@ int Stat = [
 
 ################ Pipeline Register Control #########################
 
+# TODO: if condition meets for load forwarding, don't stall
 # Should I stall or inject a bubble into Pipeline Register F?
 # At most one of these can be true.
 bool F_bubble = 0;
 bool F_stall =
 	# Conditions for a load/use hazard
-	E_icode in { IMRMOVL, IPOPL } &&
-	 E_dstM in { d_srcA, d_srcB } ||
+  E_icode in { IMRMOVL, IPOPL } &&
+   #E_dstM in { d_srcA, d_srcB } ||
+   (E_dstM == d_srcB || (E_dstM == d_srcA && ! D_icode == IRMMOVL)) ||
 	# Stalling at fetch while ret passes through pipeline
-	IRET in { D_icode, E_icode, M_icode };
+  IRET in { D_icode, E_icode, M_icode };
 
 # Should I stall or inject a bubble into Pipeline Register D?
 # At most one of these can be true.
 bool D_stall = 
 	# Conditions for a load/use hazard
-	E_icode in { IMRMOVL, IPOPL } &&
-	 E_dstM in { d_srcA, d_srcB };
+  E_icode in { IMRMOVL, IPOPL } &&
+   (E_dstM == d_srcB || (E_dstM == d_srcA && ! D_icode == IRMMOVL));
+   #E_dstM in { d_srcA, d_srcB };
 
 bool D_bubble =
 	# Mispredicted branch
@@ -356,15 +364,18 @@ bool E_bubble =
 	(E_icode == IJXX && !e_Cnd) ||
 	# Conditions for a load/use hazard
 	E_icode in { IMRMOVL, IPOPL } &&
+   (E_dstM == d_srcB || (E_dstM == d_srcA && ! D_icode == IRMMOVL)) &&
 	 E_dstM in { d_srcA, d_srcB};
 
 # Should I stall or inject a bubble into Pipeline Register M?
 # At most one of these can be true.
 bool M_stall = 0;
 # Start injecting bubbles as soon as exception passes through memory stage
-bool M_bubble = m_stat in { SADR, SINS, SHLT } || W_stat in { SADR, SINS, SHLT };
+bool M_bubble = 0;
+#bool M_bubble = m_stat in { SADR, SINS, SHLT } || W_stat in { SADR, SINS, SHLT };
 
 # Should I stall or inject a bubble into Pipeline Register W?
-bool W_stall = W_stat in { SADR, SINS, SHLT };
+#bool W_stall = W_stat in { SADR, SINS, SHLT };
+bool W_stall = 0;
 bool W_bubble = 0;
 #/* $end pipe-all-hcl */
