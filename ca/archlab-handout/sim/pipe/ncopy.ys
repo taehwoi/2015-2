@@ -12,7 +12,8 @@
 #   http://nadeausoftware.com/articles/2012/05/c_c_tip_how_copy_memory_quickly
 #
 # 1. Add IIADDL, and LEAVE instruction in the pipeline to merge 2 instructions to one.
-#
+#   But, didn't use leave although it reduces about 0.6CPE, just to follow instructions 
+#   to not modify function epilogues.
 # 2. Since looping by 1 is expensive (increasing/decreasing pointers/length per iteration, doing boundary check per iteration...) copy N elements at once.
 #
 # 3. copying N elements at the same time can lead to uncopied elements if len % N != 0.
@@ -57,6 +58,7 @@ ncopy:
 
   iaddl $-1,%edx # len==1? /* don't have to restore length */
   je ONE # corner case
+
   #odd length & more than 1
   mrmovl (%ebx), %esi #%esi = tmp
   rmmovl %esi, (%ecx)
@@ -153,7 +155,9 @@ ONE: #no need to handle length
   popl %edi               # Restore callee-save registers
   popl %ebx
   popl %esi
-  leave
+  #leave
+  rrmovl %ebp, %esp
+  popl %ebp
   ret
 ##################################################################
 # Keep the following label at the end of your function

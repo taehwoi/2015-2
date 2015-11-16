@@ -3,12 +3,19 @@
 #    HCL Description of Control for Pipelined Y86 Processor        #
 #    Copyright (C) Randal E. Bryant, David R. O'Hallaron, 2010     #
 ####################################################################
-
 ## Your task is to implement the iaddl and leave instructions
 ## The file contains a declaration of the icodes
 ## for iaddl (IIADDL) and leave (ILEAVE).
 ## Your job is to add the rest of the logic to make it work
-
+##
+## ADDED data forwarding, because NCOPY has many sets of
+##   1. imrmovl (X) Y
+##   2. irmmovl  Y (Z)
+## By adding data forwarding, instead of stalling until instruction 1's register 
+## is written, instruction 2 can directly use the value in (X).
+## To do this, we have to modify e_valA, according to pipe-lf.hcl.
+## When the instruction to be executed is IRMMOVL and it's source(Y) happens to equal to that of the Memory stage (there can actually be more choices to forward from, but in our ncopy example, getting it only from the M stage is sufficient).
+## only added data forwarding for irmmovl since that's most used, and sufficient for CPE## below 10.
 ####################################################################
 #    C Include's.  Don't alter these                               #
 ####################################################################
@@ -274,9 +281,10 @@ bool set_cc = (E_icode == IOPL || E_icode == IIADDL) &&
 ## Generate valA in execute stage
 ## modified here to implement data forwarding
 int e_valA = [
-  # if Exec stage source == M stage dst
-  (E_icode == IRMMOVL && E_srcA == M_dstM) : m_valM; 
-	1 : E_valA;  # Use valA from stage pipe register
+  # if Exec stage source == M stage(previous stage)dst just use m_valM
+  # referenced from slide 12 p22 and 23
+  (M_icode== IMRMOVL && E_icode == IRMMOVL && E_srcA == M_dstE) : m_valM;
+  1 : E_valA;  # Use valA from stage pipe register
 ];
 
 ## Set dstE to RNONE in event of not-taken conditional move
@@ -336,7 +344,9 @@ bool F_stall =
 	# Conditions for a load/use hazard
   E_icode in { IMRMOVL, IPOPL } &&
    #E_dstM in { d_srcA, d_srcB } ||
-   (E_dstM == d_srcB || (E_dstM == d_srcA && ! D_icode == IRMMOVL)) ||
+   # when IRMMOVL, even though its src is current execution stage's dst, don't stall
+   # in fetch stage because we are going to load-forward!
+   (E_dstM == d_srcB || (E_dstM == d_srcA && !D_icode == IRMMOVL)) ||
 	# Stalling at fetch while ret passes through pipeline
   IRET in { D_icode, E_icode, M_icode };
 
@@ -344,15 +354,17 @@ bool F_stall =
 # At most one of these can be true.
 bool D_stall = 
 	# Conditions for a load/use hazard
+   # when IRMMOVL, even though its src is current execution stage's dst, don't stall
+   # in decode stage because we are going to load-forward!
   E_icode in { IMRMOVL, IPOPL } &&
-   (E_dstM == d_srcB || (E_dstM == d_srcA && ! D_icode == IRMMOVL));
+   (E_dstM == d_srcB || (E_dstM == d_srcA && !D_icode == IRMMOVL));
    #E_dstM in { d_srcA, d_srcB };
 
 bool D_bubble =
 	# Mispredicted branch
 	(E_icode == IJXX && !e_Cnd) ||
 	# Stalling at fetch while ret passes through pipeline
-	# but not condition for a load/use hazard
+	# but not condition for a load/use hazard TODO: should I modify this condition too??
 	!(E_icode in { IMRMOVL, IPOPL } && E_dstM in { d_srcA, d_srcB }) &&
 	  IRET in { D_icode, E_icode, M_icode };
 
@@ -367,15 +379,16 @@ bool E_bubble =
    (E_dstM == d_srcB || (E_dstM == d_srcA && ! D_icode == IRMMOVL)) &&
 	 E_dstM in { d_srcA, d_srcB};
 
+
 # Should I stall or inject a bubble into Pipeline Register M?
 # At most one of these can be true.
 bool M_stall = 0;
 # Start injecting bubbles as soon as exception passes through memory stage
-bool M_bubble = 0;
-#bool M_bubble = m_stat in { SADR, SINS, SHLT } || W_stat in { SADR, SINS, SHLT };
+#bool M_bubble = 0;
+bool M_bubble = m_stat in { SADR, SINS, SHLT } || W_stat in { SADR, SINS, SHLT };
 
 # Should I stall or inject a bubble into Pipeline Register W?
-#bool W_stall = W_stat in { SADR, SINS, SHLT };
-bool W_stall = 0;
+bool W_stall = W_stat in { SADR, SINS, SHLT };
+#bool W_stall = 0;
 bool W_bubble = 0;
 #/* $end pipe-all-hcl */

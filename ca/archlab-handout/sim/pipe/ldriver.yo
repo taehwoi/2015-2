@@ -29,7 +29,8 @@
                       | #   http://nadeausoftware.com/articles/2012/05/c_c_tip_how_copy_memory_quickly
                       | #
                       | # 1. Add IIADDL, and LEAVE instruction in the pipeline to merge 2 instructions to one.
-                      | #
+                      | #   But, didn't use leave although it reduces about 0.6CPE, just to follow instructions 
+                      | #   to not modify function epilogues.
                       | # 2. Since looping by 1 is expensive (increasing/decreasing pointers/length per iteration, doing boundary check per iteration...) copy N elements at once.
                       | #
                       | # 3. copying N elements at the same time can lead to uncopied elements if len % N != 0.
@@ -74,6 +75,7 @@
                       | 
   0x05c: c0f2ffffffff |   iaddl $-1,%edx # len==1? /* don't have to restore length */
   0x062: 73a0010000   |   je ONE # corner case
+                      | 
                       |   #odd length & more than 1
   0x067: 506300000000 |   mrmovl (%ebx), %esi #%esi = tmp
   0x06d: 406100000000 |   rmmovl %esi, (%ecx)
@@ -170,79 +172,81 @@
   0x1b9: b07f         |   popl %edi               # Restore callee-save registers
   0x1bb: b03f         |   popl %ebx
   0x1bd: b06f         |   popl %esi
-  0x1bf: d0           |   leave
-  0x1c0: 90           |   ret
+                      |   #leave
+  0x1bf: 2054         |   rrmovl %ebp, %esp
+  0x1c1: b05f         |   popl %ebp
+  0x1c3: 90           |   ret
                       | ##################################################################
                       | # Keep the following label at the end of your function
-  0x1c1:              |   End:
+  0x1c4:              |   End:
                       | #/* $end ncopy-ys */
-  0x1c1:              | EndFun:
+  0x1c4:              | EndFun:
                       | 
                       | ###############################
                       | # Source and destination blocks 
                       | ###############################
   0x1c4:              | 	.align 4
   0x1c4:              | src:
-  0x1c4: 01000000     | 	.long 1
+  0x1c4: ffffffff     | 	.long -1
   0x1c8: 02000000     | 	.long 2
   0x1cc: fdffffff     | 	.long -3
-  0x1d0: fcffffff     | 	.long -4
+  0x1d0: 04000000     | 	.long 4
   0x1d4: 05000000     | 	.long 5
   0x1d8: 06000000     | 	.long 6
-  0x1dc: 07000000     | 	.long 7
-  0x1e0: 08000000     | 	.long 8
-  0x1e4: f7ffffff     | 	.long -9
+  0x1dc: f9ffffff     | 	.long -7
+  0x1e0: f8ffffff     | 	.long -8
+  0x1e4: 09000000     | 	.long 9
   0x1e8: f6ffffff     | 	.long -10
   0x1ec: f5ffffff     | 	.long -11
   0x1f0: 0c000000     | 	.long 12
   0x1f4: f3ffffff     | 	.long -13
-  0x1f8: f2ffffff     | 	.long -14
+  0x1f8: 0e000000     | 	.long 14
   0x1fc: 0f000000     | 	.long 15
-  0x200: 10000000     | 	.long 16
+  0x200: f0ffffff     | 	.long -16
   0x204: efffffff     | 	.long -17
-  0x208: 12000000     | 	.long 18
+  0x208: eeffffff     | 	.long -18
   0x20c: 13000000     | 	.long 19
   0x210: ecffffff     | 	.long -20
-  0x214: ebffffff     | 	.long -21
-  0x218: eaffffff     | 	.long -22
-  0x21c: e9ffffff     | 	.long -23
-  0x220: e8ffffff     | 	.long -24
+  0x214: 15000000     | 	.long 21
+  0x218: 16000000     | 	.long 22
+  0x21c: 17000000     | 	.long 23
+  0x220: 18000000     | 	.long 24
   0x224: 19000000     | 	.long 25
-  0x228: 1a000000     | 	.long 26
+  0x228: e6ffffff     | 	.long -26
   0x22c: e5ffffff     | 	.long -27
-  0x230: e4ffffff     | 	.long -28
+  0x230: 1c000000     | 	.long 28
   0x234: e3ffffff     | 	.long -29
-  0x238: e2ffffff     | 	.long -30
+  0x238: 1e000000     | 	.long 30
   0x23c: e1ffffff     | 	.long -31
-  0x240: 20000000     | 	.long 32
-  0x244: 21000000     | 	.long 33
-  0x248: deffffff     | 	.long -34
+  0x240: e0ffffff     | 	.long -32
+  0x244: dfffffff     | 	.long -33
+  0x248: 22000000     | 	.long 34
   0x24c: 23000000     | 	.long 35
   0x250: 24000000     | 	.long 36
-  0x254: 25000000     | 	.long 37
+  0x254: dbffffff     | 	.long -37
   0x258: daffffff     | 	.long -38
-  0x25c: d9ffffff     | 	.long -39
+  0x25c: 27000000     | 	.long 39
   0x260: 28000000     | 	.long 40
   0x264: 29000000     | 	.long 41
   0x268: d6ffffff     | 	.long -42
   0x26c: 2b000000     | 	.long 43
-  0x270: d4ffffff     | 	.long -44
-  0x274: d3ffffff     | 	.long -45
-  0x278: d2ffffff     | 	.long -46
+  0x270: 2c000000     | 	.long 44
+  0x274: 2d000000     | 	.long 45
+  0x278: 2e000000     | 	.long 46
   0x27c: d1ffffff     | 	.long -47
   0x280: d0ffffff     | 	.long -48
-  0x284: cfffffff     | 	.long -49
+  0x284: 31000000     | 	.long 49
   0x288: ceffffff     | 	.long -50
-  0x28c: 33000000     | 	.long 51
+  0x28c: cdffffff     | 	.long -51
   0x290: ccffffff     | 	.long -52
-  0x294: 35000000     | 	.long 53
-  0x298: caffffff     | 	.long -54
+  0x294: cbffffff     | 	.long -53
+  0x298: 36000000     | 	.long 54
   0x29c: c9ffffff     | 	.long -55
-  0x2a0: 38000000     | 	.long 56
-  0x2a4: 39000000     | 	.long 57
-  0x2a8: 3a000000     | 	.long 58
-  0x2ac: 3b000000     | 	.long 59
-  0x2b0: 3c000000     | 	.long 60
+  0x2a0: c8ffffff     | 	.long -56
+  0x2a4: c7ffffff     | 	.long -57
+  0x2a8: c6ffffff     | 	.long -58
+  0x2ac: c5ffffff     | 	.long -59
+  0x2b0: c4ffffff     | 	.long -60
   0x2b4: 3d000000     | 	.long 61
   0x2b8: 3e000000     | 	.long 62
   0x2bc: 3f000000     | 	.long 63

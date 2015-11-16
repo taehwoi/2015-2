@@ -8,7 +8,8 @@
 ## The file contains a declaration of the icodes
 ## for iaddl (IIADDL) and leave (ILEAVE).
 ## Your job is to add the rest of the logic to make it work
-
+##
+## descriptions are next to where IIADDL should be added.
 ####################################################################
 #    C Include's.  Don't alter these                               #
 ####################################################################
@@ -107,15 +108,18 @@ int ifun = [
 	1: imem_ifun;		# Default: get from instruction memory
 ];
 
+#IIADDL should be a valid instruction.
 bool instr_valid = icode in 
 	{ INOP, IHALT, IRRMOVL, IIRMOVL, IRMMOVL, IMRMOVL,
 	       IOPL, IJXX, ICALL, IRET, IPUSHL, IPOPL, IIADDL, ILEAVE};
 
+#one operand of IIADDL is a register.
 # Does fetched instruction require a regid byte?
 bool need_regids =
 	icode in { IRRMOVL, IOPL, IPUSHL, IPOPL, 
 		     IIRMOVL, IRMMOVL, IMRMOVL, IIADDL };
 
+#one operand of IIADDL is a constant.
 # Does fetched instruction require a constant word?
 bool need_valC =
 	icode in { IIRMOVL, IRMMOVL, IMRMOVL, IJXX, ICALL, IIADDL};
@@ -131,6 +135,7 @@ int srcA = [
 ];
 
 ## What register should be used as the B source?
+## IIADDL's B source is rB
 int srcB = [
 	icode in { IOPL, IRMMOVL, IMRMOVL, IIADDL  } : rB;
 	icode in { IPUSHL, IPOPL, ICALL, IRET } : RESP;
@@ -139,6 +144,7 @@ int srcB = [
 ];
 
 ## What register should be used as the E destination?
+## IIADDL's destination is rB.
 int dstE = [
 	icode in { IRRMOVL } && Cnd : rB;
 	icode in { IIRMOVL, IOPL, IIADDL} : rB;
@@ -155,6 +161,7 @@ int dstM = [
 
 ################ Execute Stage   ###################################
 
+## IIADDL: a constant value should go into input A of ALU.
 ## Select input A to ALU
 int aluA = [
 	icode in { IRRMOVL, IOPL} : valA;
@@ -164,6 +171,7 @@ int aluA = [
 	# Other instructions don't need ALU
 ];
 
+## IIADDL: value of rB should go into input B of ALU
 ## Select input B to ALU
 int aluB = [
 	icode in { IRMMOVL, IMRMOVL, IOPL, ICALL, 
@@ -178,6 +186,7 @@ int alufun = [
 	1 : ALUADD;
 ];
 
+## IIADDL should update condition since its an arithmetic operation
 ## Should the condition codes be updated?
 bool set_cc = icode in { IOPL, IIADDL };
 

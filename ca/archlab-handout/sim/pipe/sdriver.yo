@@ -29,7 +29,8 @@
                       | #   http://nadeausoftware.com/articles/2012/05/c_c_tip_how_copy_memory_quickly
                       | #
                       | # 1. Add IIADDL, and LEAVE instruction in the pipeline to merge 2 instructions to one.
-                      | #
+                      | #   But, didn't use leave although it reduces about 0.6CPE, just to follow instructions 
+                      | #   to not modify function epilogues.
                       | # 2. Since looping by 1 is expensive (increasing/decreasing pointers/length per iteration, doing boundary check per iteration...) copy N elements at once.
                       | #
                       | # 3. copying N elements at the same time can lead to uncopied elements if len % N != 0.
@@ -74,6 +75,7 @@
                       | 
   0x05c: c0f2ffffffff |   iaddl $-1,%edx # len==1? /* don't have to restore length */
   0x062: 73a0010000   |   je ONE # corner case
+                      | 
                       |   #odd length & more than 1
   0x067: 506300000000 |   mrmovl (%ebx), %esi #%esi = tmp
   0x06d: 406100000000 |   rmmovl %esi, (%ecx)
@@ -170,21 +172,23 @@
   0x1b9: b07f         |   popl %edi               # Restore callee-save registers
   0x1bb: b03f         |   popl %ebx
   0x1bd: b06f         |   popl %esi
-  0x1bf: d0           |   leave
-  0x1c0: 90           |   ret
+                      |   #leave
+  0x1bf: 2054         |   rrmovl %ebp, %esp
+  0x1c1: b05f         |   popl %ebp
+  0x1c3: 90           |   ret
                       | ##################################################################
                       | # Keep the following label at the end of your function
-  0x1c1:              |   End:
+  0x1c4:              |   End:
                       | #/* $end ncopy-ys */
-  0x1c1:              | EndFun:
+  0x1c4:              | EndFun:
                       | 
                       | ###############################
                       | # Source and destination blocks 
                       | ###############################
   0x1c4:              | 	.align 4
   0x1c4:              | src:
-  0x1c4: ffffffff     | 	.long -1
-  0x1c8: 02000000     | 	.long 2
+  0x1c4: 01000000     | 	.long 1
+  0x1c8: feffffff     | 	.long -2
   0x1cc: fdffffff     | 	.long -3
   0x1d0: 04000000     | 	.long 4
   0x1d4: fadebc00     | 	.long 0xbcdefa # This shouldn't get moved

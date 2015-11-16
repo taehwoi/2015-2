@@ -166,9 +166,9 @@ int gen_set_cc()
 
 int gen_e_valA()
 {
-    return ((((id_ex_curr->icode) == (I_RMMOVL)) & ((id_ex_curr->srca) == 
-          (ex_mem_curr->destm))) ? (mem_wb_next->valm) : (id_ex_curr->vala)
-      );
+    return (((((ex_mem_curr->icode) == (I_MRMOVL)) & ((id_ex_curr->icode)
+             == (I_RMMOVL))) & ((id_ex_curr->srca) == (ex_mem_curr->deste))
+        ) ? (mem_wb_next->valm) : (id_ex_curr->vala));
 }
 
 int gen_e_dstE()
@@ -286,12 +286,16 @@ int gen_M_stall()
 
 int gen_M_bubble()
 {
-    return 0;
+    return (((mem_wb_next->status) == (STAT_ADR) || (mem_wb_next->status)
+         == (STAT_INS) || (mem_wb_next->status) == (STAT_HLT)) | (
+        (mem_wb_curr->status) == (STAT_ADR) || (mem_wb_curr->status) == 
+        (STAT_INS) || (mem_wb_curr->status) == (STAT_HLT)));
 }
 
 int gen_W_stall()
 {
-    return 0;
+    return ((mem_wb_curr->status) == (STAT_ADR) || (mem_wb_curr->status)
+       == (STAT_INS) || (mem_wb_curr->status) == (STAT_HLT));
 }
 
 int gen_W_bubble()
