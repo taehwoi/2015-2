@@ -24,18 +24,30 @@
                       | # 2012-11114 TAEHWOI OUM.
                       | #
                       | # Describe how and why you modified the baseline code.
-                      | # 0. pushl %ebp once again to utilize 1 more registers
-                      | # 1. since looping is expensive, move 8 elements at once.
-                      | # --2. use cmove to add cnt.--
-                      | # 2. apparently, using cmove is expensive due to resetting inc to 0 everytime
-                      | #   just use jump-ifs -> no need to pushl %ebp??
-                      | #   or think of a way to use cmove efficiently
-                      | # 3. use a helper register to check even/odd of length -> this way, you don't have to check for array range every single time; twice.
-                      | # 4. what about cmove once and jump-if once?
-                      | # 5. TODO: check for mod 4 and deal cases smaller than 4 seperately
-                      | #   for cases bigger than 4, but not mod, subtract until mod 4 == 0
-                      | # 6. Not Do 5..? irmovl $1,R is much cheaper than $4,R .. wonder why
-                      | # 7. Use leave instead of two instructions
+                      | # 0. change structure of the loop according to assembly code resulting from 
+                      | #   GCC -O3. Using iterator i, or memcpy is faster when copying an array but will have to stick with pointer arithmetic because that's what Y86 have.
+                      | #   http://nadeausoftware.com/articles/2012/05/c_c_tip_how_copy_memory_quickly
+                      | #
+                      | # 1. Add IIADDL, and LEAVE instruction in the pipeline to merge 2 instructions to one.
+                      | #
+                      | # 2. Since looping by 1 is expensive (increasing/decreasing pointers/length per iteration, doing boundary check per iteration...) copy N elements at once.
+                      | #
+                      | # 3. copying N elements at the same time can lead to uncopied elements if len % N != 0.
+                      | #   So, decided to use 2 for N, and check for odd/even at the start of the function.
+                      | # 4. If length even, jump directly in to the loop that copies two elements at once.
+                      | #
+                      | # 5. When length is odd, decrement length, check CC,and jump to ONE, or
+                      | # will copy one element, and jump in to loop so that loop only has to check boundary once every two copies.  According to the benchmark, small cases(especially when len is 1) shows high CPE. So, when the length is 1, instead of copying one element and jumping in to loop, jump to ONE, where you won't have to handle length.
+                      | #
+                      | # 6. At first, used cmove to add 1 to count. However, using cmove requires push/popping one more register to stack since Y86 cmove only allows reg to reg, and to reset target register after you add. According to the benchmark using jumps and iiaddls are faster than cmoves and iraddls.
+                      | #
+                      | # 7. Tried increasing N to 4 or 8 and, jump to the corresponding loop, but failed to create a jump table. Also tried to handle cases where len%N == 1 ~ N-1.
+                      | # However, since pipe-full.hcl uses branch always taken strategy, too many case handling at the beginning of the function actually worsened performance. So, decided to copy 8 elements at once, and but still check boundary every two copies. (8 showed best performance, out of 2 4 8 16 32).
+                      | # 
+                      | # 8. Since pipeline assumes branch taken, jump to the next loop before jumping to Done, # because jumping to Done will only happen once per array.
+                      | #
+                      | #--This resulted in CPE of 10.56, and after many trial and errors, decided that this was
+                      | # the best I could achieve by modifying Ncopy.
                       | ##################################################################
                       | # Do not modify this portion
                       | # Function prologue.
@@ -53,25 +65,23 @@
                       | # You can modify this portion
                       | # small cases -> hard coding??
                       | # Loop header
-  0x046: 30f764000000 |   irmovl $100, %edi #useful helper reg
-                      |   #xorl %edi, %edi
-                      |   #iaddl $3, %edi
+  0x046: 30f701000000 |   irmovl $1, %edi #useful helper reg
   0x04c: 6300         |   xorl %eax, %eax #cnt = 0
   0x04e: 6222         |   andl %edx, %edx   # len <= 0?
   0x050: 71b9010000   |   jle Done    # if so, goto Done:
-  0x055: 6227         |   andl %edx, %edi   # len even?
+  0x055: 6227         |   andl %edx, %edi   # len even? /*doesn't modify length -> no need to restore */
   0x057: 738c000000   |   je Loop0 #is even (%ebp == 0)
                       | 
-  0x05c: c0f2ffffffff |   iaddl $-1,%edx # len==1?
-  0x062: 73a0010000   |   je One
+  0x05c: c0f2ffffffff |   iaddl $-1,%edx # len==1? /* don't have to restore length */
+  0x062: 73a0010000   |   je ONE # corner case
                       |   #odd length & more than 1
   0x067: 506300000000 |   mrmovl (%ebx), %esi #%esi = tmp
   0x06d: 406100000000 |   rmmovl %esi, (%ecx)
   0x073: c0f304000000 |   iaddl $4, %ebx
   0x079: c0f104000000 |   iaddl $4, %ecx
-  0x07f: 6266         |   andl %esi, %esi #esi <= 0?
-  0x081: 718c000000   |   jle Loop0
-  0x086: c0f001000000 |   iaddl $1, %eax
+  0x07f: 6266         |   andl %esi, %esi #tmp <= 0?
+  0x081: 718c000000   |   jle Loop0 #tmp <= 0
+  0x086: c0f001000000 |   iaddl $1, %eax #tmp > 0
                       | 
   0x08c:              | Loop0: #sub by 2
   0x08c: 506300000000 |   mrmovl (%ebx), %esi #tmp
@@ -88,8 +98,8 @@
   0x0b8: c0f001000000 |   iaddl $1, %eax
   0x0be:              | Loop0check:
   0x0be: c0f2feffffff |   iaddl $-2, %edx #len-=2
-  0x0c4: 76ce000000   |   jg Loop1 #edx >=2 more likely to continue
-  0x0c9: 73b9010000   |   je Done #edx ==0
+  0x0c4: 76ce000000   |   jg Loop1 #len >=2 more likely to continue
+  0x0c9: 73b9010000   |   je Done #len ==0
                       | 
   0x0ce:              | Loop1:
   0x0ce: 506308000000 |   mrmovl 8(%ebx), %esi #tmp
@@ -105,8 +115,8 @@
   0x0fa: c0f001000000 |   iaddl $1, %eax
   0x100:              | Loop1check:
   0x100: c0f2feffffff |   iaddl $-2, %edx #len-=2
-  0x106: 7610010000   |   jg Loop2 #edx >=2 
-  0x10b: 73b9010000   |   je Done #edx ==0
+  0x106: 7610010000   |   jg Loop2 #len >=2 
+  0x10b: 73b9010000   |   je Done #len ==0
                       | 
   0x110:              | Loop2:
   0x110: 506310000000 |   mrmovl 16(%ebx), %esi #tmp
@@ -122,8 +132,8 @@
   0x13c: c0f001000000 |   iaddl $1, %eax
   0x142:              | Loop2check:
   0x142: c0f2feffffff |   iaddl $-2, %edx #len-=2
-  0x148: 7652010000   |   jg Loop3 #edx >=2
-  0x14d: 73b9010000   |   je Done #edx ==0
+  0x148: 7652010000   |   jg Loop3 #len >=2
+  0x14d: 73b9010000   |   je Done #len ==0
                       | 
   0x152:              | Loop3:
   0x152: 506318000000 |   mrmovl 24(%ebx), %esi #tmp
@@ -144,10 +154,10 @@
   0x18a: c0f120000000 |   iaddl $32, %ecx
   0x190: c0f2feffffff |   iaddl $-2, %edx #len-=2
                       | 
-  0x196: 768c000000   |   jg Loop0 #edx > 2
-  0x19b: 73b9010000   |   je Done #edx ==0
+  0x196: 768c000000   |   jg Loop0 #len > 2
+  0x19b: 73b9010000   |   je Done #len ==0
                       | 
-  0x1a0:              | One: #no need to handle length
+  0x1a0:              | ONE: #no need to handle length
   0x1a0: 506300000000 |   mrmovl (%ebx), %esi #%esi = tmp
   0x1a6: 406100000000 |   rmmovl %esi, (%ecx)
   0x1ac: 6266         |   andl %esi, %esi #esi <= 0?
@@ -174,68 +184,68 @@
   0x1c4:              | 	.align 4
   0x1c4:              | src:
   0x1c4: 01000000     | 	.long 1
-  0x1c8: feffffff     | 	.long -2
-  0x1cc: 03000000     | 	.long 3
+  0x1c8: 02000000     | 	.long 2
+  0x1cc: fdffffff     | 	.long -3
   0x1d0: fcffffff     | 	.long -4
-  0x1d4: fbffffff     | 	.long -5
-  0x1d8: faffffff     | 	.long -6
+  0x1d4: 05000000     | 	.long 5
+  0x1d8: 06000000     | 	.long 6
   0x1dc: 07000000     | 	.long 7
   0x1e0: 08000000     | 	.long 8
   0x1e4: f7ffffff     | 	.long -9
-  0x1e8: 0a000000     | 	.long 10
-  0x1ec: 0b000000     | 	.long 11
-  0x1f0: f4ffffff     | 	.long -12
+  0x1e8: f6ffffff     | 	.long -10
+  0x1ec: f5ffffff     | 	.long -11
+  0x1f0: 0c000000     | 	.long 12
   0x1f4: f3ffffff     | 	.long -13
   0x1f8: f2ffffff     | 	.long -14
   0x1fc: 0f000000     | 	.long 15
-  0x200: f0ffffff     | 	.long -16
+  0x200: 10000000     | 	.long 16
   0x204: efffffff     | 	.long -17
-  0x208: eeffffff     | 	.long -18
+  0x208: 12000000     | 	.long 18
   0x20c: 13000000     | 	.long 19
-  0x210: 14000000     | 	.long 20
+  0x210: ecffffff     | 	.long -20
   0x214: ebffffff     | 	.long -21
-  0x218: 16000000     | 	.long 22
-  0x21c: 17000000     | 	.long 23
-  0x220: 18000000     | 	.long 24
+  0x218: eaffffff     | 	.long -22
+  0x21c: e9ffffff     | 	.long -23
+  0x220: e8ffffff     | 	.long -24
   0x224: 19000000     | 	.long 25
-  0x228: e6ffffff     | 	.long -26
-  0x22c: 1b000000     | 	.long 27
+  0x228: 1a000000     | 	.long 26
+  0x22c: e5ffffff     | 	.long -27
   0x230: e4ffffff     | 	.long -28
   0x234: e3ffffff     | 	.long -29
-  0x238: 1e000000     | 	.long 30
-  0x23c: 1f000000     | 	.long 31
-  0x240: e0ffffff     | 	.long -32
+  0x238: e2ffffff     | 	.long -30
+  0x23c: e1ffffff     | 	.long -31
+  0x240: 20000000     | 	.long 32
   0x244: 21000000     | 	.long 33
-  0x248: 22000000     | 	.long 34
+  0x248: deffffff     | 	.long -34
   0x24c: 23000000     | 	.long 35
   0x250: 24000000     | 	.long 36
   0x254: 25000000     | 	.long 37
   0x258: daffffff     | 	.long -38
-  0x25c: 27000000     | 	.long 39
-  0x260: d8ffffff     | 	.long -40
+  0x25c: d9ffffff     | 	.long -39
+  0x260: 28000000     | 	.long 40
   0x264: 29000000     | 	.long 41
-  0x268: 2a000000     | 	.long 42
-  0x26c: d5ffffff     | 	.long -43
+  0x268: d6ffffff     | 	.long -42
+  0x26c: 2b000000     | 	.long 43
   0x270: d4ffffff     | 	.long -44
-  0x274: 2d000000     | 	.long 45
-  0x278: 2e000000     | 	.long 46
+  0x274: d3ffffff     | 	.long -45
+  0x278: d2ffffff     | 	.long -46
   0x27c: d1ffffff     | 	.long -47
   0x280: d0ffffff     | 	.long -48
   0x284: cfffffff     | 	.long -49
-  0x288: 32000000     | 	.long 50
-  0x28c: cdffffff     | 	.long -51
+  0x288: ceffffff     | 	.long -50
+  0x28c: 33000000     | 	.long 51
   0x290: ccffffff     | 	.long -52
-  0x294: cbffffff     | 	.long -53
-  0x298: 36000000     | 	.long 54
-  0x29c: 37000000     | 	.long 55
-  0x2a0: c8ffffff     | 	.long -56
+  0x294: 35000000     | 	.long 53
+  0x298: caffffff     | 	.long -54
+  0x29c: c9ffffff     | 	.long -55
+  0x2a0: 38000000     | 	.long 56
   0x2a4: 39000000     | 	.long 57
   0x2a8: 3a000000     | 	.long 58
-  0x2ac: c5ffffff     | 	.long -59
-  0x2b0: c4ffffff     | 	.long -60
-  0x2b4: c3ffffff     | 	.long -61
-  0x2b8: c2ffffff     | 	.long -62
-  0x2bc: c1ffffff     | 	.long -63
+  0x2ac: 3b000000     | 	.long 59
+  0x2b0: 3c000000     | 	.long 60
+  0x2b4: 3d000000     | 	.long 61
+  0x2b8: 3e000000     | 	.long 62
+  0x2bc: 3f000000     | 	.long 63
   0x2c0: fadebc00     | 	.long 0xbcdefa # This shouldn't get moved
                       | 
   0x2d0:              | 	.align 16

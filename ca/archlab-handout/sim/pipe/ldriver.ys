@@ -24,18 +24,30 @@ StartFun:
 # 2012-11114 TAEHWOI OUM.
 #
 # Describe how and why you modified the baseline code.
-# 0. pushl %ebp once again to utilize 1 more registers
-# 1. since looping is expensive, move 8 elements at once.
-# --2. use cmove to add cnt.--
-# 2. apparently, using cmove is expensive due to resetting inc to 0 everytime
-#   just use jump-ifs -> no need to pushl %ebp??
-#   or think of a way to use cmove efficiently
-# 3. use a helper register to check even/odd of length -> this way, you don't have to check for array range every single time; twice.
-# 4. what about cmove once and jump-if once?
-# 5. TODO: check for mod 4 and deal cases smaller than 4 seperately
-#   for cases bigger than 4, but not mod, subtract until mod 4 == 0
-# 6. Not Do 5..? irmovl $1,R is much cheaper than $4,R .. wonder why
-# 7. Use leave instead of two instructions
+# 0. change structure of the loop according to assembly code resulting from 
+#   GCC -O3. Using iterator i, or memcpy is faster when copying an array but will have to stick with pointer arithmetic because that's what Y86 have.
+#   http://nadeausoftware.com/articles/2012/05/c_c_tip_how_copy_memory_quickly
+#
+# 1. Add IIADDL, and LEAVE instruction in the pipeline to merge 2 instructions to one.
+#
+# 2. Since looping by 1 is expensive (increasing/decreasing pointers/length per iteration, doing boundary check per iteration...) copy N elements at once.
+#
+# 3. copying N elements at the same time can lead to uncopied elements if len % N != 0.
+#   So, decided to use 2 for N, and check for odd/even at the start of the function.
+# 4. If length even, jump directly in to the loop that copies two elements at once.
+#
+# 5. When length is odd, decrement length, check CC,and jump to ONE, or
+# will copy one element, and jump in to loop so that loop only has to check boundary once every two copies.  According to the benchmark, small cases(especially when len is 1) shows high CPE. So, when the length is 1, instead of copying one element and jumping in to loop, jump to ONE, where you won't have to handle length.
+#
+# 6. At first, used cmove to add 1 to count. However, using cmove requires push/popping one more register to stack since Y86 cmove only allows reg to reg, and to reset target register after you add. According to the benchmark using jumps and iiaddls are faster than cmoves and iraddls.
+#
+# 7. Tried increasing N to 4 or 8 and, jump to the corresponding loop, but failed to create a jump table. Also tried to handle cases where len%N == 1 ~ N-1.
+# However, since pipe-full.hcl uses branch always taken strategy, too many case handling at the beginning of the function actually worsened performance. So, decided to copy 8 elements at once, and but still check boundary every two copies. (8 showed best performance, out of 2 4 8 16 32).
+# 
+# 8. Since pipeline assumes branch taken, jump to the next loop before jumping to Done, # because jumping to Done will only happen once per array.
+#
+#--This resulted in CPE of 10.56, and after many trial and errors, decided that this was
+# the best I could achieve by modifying Ncopy.
 ##################################################################
 # Do not modify this portion
 # Function prologue.
@@ -53,25 +65,23 @@ ncopy:
 # You can modify this portion
 # small cases -> hard coding??
 # Loop header
-  irmovl $100, %edi #useful helper reg
-  #xorl %edi, %edi
-  #iaddl $3, %edi
+  irmovl $1, %edi #useful helper reg
   xorl %eax, %eax #cnt = 0
   andl %edx, %edx   # len <= 0?
   jle Done    # if so, goto Done:
-  andl %edx, %edi   # len even?
+  andl %edx, %edi   # len even? /*doesn't modify length -> no need to restore */
   je Loop0 #is even (%ebp == 0)
 
-  iaddl $-1,%edx # len==1?
-  je One
+  iaddl $-1,%edx # len==1? /* don't have to restore length */
+  je ONE # corner case
   #odd length & more than 1
   mrmovl (%ebx), %esi #%esi = tmp
   rmmovl %esi, (%ecx)
   iaddl $4, %ebx
   iaddl $4, %ecx
-  andl %esi, %esi #esi <= 0?
-  jle Loop0
-  iaddl $1, %eax
+  andl %esi, %esi #tmp <= 0?
+  jle Loop0 #tmp <= 0
+  iaddl $1, %eax #tmp > 0
 
 Loop0: #sub by 2
   mrmovl (%ebx), %esi #tmp
@@ -88,8 +98,8 @@ Loop0half:
   iaddl $1, %eax
 Loop0check:
   iaddl $-2, %edx #len-=2
-  jg Loop1 #edx >=2 more likely to continue
-  je Done #edx ==0
+  jg Loop1 #len >=2 more likely to continue
+  je Done #len ==0
 
 Loop1:
   mrmovl 8(%ebx), %esi #tmp
@@ -105,8 +115,8 @@ Loop1half:
   iaddl $1, %eax
 Loop1check:
   iaddl $-2, %edx #len-=2
-  jg Loop2 #edx >=2 
-  je Done #edx ==0
+  jg Loop2 #len >=2 
+  je Done #len ==0
 
 Loop2:
   mrmovl 16(%ebx), %esi #tmp
@@ -122,8 +132,8 @@ Loop2half:
   iaddl $1, %eax
 Loop2check:
   iaddl $-2, %edx #len-=2
-  jg Loop3 #edx >=2
-  je Done #edx ==0
+  jg Loop3 #len >=2
+  je Done #len ==0
 
 Loop3:
   mrmovl 24(%ebx), %esi #tmp
@@ -144,10 +154,10 @@ Loop3check:
   iaddl $32, %ecx
   iaddl $-2, %edx #len-=2
 
-  jg Loop0 #edx > 2
-  je Done #edx ==0
+  jg Loop0 #len > 2
+  je Done #len ==0
 
-One: #no need to handle length
+ONE: #no need to handle length
   mrmovl (%ebx), %esi #%esi = tmp
   rmmovl %esi, (%ecx)
   andl %esi, %esi #esi <= 0?
@@ -174,68 +184,68 @@ EndFun:
 	.align 4
 src:
 	.long 1
-	.long -2
-	.long 3
+	.long 2
+	.long -3
 	.long -4
-	.long -5
-	.long -6
+	.long 5
+	.long 6
 	.long 7
 	.long 8
 	.long -9
-	.long 10
-	.long 11
-	.long -12
+	.long -10
+	.long -11
+	.long 12
 	.long -13
 	.long -14
 	.long 15
-	.long -16
+	.long 16
 	.long -17
-	.long -18
+	.long 18
 	.long 19
-	.long 20
+	.long -20
 	.long -21
-	.long 22
-	.long 23
-	.long 24
+	.long -22
+	.long -23
+	.long -24
 	.long 25
-	.long -26
-	.long 27
+	.long 26
+	.long -27
 	.long -28
 	.long -29
-	.long 30
-	.long 31
-	.long -32
+	.long -30
+	.long -31
+	.long 32
 	.long 33
-	.long 34
+	.long -34
 	.long 35
 	.long 36
 	.long 37
 	.long -38
-	.long 39
-	.long -40
+	.long -39
+	.long 40
 	.long 41
-	.long 42
-	.long -43
+	.long -42
+	.long 43
 	.long -44
-	.long 45
-	.long 46
+	.long -45
+	.long -46
 	.long -47
 	.long -48
 	.long -49
-	.long 50
-	.long -51
+	.long -50
+	.long 51
 	.long -52
-	.long -53
-	.long 54
-	.long 55
-	.long -56
+	.long 53
+	.long -54
+	.long -55
+	.long 56
 	.long 57
 	.long 58
-	.long -59
-	.long -60
-	.long -61
-	.long -62
-	.long -63
+	.long 59
+	.long 60
+	.long 61
+	.long 62
+	.long 63
 	.long 0xbcdefa # This shouldn't get moved
 
 	.align 16
