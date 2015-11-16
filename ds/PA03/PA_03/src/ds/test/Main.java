@@ -26,24 +26,26 @@ public class Main {
 			case MERGE:
 				Player1 = i_scanner.nextInt();
 				Player2 = i_scanner.nextInt();
-				// fill your code
-
+        if (Game.Merge(Player1,Player2)) //Merge Success?
+          System.out.printf("MERGE: %d %d\n",Player1,Player2);
+        else
+          System.out.println("Merge Failed");
 				break;
 			case LOGIN:
 				Player1 = i_scanner.nextInt();
 				Power = i_scanner.nextInt();
-				// fill your code
-
-				break;
+        Game.Login(Player1,Power);
+        System.out.printf("LOGIN: %d\n", Player1);
+        break;
 			case PRINTLEADER:
 				Player1 = i_scanner.nextInt();
-				// fill your code				
-				
+        System.out.print("LEADER: ");
+        System.out.println(Game.PrintLeader(Player1));
 				break;
 			case PRINTPOWER:
 				Player1 = i_scanner.nextInt();
-				// fill your code
-
+        System.out.print("POWER: ");
+        System.out.println(Game.PrintPower(Player1));
 				break;
 			}
 
