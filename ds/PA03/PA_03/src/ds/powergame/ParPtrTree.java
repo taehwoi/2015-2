@@ -11,18 +11,24 @@ public class ParPtrTree {
 
 	/** Determine if nodes are in different trees */
 	public boolean differ(int a, int b) {
+    Integer root1 = find(array[a]);
+    Integer root2 = find(array[b]);
 		// fill your code
-		return true;
+		return root1 != root2;
 	}
 
 	/** Merge two subtrees */
-	public void UNION(int a, int b) {
+	public void union(int a, int b) {
+    Integer root1 = find(a);
+    Integer root2 = find(b);
+    if (root1 != root2)
+      array[root2]=root1; //FIXME
 		// fill your code
 	}
 
-	public Integer FIND(Integer curr) {
-		// fill your code
-		// must use path compression
-		return 0;
+	public Integer find(Integer curr) {
+    if (array[curr] == null) return curr;
+    array[curr] = find(array[curr]);
+    return array[curr];
 	}
 }
