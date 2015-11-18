@@ -12,13 +12,12 @@ else
   ocamlc commonGrade.ml
   for ((i=$1;i<=x;i++))
   do 
-    if [ ! -f ./hw6_"$i".ml ]; then
+    if [ ! -f ./hw*_"$i".ml ]; then
       echo "File not found!"
-      break
     else
-      ocamlc hw6_"$i".ml
-      ocaml commonGrade.cmo hw6_"$i".cmo hw6_"$i"_selfgrader.ml
-      rm -rf hw6_"$i".cm{o,i} 
+      ocamlc hw*_"$i".ml
+      ocaml commonGrade.cmo hw*_"$i".cmo hw*_"$i"_selfgrader.ml
+      rm -rf hw*_"$i".cm{o,i} 
     fi
   done
 fi
