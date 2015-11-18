@@ -17,7 +17,7 @@ else
     else
       ocamlc hw*_"$i".ml
       ocaml commonGrade.cmo hw*_"$i".cmo hw*_"$i"_selfgrader.ml
-      rm -rf hw*_"$i".cm{o,i} 
+      rm -rf hw*_"$i".cm{o,i} a.out
     fi
   done
 fi
