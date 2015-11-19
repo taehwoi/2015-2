@@ -25,31 +25,34 @@ public class Main {
 			int value = 0;
 			int k = 0;
 			String type = null;
+      final String ERROR = "The value does not exist";
 			
 			switch(getCommandNum(cmd)){
 			case ADD:
 				value = i_scanner.nextInt();
-								
-				// fill your code			
-				
+        sorter.add(value);
+        System.out.println("ADD: " + value);
 				break;
+
 			case REMOVE:
 				value = i_scanner.nextInt();
-				
-				// fill your code
-				
+        if (sorter.remove(value))
+          System.out.println("REMOVE: " + value);
+        else
+          System.out.println(ERROR);
 				break;
+
 			case SORT:
 				type = i_scanner.next();
-				
-				// fill your code
-				
+        sorter.sort(type);
+        System.out.println(sorter);
 				break;
 				
 			case TOP:
 				
 				k = i_scanner.nextInt();
 				type = i_scanner.next();
+        System.out.println(sorter.top(k,type));
 								
 				// fill your code
 				
