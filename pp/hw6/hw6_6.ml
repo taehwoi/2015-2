@@ -12,3 +12,4 @@ let rec checkMetro (m:metro): bool =
       | AREA (n,m) -> helper m (n::al)
       | CONNECT (m0,m1) -> helper m0 al && helper m1 al
   in helper m []
+
