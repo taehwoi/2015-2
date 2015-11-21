@@ -38,4 +38,4 @@ let rec drop (t: tourna) (d: team): string =
       else if drop t_r d = ""
       then drop t_l d 
       else 
-        String.concat "" ["("; (drop t_l d); " "; (drop t_r d); ")"]
+        "(" ^ (drop t_l d) ^ " " ^ (drop t_r d) ^ ")"
