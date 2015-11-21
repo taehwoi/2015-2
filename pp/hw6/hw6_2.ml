@@ -27,5 +27,5 @@ let string_of_team (t: team) =
 
 let rec parenize (t: tourna): string =
   match t with
-  | LEAF n -> (string_of_team n)
-  | NODE (t_l, t_r) -> String.concat "" ["("; parenize t_l; " "; parenize t_r; ")"]
+  | LEAF n -> string_of_team n
+  | NODE (t_l, t_r) -> "(" ^ parenize t_l ^ " " ^ parenize t_r ^ ")"
