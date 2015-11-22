@@ -46,15 +46,17 @@ let rec exeval (p:pgm) (st:state): state list =
           match l with
           | [] -> []
           | (f,s)::t -> 
-              if f then
+              if true=f then
               [(f,s)] else
               (helper c1 s) @ (a st t) in (List.sort_uniq compare (a st new_st_l))
     | REPEAT c -> 
-        let rec rep (st:state) (n:int): ((fin * state) list) =
-          if (n>300 || (rep_N c st n) = (rep_N c st (n+1))) then
-            (List.sort_uniq compare (rep_N c st n)@(helper c st)) else
-            (List.sort_uniq compare (rep_N c st n)@(rep st (n + 1))) in
-        (List.sort_uniq compare (rep st 0))
+        let rec rep (st:state) (n:int) (cur: ((fin * state) list)) :((fin * state) list) =
+          if (List.sort_uniq compare cur) = (List.sort_uniq compare (rep_N c st (n+1) @ cur)) then
+            cur else 
+              let newcur = (List.sort_uniq compare cur @ rep_N c st (n+1)) in
+              (rep st (n+1) newcur) in
+
+        (List.sort_uniq compare (rep st 0 (rep_N c st 0)))
     | EQ (exp, c) -> 
         if st = exp_eval exp st then
           helper c st else
