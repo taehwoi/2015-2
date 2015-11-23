@@ -31,13 +31,13 @@ public class Main {
 			case ADD:
 				value = i_scanner.nextInt();
         sorter.add(value);
-        System.out.println("ADD: " + value);
+        System.out.print("ADD: " + value + "\n");
 				break;
 
 			case REMOVE:
 				value = i_scanner.nextInt();
         if (sorter.remove(value))
-          System.out.println("REMOVE: " + value);
+          System.out.print("REMOVE: "+ value + "\n");
         else
           System.out.println(ERROR);
 				break;
@@ -45,6 +45,7 @@ public class Main {
 			case SORT:
 				type = i_scanner.next();
         sorter.sort(type);
+        System.out.print("SORT: ");
         System.out.println(sorter);
 				break;
 				
@@ -52,6 +53,7 @@ public class Main {
 				
 				k = i_scanner.nextInt();
 				type = i_scanner.next();
+        System.out.print("TOP: ");
         System.out.println(sorter.top(k,type));
 								
 				// fill your code
@@ -66,13 +68,13 @@ public class Main {
 	}
 	
 	private static int getCommandNum(String cmd){
-		if(cmd.equals("add"))
+    if (cmd.charAt(0) == 'a') 
 			return ADD;
-		if(cmd.equals("remove"))
+    if (cmd.charAt(0) == 'r') 
 			return REMOVE;
-		else if(cmd.equals("sort"))
+    if (cmd.charAt(0) == 's') 
 			return SORT;
-		else if(cmd.equals("top"))
+    if (cmd.charAt(0) == 't') 
 			return TOP;
 		else 
 			return ERROR;
