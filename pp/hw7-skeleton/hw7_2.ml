@@ -21,10 +21,10 @@ module SkiLiquid : SKI = struct
   let rec react: liquid -> liquid =
     let rec helper (l: liquid) : liquid =
       match l with
-      | M (I,e) -> e
-      | M ((M (K,e0)), e1) -> e0
-      | M ((M ((M (S,e0)), e1)), e2) -> (M ((M (e0, e2)), (M (e1, e2))))
-      | M (l0,l1) -> M ((helper l0), (helper l1))
+      | M (I, e) -> e
+      | M ((M (K, e0)), e1) -> e0
+      | M ((M ((M (S, e0)), e1)), e2) -> (M ((M (e0, e2)), (M (e1, e2))))
+      | M (l0, l1) -> M ((helper l0), (helper l1))
       | _ -> l in
     fun l ->
       if l = helper l 
@@ -38,7 +38,7 @@ module SkiLiquid : SKI = struct
       | K -> "K"
       | I -> "I"
       | V var -> var
-      | M (l0,l1) -> "(" ^ (pprint l0) ^" "^ (pprint l1) ^ ")" 
+      | M (l0,l1) -> "("^(pprint l0)^" "^(pprint l1)^")" 
 
 let _ = print_endline (pprint (react 
   (M (M ((M (S,K)), I), V "y"))
