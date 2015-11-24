@@ -24,7 +24,7 @@ module SkiLiquid : SKI = struct
       | M (I,e) -> e
       | M ((M (K,e0)), e1) -> e0
       | M ((M ((M (S,e0)), e1)), e2) -> (M ((M (e0, e2)), (M (e1, e2))))
-      | M (a,b) -> M ((helper a), (helper b))
+      | M (l0,l1) -> M ((helper l0), (helper l1))
       | _ -> l in
     fun l ->
       if l = helper l 
@@ -41,7 +41,23 @@ module SkiLiquid : SKI = struct
       | M (l0,l1) -> "(" ^ (pprint l0) ^" "^ (pprint l1) ^ ")" 
 
 let _ = print_endline (pprint (react 
-  (M (M ((M (S,K)), I), V "x"))
+  (M (M ((M (S,K)), I), V "y"))
+))
+let _ = print_endline (pprint (react 
+  (M (M ((M (S,K)), I), K))
+))
+let _ = print_endline (pprint (react 
+  (M (M ((M (S,V "K")), V "B"), V "ILL"))
+))
+let _ = print_endline (pprint (react 
+  (M (M (M (M (I,K), K), (M (S,S))), (M (V "I", (M (S, S))))))
+))
+let _ = print_endline (pprint (react 
+   (M ((M ((M (S, (M (I,I)))), I)), (M (M (I,I), (M (V "up",V "down"))))))
+))
+
+let _ = print_endline (pprint (react 
+   (M ((M ((M ( (M ((I, (M (K, V "I"))))), (M ((M (S, I)), I) ))), V "SEOUL")), V "U"))
 ))
 
 
