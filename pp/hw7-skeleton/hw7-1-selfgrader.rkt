@@ -21,4 +21,20 @@
                                                  ))))
 
 
-
+(sgoutput (lambda () (equal? #f (bstree-add-elmt t1 1 "v2"))))
+(sgoutput (lambda () (equal? #t (bstree-add-elmt t1 5 "v0"))))
+(sgoutput (lambda () (equal? #f (bstree-add-elmt t1 10 "v0"))))
+(sgoutput (lambda () (equal? #f (bstree-add-elmt t1 6 "v2"))))
+(sgoutput (lambda () (equal? #f (bstree-add-elmt t1 4 "v2"))))
+(sgoutput (lambda () (equal? #f (bstree-add-elmt t1 -5 "v2"))))
+(sgoutput (lambda () (equal? #f (bstree-add-elmt t1 7 "v2"))))
+(sgoutput (lambda () (equal? #f (bstree-add-elmt t1 3 "v2"))))
+(sgoutput (lambda () (equal? "v0" (case-sum (lambda (x) x)
+                                            (lambda (u) "nothing")
+                                            (bstree-find-elmt t1 5)
+                                            ))))
+(sgoutput (lambda () (equal? #t (bstree-del-elmt t1 7))))
+(sgoutput (lambda () (equal? #t (bstree-del-elmt t1 -5))))
+(sgoutput (lambda () (equal? #f (bstree-del-elmt t1 7))))
+(sgoutput (lambda () (equal? #f (bstree-del-elmt t1 -5))))
+(sgoutput (lambda () (equal? #f (bstree-add-elmt t1 -6 "hi"))))
