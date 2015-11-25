@@ -10,33 +10,62 @@
 ; tree should look like this:
 ; ((k,v) (left tree) (right tree))
 (define bstree '())
-(define (get-left s)
-  (case-sum
-   (lambda (v) v)
-   (lambda (v) 'not-left)
-   s))
+
+(define (node k v)
+  (mcons (cons k v) (mcons null null)))
 
 (define (bstree-make)
-  (set! bstree 
-    (mcons '() (mcons (inl null) (inr null)))))
+    (mcons (cons null null) (mcons null null)))
 
-(define (left-child node) ;node -> tree
-  (mcar (mcdr node))
-  )
-(define (right-child node) ;node -> tree
-  (mcdr (mcdr node))
-  )
+(define (root bst)
+  (mcar bst))
+(define (node-key node)
+  (car node))
+(define (node-val node)
+  (cdr node))
+(define (left-tree t) ;tree -> tree
+  (mcar (mcdr t)))
+(define (right-tree t) ;node -> tree
+  (mcdr (mcdr t)))
 
 (define (bstree-add-elmt t k v)
-  'TODO)
-
-(define (bstree-del-elmt t k)
-  'TODO)
+  (if (equal? null (node-key (root t)))
+    (let ()
+      (set-mcar! t (cons k v))
+      #f)
+      (if (> (car (root t)) k)
+        (let ()
+          (if (equal? (left-tree t) null)
+            (set-mcar! (mcdr t) (node k v))
+            (bstree-add-elmt (left-tree t) k v)))
+        (let ()
+          (if (equal? (right-tree t) null)
+            (set-mcdr! (mcdr t) (node k v))
+            (bstree-add-elmt (right-tree t) k v))))))
 
 (define (bstree-find-elmt t k)
-  'TODO)
+  (if (equal? null t)
+    (inr 'FAIL)
+    (if (equal? k (node-key (root t)))
+      (inl (node-val (root t)))
+      (if (< k (node-key (root t)))
+        (bstree-find-elmt (left-tree t) k)
+        (bstree-find-elmt (right-tree t) k)))))
 
-(bstree-make)
-bstree
-(right-child bstree)
-;test -> set bstree's right element to 3
+(define (bstree-del-elmt t k)
+  (if (equal? null t)
+    #f
+    (if (equal? k (node-key (root t)))
+      (inl (node-val (root t)))
+      (if (< k (node-key (root t)))
+        (bstree-del-elmt (left-tree t) k)
+        (bstree-del-elmt (right-tree t) k)))))
+
+(define bst (bstree-make))
+bst
+(bstree-add-elmt bst 3 "hi")
+bst
+(bstree-add-elmt bst 2 "gee")
+(bstree-add-elmt bst 5 "he")
+(bstree-add-elmt bst -1 "she")
+bst
