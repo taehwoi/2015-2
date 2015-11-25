@@ -39,3 +39,4 @@ module SkiLiquid : SKI = struct
       | I -> "I"
       | V var -> var
       | M (l0,l1) -> "("^(pprint l0)^" "^(pprint l1)^")" 
+end
