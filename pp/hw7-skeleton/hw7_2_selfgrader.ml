@@ -69,3 +69,45 @@ let _ = output (fun () ->
             Ski.K), 
         Ski.S )) 
 )))))))
+
+let _ = output (fun () ->
+  "y" =
+  (Ski.pprint 
+    (Ski.react
+  (Ski.M (Ski.M ((Ski.M (Ski.S,Ski.K)), Ski.I), Ski.V "y"))
+)))
+
+let _ = output (fun () ->
+  "K" =
+  (Ski.pprint 
+    (Ski.react
+      (Ski.M (Ski.M ((Ski.M (Ski.S,Ski.K)), Ski.I), Ski.K))
+)))
+
+let _ = output (fun () ->
+  "((K ILL) (B ILL))" =
+  (Ski.pprint 
+    (Ski.react
+      (Ski.M (Ski.M ((Ski.M (Ski.S,Ski.V "K")), Ski.V "B"), Ski.V "ILL"))
+)))
+
+let _ = output (fun () ->
+  "(K (I (S S)))" =
+  (Ski.pprint 
+    (Ski.react
+      (Ski.M (Ski.M (Ski.M (Ski.M (Ski.I,Ski.K), Ski.K), (Ski.M (Ski.S,Ski.S))), (Ski.M (Ski.V "I", (Ski.M (Ski.S, Ski.S))))))
+)))
+
+let _ = output (fun () ->
+  "((up down) (up down))" =
+  (Ski.pprint 
+    (Ski.react
+     (Ski.M ((Ski.M ((Ski.M (Ski.S, (Ski.M (Ski.I,Ski.I)))), Ski.I)), (Ski.M (Ski.M (Ski.I,Ski.I), (Ski.M (Ski.V "up",Ski.V "down"))))))
+)))
+
+let _ = output (fun () ->
+  "((I SEOUL) U)" =
+  (Ski.pprint 
+    (Ski.react
+   (Ski.M ((Ski.M ((Ski.M ( (Ski.M ((Ski.I, (Ski.M (Ski.K, Ski.V "I"))))), (Ski.M ((Ski.M (Ski.S, Ski.I)), Ski.I) ))), Ski.V "SEOUL")), Ski.V "U"))
+)))
