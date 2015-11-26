@@ -13,7 +13,7 @@ struct
   exception EMPTY_Q
   type element = string
   type queue = 
-    Q of string list * string list
+    Q of element list * element list
 
   let emptyq = Q ([], [])
 
@@ -37,7 +37,7 @@ struct
   type element = StringQ.queue
 
   type queue = 
-     Q of StringQ.queue list * StringQ.queue list
+     Q of element list * element list
 
   let emptyq = Q ([], [])
 
@@ -53,4 +53,3 @@ struct
       | Q (l0, []) -> deq (Q ([], List.rev l0))
       | Q (l0, h::t) -> (h, Q (l0, t))
 end
-
