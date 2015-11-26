@@ -15,6 +15,8 @@ struct
   exception NON_BASIC_BOX
   let box = BOX (NW, Design.design)     (* a box is defined *)
   let rec rotate (b:box) : box = ...
+
+
   let pp b center = 
     match b with
     | BOX (NW,x) -> ()                  (* dummy, fill it if you want *)
