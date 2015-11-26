@@ -1,11 +1,11 @@
 package ds.sort;
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.ListIterator;
-import java.util.Collections;
+//import java.util.Collections;
 
+//TODO: use array bast implmentations.
 public class Sorter{
-  ArrayList<Integer> array;
+  Integer[] array;
   Random rand;
   boolean sorted;
 
@@ -13,17 +13,19 @@ public class Sorter{
   final String DESCEND = "descend";
   final String LARGEST = "largest";
   final String SMALLEST = "smallest";
+  private int cnt;
 	
 	public Sorter(int n){
-    array = new ArrayList<>(n);
+    array = new Integer[n];
     rand = new Random();
     sorted= false;
+    cnt = 0;
 	}
 	
  
 	public void add(int value)
   { 
-    array.add(value);
+    array[cnt] = value;
     sorted = false;
 	}
 	
@@ -31,20 +33,21 @@ public class Sorter{
   {//doesn't change sorted state
 
     //box value to use it as a value, not index
-    return array.remove((Integer) value); 
+    //return array.remove((Integer) value); 
 	}
 	
 	public void sort(String type)
   {
     if (!sorted)
-      quickSort(0,array.size()-1);
+      quickSort(0,cnt-1);
     switch (type)
     {
       case ASCEND:
         sorted = true;
         break;
       case DESCEND: //reverse the array.
-        Collections.reverse(array);
+        //Collections.reverse(array);
+        //FIXME
         sorted = false;
         break;
     }
@@ -94,12 +97,12 @@ public class Sorter{
     int l = last;
 
     int pivotIndex = rand.nextInt(last-first + 1) + first;
-    int pivot = array.get(pivotIndex);
+    int pivot = array[ pivotIndex ];
 
     while (f <= l) {
 
-      while (array.get(f) < pivot) f++;
-      while (array.get(l) > pivot) l--;
+      while (array[f] < pivot) f++;
+      while (array[l] > pivot) l--;
 
       if (f <= l){
         temp = array.get(f);
