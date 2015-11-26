@@ -27,10 +27,8 @@ struct
     fun q -> 
       match q with
       | Q ([], []) -> raise EMPTY_Q
-      | Q (l0, l1) -> 
-            (match l1 with 
-            | [] -> deq (Q ([], List.rev l0))
-            | h::t -> (h, Q (l0, t)))
+      | Q (l0, []) -> deq (Q ([], List.rev l0))
+      | Q (l0, h::t) -> (h, Q (l0, t))
 
 end
 
