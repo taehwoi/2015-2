@@ -30,16 +30,19 @@ struct
     | BOX (SE,x) -> ()                  (* dummy, fill it if you want *)
     | BOX (SW,x) -> ()                  (* dummy, fill it if you want *)
     | _ -> raise NON_BASIC_BOX
+
   let size = 1
 end
 
-(*module Rotate (Box:FRAME) : FRAME =*)
-(*struct *)
-  (*let box = ...*)
+module Rotate (Box:FRAME) : FRAME =
+struct 
+  (*TODO*)
+  let box = 
   (*let rotate (b:box) : box = ...*)
-  (*let pp b center = ()                  [> dummy, fill it if you want <]*)
   (*let size = ...*)
-(*end*)
+
+  (*let pp b center = ()                  [> dummy, fill it if you want <]*)
+end
 
 (*module Glue (Nw:FRAME) (Ne:FRAME) (Se:FRAME) (Sw:FRAME) : FRAME =*)
 (*struct*)
