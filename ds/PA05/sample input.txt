@@ -1,0 +1,9 @@
+start linear 1 0 0
+insert 1003
+insert 9050
+insert 8049
+insert 2877
+insert 3000
+find 9050
+find 8049
+find 2000
