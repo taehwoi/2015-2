@@ -5,8 +5,8 @@ import java.util.Arrays;
 
 //TODO: use array bast implmentations.
 public class Sorter{
-  Integer[] array;
-  Random rand;
+  static Integer[] array;
+  static Random rand;
   boolean sorted;
 
   final String ASCEND = "ascend";
@@ -36,6 +36,7 @@ public class Sorter{
     if (pos != -1) {
       for (int i = pos; i < cnt ;i++ ) 
         array[i] = array[i+1];
+      array[cnt] = null;
       cnt--;
       return true;
     }
@@ -82,7 +83,8 @@ public class Sorter{
 	public void sort(String type)
   {
     if (!sorted)
-      quickSort(0,cnt-1);
+      //quickSort(0,cnt-1);
+      DoQuickSort(0,cnt-1);
     switch (type)
     {
       case ASCEND:
@@ -135,20 +137,67 @@ public class Sorter{
       //.replace("[","") //remove []s
       //.replace("]","")
       //.trim();
-    String ret = "";
+    //String ret;
+    StringBuilder sb = new StringBuilder();
 
     for (int i=0; i<cnt; i++) 
-      ret += (array[i] + " ");
-    return ret;
+      sb.append(String.valueOf(array[i]));
+
+    return sb.toString();
   }
 
+  private static void DoQuickSort(int left, int right)
+  {
+    int pivot = 0;
+    int l, r;
+    //int pivotIndex=0;
+    int tmp;
+
+    if (left < right) {
+
+      int pivotIndex = rand.nextInt(right-left + 1) + left;
+      //pivotIndex = (left + right) /2;
+      //choose pivot someplace in the middle
+      pivot = array[pivotIndex];
+
+      l = left; //left finger
+      r = right; //right finger
+
+      while (l <= r) {
+        while (array[l] < pivot) 
+          //treat the same things at once
+          l++;
+        while (array[r] > pivot)
+          //treat the same things at once
+          r--;
+
+        //referenced from http://stackoverflow.com/questions/2467751/quicksort-vs-heapsort
+        //if we reached here, it means value[l] > pivot && value[r] < pivot.
+        if (l <= r) {
+          //swap
+          tmp = array[r];
+          array[r] = array[l];
+          array[l] = tmp;
+
+          l++;
+          r--;
+        }
+      }
+      //left is now before pivot, right is now right after pivot.
+        if (left < r) DoQuickSort(left, r);
+        if (l < right) DoQuickSort(l, right);
+    }
+    return;
+  }
   private void quickSort(int first, int last)
   {
     int temp;
     int f = first;
     int l = last;
 
-    int pivotIndex = rand.nextInt(last-first + 1) + first;
+    //int pivotIndex = rand.nextInt(last-first + 1) + first;
+    int pivotIndex = (first + last) /2;
+    
     int pivot = array[ pivotIndex ];
 
     while (f <= l) {
