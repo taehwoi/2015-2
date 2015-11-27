@@ -1,12 +1,17 @@
 remove 2
 add 3
+sort ascend
+sort descend
 add -100
 add 5
 top 1 largest
 top 1 smallest
 remove -100
+top 2 smallest
+top 2 largest
 remove -100
 remove 5
+add 5
 top 1 largest
 top 1 smallest
 sort ascend
@@ -14,9 +19,12 @@ sort descend
 remove 3
 remove 3
 add 3
-add 5
 add -100
 top 3 largest
 top 3 smallest
 sort ascend
 sort descend
+remove 1
+remove 3
+remove -100
+remove 5
