@@ -41,6 +41,12 @@ add -87024647
 add 64087715
 add -81876481
 add -25732785
+remove -25732785
+sort descend
+remove 64087715
+sort ascend
+remove 12068874
+remove 3
 add 51867766
 add -70357439
 add 52325302
@@ -30101,6 +30107,8 @@ add -37746406
 add -82793666
 add 45308479
 add 85136282
+top 1 largest
+top 1 smallest
 add 26029797
 add -976520
 add 68001513
@@ -60152,6 +60160,10 @@ add -54581921
 add -91328671
 add -77452305
 add 61311405
+sort ascend
+sort ascend
+sort descend
+sort ascend
 add 41204486
 add 38612928
 add -36033714
@@ -60222,6 +60234,7 @@ add 13837523
 add 79725534
 add 61802742
 add 86770888
+top 40000 largest
 add 16499133
 add -33584977
 add -32186877
@@ -60233,6 +60246,7 @@ add 91861451
 add 72518615
 add -99016007
 add -14457464
+top 40000 smallest
 add -8822882
 add -14653804
 add -84590532
@@ -60264,6 +60278,11 @@ add -23399856
 add -54641461
 add -87855670
 add 93793843
+sort ascend
+sort ascend
+sort ascend
+sort ascend
+sort ascend
 add -66408696
 add 68345703
 add -55976506
@@ -60282,6 +60301,7 @@ add 13937747
 add -64998666
 add 74964455
 add -9096164
+remove -34834770
 add -32987650
 add 77810785
 add 46254670
@@ -60513,6 +60533,9 @@ add -12425079
 add -85961558
 add -23396484
 add -47745344
+remove 12312
+remove 92312
+remove 2341312
 add 61997971
 add 91664902
 add -84363240
@@ -70467,6 +70490,7 @@ add 42698020
 add -55752974
 add 95214742
 add -67737334
+add 0
 add 96200251
 add -84385797
 add -37735736
@@ -70547,6 +70571,7 @@ add 67983330
 add -48448047
 add -7531904
 add 28399641
+remove 0
 add -4892598
 add -40961085
 add 47182984
@@ -70615,7 +70640,9 @@ add -52144508
 add 53580551
 add -97284622
 add 38742395
+sort ascend
 add 35943743
+sort ascend
 add 57069274
 add 16224266
 add -41545548
@@ -80862,6 +80889,8 @@ add 24042207
 add -61566643
 add 83951142
 add -64509794
+top 1 largest
+sort ascend
 add 1873763
 add 11390777
 add 69580119
@@ -91098,6 +91127,8 @@ add 54287922
 add 42435771
 add 53719584
 add -33337830
+top 1 smallest
+sort descend
 add 27644492
 add -31539116
 add -46888658
@@ -99993,3 +100024,8 @@ add -80068668
 add 70783686
 add 63552343
 sort ascend
+top 80000 smallest
+top 80000 largest
+top 2 smallest
+top 1 smallest
+top 1 largest
