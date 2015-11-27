@@ -25,7 +25,7 @@ public class Sorter{
  
 	public void add(int value)
   { 
-    array[cnt] = value;
+    array[cnt++] = value;
     sorted = false;
 	}
 	
