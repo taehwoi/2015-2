@@ -46,7 +46,7 @@ public class Sorter{
   private int find(int value)
   {
     int index = 0;
-    if (sorted) //bin search
+    if (sorted)
       index = binSearch(0,cnt-1,value); 
     else
       index = seqSearch(value); 
