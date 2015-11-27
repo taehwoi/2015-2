@@ -109,10 +109,10 @@ public class Sorter{
 	
 	public String top(int k, String type){
     StringBuilder sb = new StringBuilder(k*5);
-    String result = "";
 
     if (sorted) {
-      switch (type) {
+      switch (type) 
+      {
         case SMALLEST:
           for (int i=0; i<k; i++) {
             sb.append(array[i]);
@@ -131,7 +131,7 @@ public class Sorter{
       sort(ASCEND); //will change sort state
       return top(k,type);
     }
-    return result;
+    return sb.toString();
   }
 
   public String toString()
