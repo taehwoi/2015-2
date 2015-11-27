@@ -1,6 +1,6 @@
 package ds.test;
 
-import java.io.StringReader;
+import java.io.*;
 import java.util.Scanner;
 
 import ds.sort.Sorter;
@@ -14,30 +14,35 @@ public class Main {
 	private static final int TOP = 3;
 
 	public static void main(String[] args){
-		Scanner scanner = new Scanner(System.in);
-		int size = 200000;
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    String line;
+		int size = 100001;
 		Sorter sorter = new Sorter(size);
 		
-		while(scanner.hasNext()){
-			String line = scanner.nextLine();
-			Scanner i_scanner = new Scanner(new StringReader(line));
-			String cmd = i_scanner.next();
+		while((line = br.readLine()) != null){
+      Scanner i_scanner = new Scanner(new StringReader(line));
+			//String cmd = i_scanner.next();
 			int value = 0;
 			int k = 0;
 			String type = null;
       final String ERROR = "The value does not exist";
 			
-			switch(getCommandNum(cmd)){
+			switch(getCommandNum(line.charAt(0))){
 			case ADD:
-				value = i_scanner.nextInt();
+        try {
+          value = Integer.parseInt(line.substring(4));
+          System.out.println(value);
+        } catch (IOException e) { 
+          System.out.println(e.toString());
+        }
         sorter.add(value);
-        System.out.print("ADD: " + value + "\n");
+        System.out.printf("ADD: %d\n",value);
 				break;
 
 			case REMOVE:
 				value = i_scanner.nextInt();
         if (sorter.remove(value))
-          System.out.print("REMOVE: "+ value + "\n");
+          System.out.printf("REMOVE: %d\n",value);
         else
           System.out.println(ERROR);
 				break;
@@ -64,17 +69,17 @@ public class Main {
 			i_scanner.close();
 		}
 		
-		scanner.close();
+		//scanner.close();
 	}
 	
-	private static int getCommandNum(String cmd){
-    if (cmd.charAt(0) == 'a') 
+	private static int getCommandNum(char cmd){
+    if (cmd == 'a') 
 			return ADD;
-    if (cmd.charAt(0) == 'r') 
+    if (cmd == 'r') 
 			return REMOVE;
-    if (cmd.charAt(0) == 's') 
+    if (cmd == 's') 
 			return SORT;
-    if (cmd.charAt(0) == 't') 
+    if (cmd == 't') 
 			return TOP;
 		else 
 			return ERROR;
