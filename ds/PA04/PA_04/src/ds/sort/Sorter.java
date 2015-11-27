@@ -40,15 +40,12 @@ public class Sorter{
 
   private int find(int value)
   {
-    int index = 1;
-    if (sorted)
-    {
-      //bin search
-    }
+    int index = 0;
+    if (sorted) //bin search
+      index = binSearch(0,cnt-1,value); 
     else
-    {
-      //seq search
-    }
+      index = seqSearch(value); 
+
     return index;
   }
 
@@ -59,12 +56,21 @@ public class Sorter{
     int pivot = (f + l) / 2;
 
     while (f <= l){
-
       pivot = (f + l) / 2;
 
       if (array[pivot] < val) f = pivot + 1;
       else if (array[pivot] > val) l = pivot - 1;
       else return pivot;
+    }
+    return -1; //no such element
+  }
+
+  private int seqSearch(int val)
+  {
+    for (int i = 0; i<cnt; i++) 
+    {
+      if (array[i] == val) 
+        return i;
     }
     return -1;
   }
