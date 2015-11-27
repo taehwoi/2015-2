@@ -31,22 +31,42 @@ public class Sorter{
 	
 	public boolean remove(int value)
   {//doesn't change sorted state
+    int pos = find(value);
 
-    if (sorted)
-      //do bin search
-    else
-      //seq search
-    //box value to use it as a value, not index
+    //from pos, shift everything.
     //return array.remove((Integer) value); 
     return true;
 	}
 
   private int find(int value)
   {
+    int index = 1;
     if (sorted)
+    {
       //bin search
+    }
     else
+    {
       //seq search
+    }
+    return index;
+  }
+
+  private int binSearch(int first, int last, int val)
+  { 
+    int f = first;
+    int l = last;
+    int pivot = (f + l) / 2;
+
+    while (f <= l){
+
+      pivot = (f + l) / 2;
+
+      if (array[pivot] < val) f = pivot + 1;
+      else if (array[pivot] > val) l = pivot - 1;
+      else return pivot;
+    }
+    return -1;
   }
 	
 	public void sort(String type)
