@@ -33,9 +33,13 @@ public class Sorter{
   {//doesn't change sorted state
     int pos = find(value);
 
-    //from pos, shift everything.
-    //return array.remove((Integer) value); 
-    return true;
+    if (pos != -1) {
+      for (int i = pos; i < cnt ;i++ ) 
+        array[i] = array[i+1];
+      cnt--;
+      return true;
+    }
+    return false;
 	}
 
   private int find(int value)
@@ -86,15 +90,13 @@ public class Sorter{
         break;
       case DESCEND: //reverse the array.
         //FIXME //don't reverse, just print it reversed?
-        //Collections.reverse(array);
-        sorted = false;
+        //sorted = false;
         break;
     }
     return;
 	}
 	
 	public String top(int k, String type){
-    ListIterator<Integer> I;
     String result = "";
 
     if (sorted) {
