@@ -85,8 +85,8 @@ public class Sorter{
         sorted = true;
         break;
       case DESCEND: //reverse the array.
+        //FIXME //don't reverse, just print it reversed?
         //Collections.reverse(array);
-        //FIXME
         sorted = false;
         break;
     }
@@ -100,15 +100,12 @@ public class Sorter{
     if (sorted) {
       switch (type) {
         case SMALLEST:
-          //I = array.listIterator();
-          //while(k-- > 0)
-            //result += I.next() + " ";
+          for (int i=0; i<k; i++ ) 
+            result += array[i] + " ";
           break;
         case LARGEST:
-          //return "HI";
-          //I = array.listIterator(array.size());
-          //while(k-- > 0)
-            //result += I.previous() + " ";
+          for (int i=0; i<k; i++ ) 
+            result += array[cnt-i-1] + " ";
           break;
       }
     }
