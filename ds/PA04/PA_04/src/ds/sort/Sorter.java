@@ -120,12 +120,15 @@ public class Sorter{
 
   public String toString()
   {//return space seperated values
-    String ret = Arrays.toString(array) //csv surrounded with []
-      .replace(",","") //remove commas
-      .replace("[","") //remove []s
-      .replace("]","")
-      .trim();
+    //String ret = Arrays.toString(array) //csv surrounded with []
+      //.replace(",","") //remove commas
+      //.replace("[","") //remove []s
+      //.replace("]","")
+      //.trim();
+    String ret = "";
 
+    for (int i=0; i<cnt; i++) 
+      ret += array[i];
     return ret;
   }
 
