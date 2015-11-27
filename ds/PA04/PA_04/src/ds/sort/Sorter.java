@@ -1,7 +1,7 @@
 package ds.sort;
 import java.util.Random;
 import java.util.ListIterator;
-//import java.util.Collections;
+import java.util.Arrays;
 
 //TODO: use array bast implmentations.
 public class Sorter{
@@ -15,7 +15,7 @@ public class Sorter{
   final String SMALLEST = "smallest";
   private int cnt;
 	
-	public Sorter(int n){
+	public Sorter(int n) {
     array = new Integer[n];
     rand = new Random();
     sorted= false;
@@ -32,9 +32,22 @@ public class Sorter{
 	public boolean remove(int value)
   {//doesn't change sorted state
 
+    if (sorted)
+      //do bin search
+    else
+      //seq search
     //box value to use it as a value, not index
     //return array.remove((Integer) value); 
+    return true;
 	}
+
+  private int find(int value)
+  {
+    if (sorted)
+      //bin search
+    else
+      //seq search
+  }
 	
 	public void sort(String type)
   {
@@ -61,14 +74,15 @@ public class Sorter{
     if (sorted) {
       switch (type) {
         case SMALLEST:
-          I = array.listIterator();
-          while(k-- > 0)
-            result += I.next() + " ";
+          //I = array.listIterator();
+          //while(k-- > 0)
+            //result += I.next() + " ";
           break;
         case LARGEST:
-          I = array.listIterator(array.size());
-          while(k-- > 0)
-            result += I.previous() + " ";
+          //return "HI";
+          //I = array.listIterator(array.size());
+          //while(k-- > 0)
+            //result += I.previous() + " ";
           break;
       }
     }
@@ -81,7 +95,7 @@ public class Sorter{
 
   public String toString()
   {//return space seperated values
-    String ret = array.toString() //csv surrounded with []
+    String ret = Arrays.toString(array) //csv surrounded with []
       .replace(",","") //remove commas
       .replace("[","") //remove []s
       .replace("]","")
@@ -105,9 +119,9 @@ public class Sorter{
       while (array[l] > pivot) l--;
 
       if (f <= l){
-        temp = array.get(f);
-        array.set(f, array.get(l));
-        array.set(l,temp);
+        temp = array[f];
+        array[f] = array[l];
+        array[l] = temp;
 
         f++;
         l--;
