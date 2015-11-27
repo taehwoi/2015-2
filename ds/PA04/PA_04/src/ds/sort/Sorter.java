@@ -89,12 +89,22 @@ public class Sorter{
         sorted = true;
         break;
       case DESCEND: //reverse the array.
-        //FIXME //don't reverse, just print it reversed?
-        //sorted = false;
+        rev();
+        sorted = false;
         break;
     }
     return;
 	}
+
+  private void rev()
+  {
+    for (int i=0; i < cnt/2 ; i++) 
+    {
+      int tmp = array[i];
+      array[i] = array[cnt - i - 1];
+      array[cnt - i - 1] = tmp;
+    }
+  }
 	
 	public String top(int k, String type){
     String result = "";
@@ -128,7 +138,7 @@ public class Sorter{
     String ret = "";
 
     for (int i=0; i<cnt; i++) 
-      ret += array[i];
+      ret += (array[i] + " ");
     return ret;
   }
 
