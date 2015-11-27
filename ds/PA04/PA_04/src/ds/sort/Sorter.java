@@ -108,17 +108,22 @@ public class Sorter{
   }
 	
 	public String top(int k, String type){
+    StringBuilder sb = new StringBuilder(k*5);
     String result = "";
 
     if (sorted) {
       switch (type) {
         case SMALLEST:
-          for (int i=0; i<k; i++ ) 
-            result += array[i] + " ";
+          for (int i=0; i<k; i++) {
+            sb.append(array[i]);
+            sb.append(' ');
+          }
           break;
         case LARGEST:
-          for (int i=0; i<k; i++ ) 
-            result += array[cnt-i-1] + " ";
+          for (int i=0; i<k; i++) {
+            sb.append(array[cnt-i-1]);
+            sb.append(' ');
+          }
           break;
       }
     }
@@ -147,14 +152,12 @@ public class Sorter{
     return sb.toString();
   }
 
-  private void quickSort(int first, int last)
+  private static void quickSort(int first, int last)
   {
     int temp;
     int f = first;
     int l = last;
-
     int pivotIndex = rand.nextInt(last-first + 1) + first;
-    
     int pivot = array[ pivotIndex ];
 
     while (f <= l) {
