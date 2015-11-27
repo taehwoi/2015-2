@@ -137,10 +137,12 @@ public class Sorter{
       //.replace("]","")
       //.trim();
     //String ret;
-    StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder(cnt*5);
 
-    for (int i=0; i<cnt; i++) 
-      sb.append(String.valueOf(array[i]));
+    for (int i=0; i<cnt; i++) {
+      sb.append(array[i]);
+      sb.append(' ');
+    }
 
     return sb.toString();
   }
