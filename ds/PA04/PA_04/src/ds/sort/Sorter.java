@@ -131,7 +131,7 @@ public class Sorter{
       sort(ASCEND); //will change sort state
       return top(k,type);
     }
-    return sb.toString();
+    return sb.toString().trim();
   }
 
   public String toString()
@@ -149,7 +149,7 @@ public class Sorter{
       sb.append(' ');
     }
 
-    return sb.toString();
+    return sb.toString().trim();
   }
 
   private static void quickSort(int first, int last)
