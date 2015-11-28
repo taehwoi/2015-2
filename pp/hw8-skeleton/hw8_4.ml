@@ -37,15 +37,51 @@ end
 module Rotate (Box:FRAME) : FRAME =
 struct 
   (*TODO*)
-  let box = 
-  (*let rotate (b:box) : box = ...*)
-  (*let size = ...*)
+  let rec rotate (b:box) : box = 
+    match b with
+    | BOX (NW, d)-> BOX (NE, d)
+    | BOX (NE, d)-> BOX (SE, d)
+    | BOX (SE, d)-> BOX (SW, d)
+    | BOX (SW, d)-> BOX (NW, d)
+    (*FIXME*)
+    | GLUED (b0, b1, b2, b3) -> GLUED (rotate b3, rotate b0, rotate b1, rotate b2)
 
-  (*let pp b center = ()                  [> dummy, fill it if you want <]*)
+
+  let box = rotate (Box.box)
+
+  let size = 1 (*FIXME*)
+
+  let pp b center = 
+    match b with
+    | BOX (NW,x) -> ()                  (* dummy, fill it if you want *)
+    | BOX (NE,x) -> ()                  (* dummy, fill it if you want *)
+    | BOX (SE,x) -> ()                  (* dummy, fill it if you want *)
+    | BOX (SW,x) -> ()                  (* dummy, fill it if you want *)
+    | _ -> ()
 end
 
-(*module Glue (Nw:FRAME) (Ne:FRAME) (Se:FRAME) (Sw:FRAME) : FRAME =*)
-(*struct*)
-  (*exception DIFFERENT_SIZED_BOXES*)
-  (*...*)
-(*end*)
+module Glue (Nw:FRAME) (Ne:FRAME) (Se:FRAME) (Sw:FRAME) : FRAME =
+struct
+  exception DIFFERENT_SIZED_BOXES
+
+  let box = 
+    GLUED (Nw.box, Ne.box, Se.box, Sw.box)
+
+  let rec rotate (b:box) : box = 
+    match b with
+    | BOX (NW, d)-> BOX (NE, d)
+    | BOX (NE, d)-> BOX (SE, d)
+    | BOX (SE, d)-> BOX (SW, d)
+    | BOX (SW, d)-> BOX (NW, d)
+    (*FIXME*)
+    | GLUED (b0, b1, b2, b3) -> GLUED (rotate b3, rotate b0, rotate b1, rotate b2)
+
+  let size = 1 (*FIXME*)
+  let pp b center = 
+    match b with
+    | BOX (NW,x) -> ()                  (* dummy, fill it if you want *)
+    | BOX (NE,x) -> ()                  (* dummy, fill it if you want *)
+    | BOX (SE,x) -> ()                  (* dummy, fill it if you want *)
+    | BOX (SW,x) -> ()                  (* dummy, fill it if you want *)
+    | _ -> ()
+end
