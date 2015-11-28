@@ -3,7 +3,6 @@ import java.util.Random;
 import java.util.ListIterator;
 import java.util.Arrays;
 
-//TODO: use array bast implmentations.
 public class Sorter{
   static Integer[] array;
   static Random rand;
