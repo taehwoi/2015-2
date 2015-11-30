@@ -45,6 +45,12 @@
                (hash-set! ht (caaadr E) (myeval (car (cdaadr E)) env))
                (myeval (caddr exp) (cons ht env))))
 
+            ((equal? t 'letrec) 
+             (let ()
+               (define ht (make-hash))
+               (hash-set! ht (caaadr E) (myeval (car (cdaadr E)) (cons ht env)))
+               (myeval (caddr exp) (cons ht env))))
+
 
             ))))))
 (define (look-up v env)
@@ -54,5 +60,5 @@
       (hash-ref (car env) v 'nil)
       (look-up v (cdr env)))))
 
-(define exp  '(let ((p (cons 1 (cons 2 '())))) (cons 0 p)))
+(define exp  '(letrec ((p (cons 1 (cons 2 '())))) (cons 0 p)))
 (myeval exp '())
