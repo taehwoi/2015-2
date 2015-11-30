@@ -51,6 +51,8 @@
                (hash-set! ht (caaadr E) (myeval (car (cdaadr E)) (cons ht env)))
                (myeval (caddr exp) (cons ht env))))
 
+            ((equal? t 'lambda) ;TODO: ERROR?
+             (list 'fun (cadr E) `-> (caddr E)))
 
             ))))))
 (define (look-up v env)
