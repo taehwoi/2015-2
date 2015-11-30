@@ -15,7 +15,7 @@
     ((equal? t '<) (< (myeval (list (cadr E))) (myeval (cddr E))))
     ((equal? t '>) (> (myeval (list (cadr E))) (myeval (cddr E))))
 
-    ; IFS
+    ; IF
     ((equal? t 'if)
      (if (myeval (cadr E));predicate
        (myeval (list (caddr E))) ;true-action
