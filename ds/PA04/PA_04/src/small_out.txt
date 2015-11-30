@@ -1,0 +1,22 @@
+The value does not exist
+ADD: 3
+ADD: -100
+ADD: 5
+TOP: 5 
+TOP: -100 
+REMOVE: -100
+The value does not exist
+REMOVE: 5
+TOP: 3 
+TOP: 3 
+SORT: 3 
+SORT: 3 
+REMOVE: 3
+The value does not exist
+ADD: 3
+ADD: 5
+ADD: -100
+TOP: 5 3 -100 
+TOP: -100 3 5 
+SORT: -100 3 5 
+SORT: 5 3 -100 
