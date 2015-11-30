@@ -35,9 +35,6 @@
             ((equal? t 'car) (car (myeval (cadr E) env)) )
             ((equal? t 'cdr) (cdr (myeval (cadr E) env)) )
 
-            ; lambda
-            ;((equal? t 'lambda) )
-
             ; let FIXME: use map to process list into env?
             ((equal? t 'let) 
              (let ()
@@ -53,6 +50,9 @@
 
             ((equal? t 'lambda) ;TODO: ERROR?
              (list 'fun (cadr E) `-> (caddr E)))
+
+            ;APPLICATION
+            ((list? t 'FIXME))
 
             ))))))
 (define (look-up v env)
