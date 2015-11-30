@@ -135,12 +135,8 @@ public class Sorter{
 
   public String toString()
   {//return space seperated values
-    //String ret = Arrays.toString(array) //csv surrounded with []
-      //.replace(",","") //remove commas
-      //.replace("[","") //remove []s
-      //.replace("]","")
-      //.trim();
-    //String ret;
+    
+    //allocate expected length
     StringBuilder sb = new StringBuilder(cnt*5);
 
     for (int i=0; i<cnt; i++) {
