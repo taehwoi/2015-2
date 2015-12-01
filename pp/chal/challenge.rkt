@@ -6,7 +6,7 @@
 ;TODO: divide myeval in to modules
 (define (myeval E env) ;myeval: (Expression) List -> E
   ;(write env)(newline)
-  (write E)(newline)
+  ;(write E)(newline)
   (if (equal? E ''())
     '()
     (if (or (number? E) (boolean? E))
@@ -55,13 +55,13 @@
                (define ht (make-hash))
                (hash-set! ht (caaadr E) 'UNDEF)
                (hash-set! ht (caaadr E) (myeval (car (cdaadr E)) (cons ht env)))
-               (define new-exp (map 
+               #;(define new-exp (map 
                                  (lambda (x)
                                    (if (equal? x (caaadr E)) 
                                      (hash-ref ht x)
                                      x )) 
                                  (caddr E)))
-               (myeval new-exp (cons ht env)))) ;use mutable pair
+               (myeval (caddr E) (cons ht env)))) ;use mutable pair
 
             ((equal? t 'lambda) ;TODO: ERROR?
              (list 'lambda (cadr E) (caddr E)))
@@ -85,19 +85,22 @@
              ))))))
 (define (look-up v env)
   (if (null? env) 
-    ERROR ;no such variable -> throw error
+    (let ()
+      (write "err")
+      ERROR ;no such variable -> throw error
+      )
     (if (not (equal? (hash-ref (car env) v 'nil) 'nil))
       (hash-ref (car env) v 'nil)
       (look-up v (cdr env)))))
 
 ;(define t '(let ((f (lambda (x) (if (= x 0) 1 2)))) (f 3)))
 (define t10  '(let ((p (cons 1 (cons 2 '())))) (cons p 0)))
-;(myeval t '())
+(myeval t10 '())
 ;(caddr t10)
 ;(define g '((lambda (x) (if (= x 0) 1 2)) 3))
 ;(caddr t)
 ;(myeval g '())
 
 ;(define t13 '(letrec ((f (lambda (x) (if (= x 0) 1 (* (f (- x 1)) x) )))) (f 5)))
-(define t13 '(letrec ((g (lambda (x) (if (= x 0) 1 (* (g (- x 1)) x) )))) (g 5)))
-(myeval t13 '())
+;(define t13 '(letrec ((g (lambda (x) (if (= x 0) 1 (* (g (- x 1)) x) )))) (g 5)))
+;(myeval t13 '())
