@@ -73,9 +73,8 @@
                      (hash-set! ht x (eval-helper y (cons ht env)))) (cadr t) (cdr E))
                  (eval-helper (caddr t) (cons ht env))))
 
-              ;TEST
               ((equal? (car (look-up t env)) 'lambda)
-               (eval-helper (append (list (look-up t env)) (cdr E)) env)) ;FIXME for multi-variables
+               (eval-helper (cons (look-up t env) (cdr E)) env)) ;FIXME for multi-variables
 
               ;((or (equal? (car (look-up t env)) 'lambda) (list? t))
 
