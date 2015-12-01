@@ -3,9 +3,10 @@
 ;env: list of hashtables
 (define ERROR 'error)
 
-;TODO: divide myeval in to modules
+;TODO: divide eval-helper in to modules
 ;TODO: allow multiple variables (use map)
-(define (myeval E env) ;myeval: (Expression) List -> E
+(define (myeval E)
+(define (eval-helper E env) ;eval-helper: (Expression) List -> E
   ;(write env)(newline)
   ;(write E)(newline)
   (if (equal? E ''())
@@ -19,24 +20,24 @@
           (define t (car E))
           (cond 
             ; ARITHMETIC - nothing but just application????
-            ((equal? t '+) (+ (myeval (cadr E) env) (myeval (caddr E) env))) 
-            ((equal? t '-) (- (myeval (cadr E) env) (myeval (caddr E) env)))
-            ((equal? t '*) (* (myeval (cadr E) env) (myeval (caddr E) env)))
-            ((equal? t '=) (= (myeval (cadr E) env) (myeval (caddr E) env)))
-            ((equal? t '<) (< (myeval (cadr E) env) (myeval (caddr E) env)))
-            ((equal? t '>) (> (myeval (cadr E) env) (myeval (caddr E) env)))
+            ((equal? t '+) (+ (eval-helper (cadr E) env) (eval-helper (caddr E) env))) 
+            ((equal? t '-) (- (eval-helper (cadr E) env) (eval-helper (caddr E) env)))
+            ((equal? t '*) (* (eval-helper (cadr E) env) (eval-helper (caddr E) env)))
+            ((equal? t '=) (= (eval-helper (cadr E) env) (eval-helper (caddr E) env)))
+            ((equal? t '<) (< (eval-helper (cadr E) env) (eval-helper (caddr E) env)))
+            ((equal? t '>) (> (eval-helper (cadr E) env) (eval-helper (caddr E) env)))
 
             ; IFS
             ((equal? t 'if)
-             (if (myeval (cadr E) env);predicate
-               (myeval (caddr E) env) ;true-action
-               (myeval (cadddr E) env))) ;false-action
+             (if (eval-helper (cadr E) env);predicate
+               (eval-helper (caddr E) env) ;true-action
+               (eval-helper (cadddr E) env))) ;false-action
 
             ; PAIR OPERATIONS
-            ((equal? t 'cons) (cons (myeval (cadr E) env) (myeval (caddr E) env)))
-            ;TODO: throw error when (pair? myeval E) = #f
-            ((equal? t 'car) (car (myeval (cadr E) env)) )
-            ((equal? t 'cdr) (cdr (myeval (cadr E) env)) )
+            ((equal? t 'cons) (cons (eval-helper (cadr E) env) (eval-helper (caddr E) env)))
+            ;TODO: throw error when (pair? eval-helper E) = #f
+            ((equal? t 'car) (car (eval-helper (cadr E) env)) )
+            ((equal? t 'cdr) (cdr (eval-helper (cadr E) env)) )
 
             ; let FIXME: use map to process list into env?
             ((equal? t 'let) 
@@ -44,9 +45,9 @@
                (define ht (make-hash))
                (for-each 
                  (lambda (x) 
-                   (hash-set! ht (car x) (myeval (cadr x) env))) (cadr E)) ;TODO:ask question
+                   (hash-set! ht (car x) (eval-helper (cadr x) env))) (cadr E)) ;TODO:ask question
                 ;change occurrence of variable with appropriate value?
-               (myeval (caddr E) (cons ht env)))) ;use mutable pair
+               (eval-helper (caddr E) (cons ht env)))) ;use mutable pair
 
             ((equal? t 'letrec) 
              (let ()
@@ -56,8 +57,8 @@
                    (hash-set! ht (car x) 'UNDEF)) (cadr E)) ;TODO:ask question
                (for-each 
                  (lambda (x) 
-                   (hash-set! ht (car x) (myeval (cadr x) (cons ht env)))) (cadr E))
-               (myeval (caddr E) (cons ht env)))) ;use mutable pair
+                   (hash-set! ht (car x) (eval-helper (cadr x) (cons ht env)))) (cadr E))
+               (eval-helper (caddr E) (cons ht env)))) ;use mutable pair
 
             ((equal? t 'lambda) ;TODO: ERROR?
              (list 'lambda (cadr E) (caddr E)))
@@ -69,18 +70,19 @@
                (define ht (make-hash))
                (for-each 
                  (lambda (x y) 
-                   (hash-set! ht x (myeval y (cons ht env)))) (cadr t) (cdr E))
-               (myeval (caddr t) (cons ht env))))
+                   (hash-set! ht x (eval-helper y (cons ht env)))) (cadr t) (cdr E))
+               (eval-helper (caddr t) (cons ht env))))
 
             ;TEST
             ((equal? (car (look-up t env)) 'lambda)
-             (myeval (list (look-up t env) (cadr E)) env))
+             (eval-helper (list (look-up t env) (cadr E)) env))
 
             ;((or (equal? (car (look-up t env)) 'lambda) (list? t))
 
 
 
              ))))))
+(eval-helper E '()))
 
 (define (look-up v env)
   (if (null? env) 
@@ -90,4 +92,4 @@
       (look-up v (cdr env)))))
 
 (define t18 '((lambda (x y) (+ x y)) 3 5))
-(myeval t18 '())
+(myeval t18 )
