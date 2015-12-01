@@ -40,21 +40,25 @@
              (let ()
                (define ht (make-hash))
                (hash-set! ht (caaadr E) (myeval (car (cdaadr E)) env))
-               (myeval (caddr exp) (cons ht env))))
+               (myeval (caddr E) (cons ht env))))
 
             ((equal? t 'letrec) 
              (let ()
                (define ht (make-hash))
                (hash-set! ht (caaadr E) (myeval (car (cdaadr E)) (cons ht env)))
-               (myeval (caddr exp) (cons ht env))))
+               (myeval (caddr E) (cons ht env))))
 
             ((equal? t 'lambda) ;TODO: ERROR?
              (list 'fun (cadr E) `-> (caddr E)))
 
             ;APPLICATION
-            ((list? t 'FIXME))
+            ((list? t)
+             (let ()
+               (define ht (make-hash))
+               (hash-set! ht (caadr t) (myeval (cadr E) env))
+               (myeval (caddr t) (cons ht env))))
 
-            ))))))
+             ))))))
 (define (look-up v env)
   (if (null? env) 
     ERROR ;no such variable -> throw error
@@ -62,5 +66,8 @@
       (hash-ref (car env) v 'nil)
       (look-up v (cdr env)))))
 
-(define exp  '(letrec ((p (cons 1 (cons 2 '())))) (cons 0 p)))
-(myeval exp '())
+;(define exp  '(letrec ((p (cons 1 (cons 2 '())))) (cons 0 p)))
+;(myeval exp '())
+
+(myeval '(letrec ((f (lambda (x)
+                             (if (= x 0) 0 (+ x (f (- x 1))))))) (f 5)) '())
