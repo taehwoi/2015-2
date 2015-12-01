@@ -5,6 +5,8 @@
 
 ;TODO: divide myeval in to modules
 (define (myeval E env) ;myeval: (Expression) List -> E
+  ;(write env)(newline)
+  (write E)(newline)
   (if (equal? E ''())
     '()
     (if (or (number? E) (boolean? E))
@@ -40,23 +42,45 @@
              (let ()
                (define ht (make-hash))
                (hash-set! ht (caaadr E) (myeval (car (cdaadr E)) env))
-               (myeval (caddr E) (cons ht env))))
+               #;(define new-exp (map 
+                                 (lambda (x) 
+                                   (if (equal? x (caaadr E)) 
+                                     (hash-ref ht x)
+                                     x )) 
+                                 (caddr E))) ;change occurrence of variable with appropriate value?
+               (myeval (caddr E) (cons ht env)))) ;use mutable pair
 
             ((equal? t 'letrec) 
              (let ()
                (define ht (make-hash))
+               (hash-set! ht (caaadr E) 'UNDEF)
                (hash-set! ht (caaadr E) (myeval (car (cdaadr E)) (cons ht env)))
-               (myeval (caddr E) (cons ht env))))
+               (define new-exp (map 
+                                 (lambda (x)
+                                   (if (equal? x (caaadr E)) 
+                                     (hash-ref ht x)
+                                     x )) 
+                                 (caddr E)))
+               (myeval new-exp (cons ht env)))) ;use mutable pair
 
             ((equal? t 'lambda) ;TODO: ERROR?
-             (list 'fun (cadr E) `-> (caddr E)))
+             (list 'lambda (cadr E) (caddr E)))
 
-            ;APPLICATION
             ((list? t)
+             ;(write"HERE")(newline)
              (let ()
                (define ht (make-hash))
                (hash-set! ht (caadr t) (myeval (cadr E) env))
                (myeval (caddr t) (cons ht env))))
+
+            ;TEST
+            ((equal? (car (look-up t env)) 'lambda)
+             (myeval (list (look-up t env) (cadr E)) env))
+
+            ;APPLICATION
+            ;((or (equal? (car (look-up t env)) 'lambda) (list? t))
+
+
 
              ))))))
 (define (look-up v env)
@@ -66,8 +90,14 @@
       (hash-ref (car env) v 'nil)
       (look-up v (cdr env)))))
 
-;(define exp  '(letrec ((p (cons 1 (cons 2 '())))) (cons 0 p)))
-;(myeval exp '())
+;(define t '(let ((f (lambda (x) (if (= x 0) 1 2)))) (f 3)))
+(define t10  '(let ((p (cons 1 (cons 2 '())))) (cons p 0)))
+;(myeval t '())
+;(caddr t10)
+;(define g '((lambda (x) (if (= x 0) 1 2)) 3))
+;(caddr t)
+;(myeval g '())
 
-(myeval '(letrec ((f (lambda (x)
-                             (if (= x 0) 0 (+ x (f (- x 1))))))) (f 5)) '())
+;(define t13 '(letrec ((f (lambda (x) (if (= x 0) 1 (* (f (- x 1)) x) )))) (f 5)))
+(define t13 '(letrec ((g (lambda (x) (if (= x 0) 1 (* (g (- x 1)) x) )))) (g 5)))
+(myeval t13 '())
