@@ -4,6 +4,7 @@
 (define ERROR 'error)
 
 ;TODO: divide myeval in to modules
+;TODO: allow multiple variables (use map)
 (define (myeval E env) ;myeval: (Expression) List -> E
   ;(write env)(newline)
   ;(write E)(newline)
@@ -41,66 +42,52 @@
             ((equal? t 'let) 
              (let ()
                (define ht (make-hash))
-               (hash-set! ht (caaadr E) (myeval (car (cdaadr E)) env))
-               #;(define new-exp (map 
-                                 (lambda (x) 
-                                   (if (equal? x (caaadr E)) 
-                                     (hash-ref ht x)
-                                     x )) 
-                                 (caddr E))) ;change occurrence of variable with appropriate value?
+               (for-each 
+                 (lambda (x) 
+                   (hash-set! ht (car x) (myeval (cadr x) env))) (cadr E)) ;TODO:ask question
+                ;change occurrence of variable with appropriate value?
                (myeval (caddr E) (cons ht env)))) ;use mutable pair
 
             ((equal? t 'letrec) 
              (let ()
                (define ht (make-hash))
-               (hash-set! ht (caaadr E) 'UNDEF)
-               (hash-set! ht (caaadr E) (myeval (car (cdaadr E)) (cons ht env)))
-               #;(define new-exp (map 
-                                 (lambda (x)
-                                   (if (equal? x (caaadr E)) 
-                                     (hash-ref ht x)
-                                     x )) 
-                                 (caddr E)))
+               (for-each 
+                 (lambda (x) 
+                   (hash-set! ht (car x) 'UNDEF)) (cadr E)) ;TODO:ask question
+               (for-each 
+                 (lambda (x) 
+                   (hash-set! ht (car x) (myeval (cadr x) (cons ht env)))) (cadr E))
                (myeval (caddr E) (cons ht env)))) ;use mutable pair
 
             ((equal? t 'lambda) ;TODO: ERROR?
              (list 'lambda (cadr E) (caddr E)))
 
+            ;APPLICATION
             ((list? t)
              ;(write"HERE")(newline)
              (let ()
                (define ht (make-hash))
-               (hash-set! ht (caadr t) (myeval (cadr E) env))
+               (for-each 
+                 (lambda (x y) 
+                   (hash-set! ht x (myeval y (cons ht env)))) (cadr t) (cdr E))
                (myeval (caddr t) (cons ht env))))
 
             ;TEST
             ((equal? (car (look-up t env)) 'lambda)
              (myeval (list (look-up t env) (cadr E)) env))
 
-            ;APPLICATION
             ;((or (equal? (car (look-up t env)) 'lambda) (list? t))
 
 
 
              ))))))
+
 (define (look-up v env)
   (if (null? env) 
-    (let ()
-      (write "err")
-      ERROR ;no such variable -> throw error
-      )
+    ERROR ;no such variable -> throw error
     (if (not (equal? (hash-ref (car env) v 'nil) 'nil))
       (hash-ref (car env) v 'nil)
       (look-up v (cdr env)))))
 
-;(define t '(let ((f (lambda (x) (if (= x 0) 1 2)))) (f 3)))
-(define t10  '(let ((p (cons 1 (cons 2 '())))) (cons p 0)))
-(myeval t10 '())
-;(caddr t10)
-;(define g '((lambda (x) (if (= x 0) 1 2)) 3))
-;(caddr t)
-;(myeval g '())
-
-;(define t13 '(letrec ((f (lambda (x) (if (= x 0) 1 (* (f (- x 1)) x) )))) (f 5)))
-;(define t13 '(letrec ((g (lambda (x) (if (= x 0) 1 (* (g (- x 1)) x) )))) (g 5)))
-;(myeval t13 '())
+(define t18 '((lambda (x y) (+ x y)) 3 5))
+(myeval t18 '())
