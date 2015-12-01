@@ -84,3 +84,7 @@
 
 (define t18 '((lambda (x y) (+ x y)) 3 5))
 (test t18)
+
+(define tail-rec '(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) (f 5 0)))
+
+(define t19 '(let ((sum (lambda (x y) (if (= x 0) 0 (+ x y))))) (sum 5 10)))
