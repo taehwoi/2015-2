@@ -78,90 +78,54 @@
 (define (get-min t)
   (if (equal? null t)
     null
-    (if (equal? null (left-tree t))
+    (if (equal? null (node-key (root (left-tree t))))
       t
       (get-min (left-tree t)))))
 
 (define (bstree-del-elmt t k)
-
+  ;(write t)(newline)
   (if (equal? null (root t)) ;no such item
     #f
     (if (equal? k (node-key (root t))) ;found the item to delete
-      (let () (cond  ((is-leaf? t) (set-node t null)) ;if leaf node - just remove node
-                     ((equal? null (right-tree t)) 
-                      (let ()
-                        (set-node t (root (left-tree t)))
-                        (set-right-tree t (right-tree (left-tree t)))
-                        (set-left-tree t (left-tree (left-tree t)))))
-                     ((equal? null (left-tree t)) ;can merge with else, but keep it to make the tree pretty
-                      (let ()
-                        (set-node t (root (right-tree t)))
-                        (set-left-tree t (left-tree (right-tree t)))
-                        (set-right-tree t (right-tree (right-tree t)))))
-                     (else 
-                       (let ()
-                         (define new-node (get-min (right-tree t)))
-                         (define tmp (root new-node)) ;new-node will be removed after next line
-                         (bstree-del-elmt t (node-key tmp))
-                         (set-node t tmp) ;do this after deletion to avoid infinite loops
-                         ))) #t)
+      (let () 
+        (cond  ((is-leaf? t) (set-node t null)) ;if leaf node - just remove node
+               ((equal? null (right-tree t))
+                (let ()
+                  (set-node t (root (left-tree t)))
+                  (set-right-tree t (right-tree (left-tree t)))
+                  (set-left-tree t (left-tree (left-tree t)))))
+               ((equal? null (left-tree t)) ;can merge with else, but keep it to make the tree pretty
+                (let ()
+                  (set-node t (root (right-tree t)))
+                  (set-left-tree t (left-tree (right-tree t)))
+                  (set-right-tree t (right-tree (right-tree t)))))
+               (else 
+                 (let ()
+                   (define new-node (get-min (right-tree t)))
+                   (define tmp (root new-node)) ;new-node will be removed after next line
+                   ;(printf "HERE: ")(write (left-tree (left-tree (right-tree t))))(newline)
+                   (bstree-del-elmt (right-tree t) (node-key tmp))
+                   (set-node t tmp) ;do this after deletion to avoid infinite loops
+                   ))) #t)
       (if (< k (node-key (root t))) ;go down the tree
         (bstree-del-elmt (left-tree t) k)
         (bstree-del-elmt (right-tree t) k)))))
 
-(define (helper t k)
-  
-  (define (bstree-del-new t k) ;tree * key -> unit
-    (if (equal? null t)
-      '()
-      (if (< k (node-key (root t)))
-        (bstree-del-new (left-tree t) k)
-        (if (> k (node-key (root t)))
-          (bstree-del-new (right-tree t) k)
-          (if (is-leaf? t) ;leaf node
-            (set-node t null)
-            (if (equal? null (left-tree t))
-              (let ()
-                (set-node t (root (right-tree t)))
-                (set-right-tree t (right-tree (right-tree t)))
-                (set-left-tree t (left-tree (right-tree t))))
-              (if (equal? null (right-tree t))
-                (let ()
-                (set-node t (root (left-tree t)))
-                (set-right-tree t (right-tree (left-tree t)))
-                (set-left-tree t (left-tree (left-tree t))))
-                (let ()
-                  (define new-node (get-min t))
-                  (define tmp (root new-node)) ;new-node will be removed after next line
-                  (bstree-del-new t (node-key tmp)) ;delete min
-                  (set-node t tmp) ;do this after deletion to avoid infinite loops
-                  ))))))))
 
-    (if (equal? "nothing" (case-sum 
-                            (lambda (x) x) 
-                            (lambda (u) "nothing") (bstree-find-elmt t k)))
-      #f
-      (let () (bstree-del-new t k) #t)))
-
-(define bst (bstree-make))
-(bstree-add-elmt bst 5 "foo")
-bst
-;(root (left-tree bst))
-(bstree-add-elmt bst 7 "foo")
-(bstree-add-elmt bst 8 "foo")
-;(helper bst 8)
-(bstree-del-elmt bst 8)
-(bstree-add-elmt bst 3 "bar")
-(bstree-add-elmt bst 8 "HI")
-(bstree-add-elmt bst 9 "HI")
-(bstree-del-elmt bst 7)
-(bstree-add-elmt bst 2 "HI")
-(bstree-del-elmt bst 5)
-(bstree-del-elmt bst 8)
-(bstree-add-elmt bst 11 "HI")
-(bstree-add-elmt bst 12 "HI")
-(bstree-add-elmt bst 15 "HI")
-(bstree-add-elmt bst 10 "HI")
-
-(write bst)
-;(bstree-del-elmt bst 5)
+(define t2 (bstree-make))
+(equal? #f (bstree-add-elmt t2 35 "v1"))
+(equal? #f (bstree-add-elmt t2 18 "v2"))
+(equal? #f (bstree-add-elmt t2 68 "v3"))
+(equal? #f (bstree-add-elmt t2 90 "v4"))
+(equal? #f (bstree-add-elmt t2 7 "v5"))
+(equal? #f (bstree-add-elmt t2 3 "v6"))
+(equal? #f (bstree-add-elmt t2 12 "v7"))
+(equal? #f (bstree-add-elmt t2 26 "v8"))
+(equal? #f (bstree-add-elmt t2 22 "v9"))
+(equal? #f (bstree-add-elmt t2 30 "v10"))
+(equal? #f (bstree-add-elmt t2 21 "v100"))
+(write t2)(newline)
+(equal? #t (bstree-del-elmt t2 18))
+(equal? #t (bstree-del-elmt t2 21))
+;(write (node-key (root (left-tree t2))))
+;(equal? #f (bstree-add-elmt t2 99 "v11"))
