@@ -9,8 +9,11 @@
 
 ; tree should look like this:
 ; ((k,v) (left tree) (right tree))
+(define (make-node k v)
+  (cons k v))
+
 (define (make-a-tree k v)
-  (mcons (cons k v) (mcons null null)))
+  (mcons (make-node k v) (mcons null null)))
 
 (define (bstree-make)
   (make-a-tree null null))
@@ -48,8 +51,8 @@
        (equal? null (node-key (right-tree t)))))
 (define (bstree-add-elmt t k v)
   (cond
-    ((equal? null (node-key t)) (let () (set-mcar! t (cons k v)) #f))
-    ((equal? k (node-key t)) (let () (set-mcar! t (cons k v)) #t))
+    ((equal? null (node-key t)) (let () (set-node t (make-node k v)) #f))
+    ((equal? k (node-key t)) (let () (set-node t (make-node k v)) #t))
     ((< k (node-key t))
       (let ()
         (if (equal? (left-tree t) null)
