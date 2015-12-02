@@ -9,11 +9,11 @@
 
 ; tree should look like this:
 ; ((k,v) (left tree) (right tree))
-(define (make-node k v)
+(define (make-a-tree k v)
   (mcons (cons k v) (mcons null null)))
 
 (define (bstree-make)
-  (make-node null null))
+  (make-a-tree null null))
 
 (define (node bst)
   (if (equal? null bst)
@@ -46,9 +46,6 @@
 (define (is-leaf? t)
   (and (equal? null (node-key (left-tree t)))
        (equal? null (node-key (right-tree t)))))
-(make-node 3 "4")
-
-
 (define (bstree-add-elmt t k v)
   (cond
     ((equal? null (node-key t)) (let () (set-mcar! t (cons k v)) #f))
@@ -56,13 +53,13 @@
     ((< k (node-key t))
       (let ()
         (if (equal? (left-tree t) null)
-          (let () (set-left-tree t (make-node k v)) #f)
+          (let () (set-left-tree t (make-a-tree k v)) #f)
           (bstree-add-elmt (left-tree t) k v))))
     (else 
       (let ()
         (if (equal? (right-tree t) null)
           (let ()
-            (set-right-tree t (make-node k v)) #f)
+            (set-right-tree t (make-a-tree k v)) #f)
           (bstree-add-elmt (right-tree t) k v))))))
 
 (define (bstree-find-elmt t k)
@@ -84,7 +81,7 @@
     ((equal? k (node-key t)) 
       (let () 
         (cond  
-          ((is-leaf? t) (set-node t null)) ;if leaf make-node - just remove make-node
+          ((is-leaf? t) (set-node t null)) ;if leaf tree - just remove tree
           ((equal? null (right-tree t))
            (let ()
              (set-node t (node (left-tree t)))
