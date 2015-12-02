@@ -40,70 +40,67 @@
 (define (set-right-tree t rt)
   (set-mcdr! (mcdr t) rt))
 
-(define (set-node t make-node)
-  (set-mcar! t make-node))
-
-(define (bstree-add-elmt t k v)
-  (if (equal? null (node-key t))
-    (let ()
-      (set-mcar! t (cons k v)) #f)
-    (if (equal? k (node-key t))
-      (let ()
-        (set-mcar! t (cons k v)) #t)
-      (if (> (node-key t) k)
-        (let ()
-          (if (equal? (left-tree t) null)
-            (let ()
-              (set-left-tree t (make-node k v)) #f)
-            (bstree-add-elmt (left-tree t) k v)))
-        (let ()
-          (if (equal? (right-tree t) null)
-            (let ()
-              (set-right-tree t (make-node k v)) #f)
-            (bstree-add-elmt (right-tree t) k v)))))))
-
-(define (bstree-find-elmt t k)
-  (if (equal? null (node-key t))
-    (inr 'FAIL)
-    (if (equal? k (node-key t))
-      (inl (node-val t))
-      (if (< k (node-key t))
-        (bstree-find-elmt (left-tree t) k)
-        (bstree-find-elmt (right-tree t) k)))))
+(define (set-node t node)
+  (set-mcar! t node))
 
 (define (is-leaf? t)
   (and (equal? null (node-key (left-tree t)))
        (equal? null (node-key (right-tree t)))))
+(make-node 3 "4")
+
+
+(define (bstree-add-elmt t k v)
+  (cond
+    ((equal? null (node-key t)) (let () (set-mcar! t (cons k v)) #f))
+    ((equal? k (node-key t)) (let () (set-mcar! t (cons k v)) #t))
+    ((< k (node-key t))
+      (let ()
+        (if (equal? (left-tree t) null)
+          (let () (set-left-tree t (make-node k v)) #f)
+          (bstree-add-elmt (left-tree t) k v))))
+    (else 
+      (let ()
+        (if (equal? (right-tree t) null)
+          (let ()
+            (set-right-tree t (make-node k v)) #f)
+          (bstree-add-elmt (right-tree t) k v))))))
+
+(define (bstree-find-elmt t k)
+  (cond  
+    ((equal? null (node-key t)) (inr 'FAIL))
+    ((equal? k (node-key t)) (inl (node-val t)))
+    ((< k (node-key t)) (bstree-find-elmt (left-tree t) k))
+    (else (bstree-find-elmt (right-tree t) k))))
 
 (define (get-min t)
-  (if (equal? null t)
-    null
-    (if (equal? null (node-key (left-tree t)))
-      t
-      (get-min (left-tree t)))))
+  (cond  
+    ((equal? null t) null)
+    ((equal? null (node-key (left-tree t))) t)
+    (else (get-min (left-tree t)))))
 
 (define (bstree-del-elmt t k)
-  (if (equal? null (node-key t)) ;no such item
-    #f
-    (if (equal? k (node-key t)) ;found the item to delete
+  (cond
+    ((equal? null (node-key t)) #f)
+    ((equal? k (node-key t)) 
       (let () 
-        (cond  ((is-leaf? t) (set-node t null)) ;if leaf make-node - just remove make-node
-               ((equal? null (right-tree t))
-                (let ()
-                  (set-node t (node (left-tree t)))
-                  (set-right-tree t (right-tree (left-tree t)))
-                  (set-left-tree t (left-tree (left-tree t)))))
-               ((equal? null (left-tree t)) ;can merge with else, but keep it to make the tree pretty
-                (let ()
-                  (set-node t (node (right-tree t)))
-                  (set-left-tree t (left-tree (right-tree t)))
-                  (set-right-tree t (right-tree (right-tree t)))))
-               (else 
-                 (let ()
-                   (define min-tree (get-min (right-tree t)))
-                   (set-node t (node min-tree))
-                   (bstree-del-elmt (right-tree t) (node-key min-tree))
-                   ))) #t)
-      (if (< k (node-key t)) ;go down the tree
-        (bstree-del-elmt (left-tree t) k)
-        (bstree-del-elmt (right-tree t) k)))))
+        (cond  
+          ((is-leaf? t) (set-node t null)) ;if leaf make-node - just remove make-node
+          ((equal? null (right-tree t))
+           (let ()
+             (set-node t (node (left-tree t)))
+             (set-right-tree t (right-tree (left-tree t)))
+             (set-left-tree t (left-tree (left-tree t)))))
+          ((equal? null (left-tree t)) ;can merge with else, but keep it to make the tree pretty
+           (let ()
+             (set-node t (node (right-tree t)))
+             (set-left-tree t (left-tree (right-tree t)))
+             (set-right-tree t (right-tree (right-tree t)))))
+          (else 
+            (let ()
+              (define min-tree (get-min (right-tree t)))
+              (set-node t (node min-tree))
+              (bstree-del-elmt (right-tree t) (node-key min-tree))
+              ))) #t))
+    ((< k (node-key t)) (bstree-del-elmt (left-tree t) k))
+    ((< k (node-key t)) (bstree-del-elmt (left-tree t) k))
+    (else (bstree-del-elmt (right-tree t) k))))
