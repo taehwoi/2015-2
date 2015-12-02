@@ -50,7 +50,7 @@
     (if (equal? k (node-key (root t)))
       (let ()
         (set-mcar! t (cons k v)) #t)
-      (if (> (car (root t)) k)
+      (if (> (node-key (root t)) k)
         (let ()
           (if (equal? (left-tree t) null)
             (let ()
@@ -63,7 +63,7 @@
             (bstree-add-elmt (right-tree t) k v)))))))
 
 (define (bstree-find-elmt t k)
-  (if (equal? null t)
+  (if (equal? null (node-key (root t)))
     (inr 'FAIL)
     (if (equal? k (node-key (root t)))
       (inl (node-val (root t)))
@@ -72,8 +72,8 @@
         (bstree-find-elmt (right-tree t) k)))))
 
 (define (is-leaf? t)
-  (and (equal? null (left-tree t))
-       (equal? null (right-tree t))))
+  (and (equal? null (node-key (root (left-tree t))))
+       (equal? null (node-key (root (right-tree t))))))
 
 (define (get-min t)
   (if (equal? null t)
@@ -84,7 +84,7 @@
 
 (define (bstree-del-elmt t k)
   ;(write t)(newline)
-  (if (equal? null (root t)) ;no such item
+  (if (equal? null (node-key (root t))) ;no such item
     #f
     (if (equal? k (node-key (root t))) ;found the item to delete
       (let () 
@@ -103,29 +103,9 @@
                  (let ()
                    (define new-node (get-min (right-tree t)))
                    (define tmp (root new-node)) ;new-node will be removed after next line
-                   ;(printf "HERE: ")(write (left-tree (left-tree (right-tree t))))(newline)
+                   (set-node t tmp)
                    (bstree-del-elmt (right-tree t) (node-key tmp))
-                   (set-node t tmp) ;do this after deletion to avoid infinite loops
                    ))) #t)
       (if (< k (node-key (root t))) ;go down the tree
         (bstree-del-elmt (left-tree t) k)
         (bstree-del-elmt (right-tree t) k)))))
-
-
-(define t2 (bstree-make))
-(equal? #f (bstree-add-elmt t2 35 "v1"))
-(equal? #f (bstree-add-elmt t2 18 "v2"))
-(equal? #f (bstree-add-elmt t2 68 "v3"))
-(equal? #f (bstree-add-elmt t2 90 "v4"))
-(equal? #f (bstree-add-elmt t2 7 "v5"))
-(equal? #f (bstree-add-elmt t2 3 "v6"))
-(equal? #f (bstree-add-elmt t2 12 "v7"))
-(equal? #f (bstree-add-elmt t2 26 "v8"))
-(equal? #f (bstree-add-elmt t2 22 "v9"))
-(equal? #f (bstree-add-elmt t2 30 "v10"))
-(equal? #f (bstree-add-elmt t2 21 "v100"))
-(write t2)(newline)
-(equal? #t (bstree-del-elmt t2 18))
-(equal? #t (bstree-del-elmt t2 21))
-;(write (node-key (root (left-tree t2))))
-;(equal? #f (bstree-add-elmt t2 99 "v11"))
