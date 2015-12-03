@@ -1,6 +1,6 @@
 #lang racket
 
-(require "challenge.rkt")
+(require "chal.rkt")
 
 
 ;to use eval
@@ -90,3 +90,5 @@
 
 (define t19 '(let ((sum (lambda (x y) (if (= x 0) 0 (+ x y))))) (sum 5 10)))
 (test t19)
+(define t20 (let (  (x (* 3 (- 1 (+ 5 (* 6 6))) )) (y (* 3 (- 7 1)))  (z (- 3 5)) (w (* 3 3)) ) (+ x y)))
+(test t20)
