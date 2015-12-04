@@ -18,7 +18,7 @@ public class HashTable
 
   public void insert(int value) {
     int key=0;
-    for (int i=0;;i++) {
+    for (int i=0;i<M;i++) {
       key = (h(value) + probe.p(i)) % M;
       if (ht[key] == null) {
         ht[key] = value;
@@ -29,7 +29,8 @@ public class HashTable
 
   public int find(int value) {
     int key=0;
-    for (int i=0;;i++) {
+    //maximum number of collisions can be number of inputs
+    for (int i=0;i<M;i++) {
       key = (h(value) + probe.p(i)) % M;
       if (ht[key] == null)
         break;
