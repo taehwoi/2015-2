@@ -7,7 +7,7 @@
 ;TODO: allow multiple variables (use map)
 (define (myeval E)
   (define (eval-helper E env) ;eval-helper: (Expression) List -> E
-    (write env)(newline)
+    ;(write env)(newline)
     ;(write E)(newline)
     (if (equal? E ''())
       '()
@@ -65,12 +65,11 @@
 
               ;APPLICATION
               ((list? t)
-               ;(write"HERE")(newline)
                (let ()
                  (define ht (make-hash))
                  (for-each 
                    (lambda (x y) 
-                     (hash-set! ht x (eval-helper y (cons ht env)))) (cadr t) (cdr E))
+                     (hash-set! ht x (eval-helper y env))) (cadr t) (cdr E))
                  (eval-helper (caddr t) (cons ht env))))
 
               ((equal? (car (look-up t env)) 'lambda)
@@ -91,13 +90,12 @@
       (look-up v (cdr env)))))
 
 ;(define tail-rec '(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) (f 100 0)))
-(define non-tail-rec '(letrec ((f (lambda (x) (if (= x 0) 0 (+ (f (- x 1)) x))))) (f 100)))
+
 ;(cdr (caddr tail-rec))
 
 ;(define t18 '((lambda (x y) (+ x y)) 3 5))
 ;(cdr t18)
 
-;(define t19 '(let ((sum (lambda (x y) (if (= x 0) 0 (+ x y))))) (sum 5 10)))
-;(myeval tail-rec)
-(myeval non-tail-rec)
-;(list 'foo (cdr (caddr t19)))
+
+(define tail-rec '(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) (f 5 0)))
+(myeval tail-rec)

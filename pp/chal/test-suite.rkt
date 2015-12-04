@@ -1,6 +1,6 @@
 #lang racket
 
-(require "challenge.rkt")
+(require "chal.rkt")
 
 
 ;to use eval
@@ -85,8 +85,12 @@
 (define t18 '((lambda (x y) (+ x y)) 3 5))
 (test t18)
 
-(define tail-rec '(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) (f 5 0)))
+(define tail-rec '(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) (f 6 0)))
 (test tail-rec)
 
 (define t19 '(let ((sum (lambda (x y) (if (= x 0) 0 (+ x y))))) (sum 5 10)))
 (test t19)
+(define t20 (let (  (x (* 3 (- 1 (+ 5 (* 6 6))) )) (y (* 3 (- 7 1)))  (z (- 3 5)) (w (* 3 3)) ) (+ x y)))
+(test t20)
+(define t21 (let ((g (lambda (x y z w) (+ (+ x y) (+ z w))))) (g 1 2 3 4)))
+(test t21)
