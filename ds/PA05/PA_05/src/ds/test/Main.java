@@ -22,26 +22,31 @@ public class Main {
 			int value = 0;
 			int c1 = 0, c2 = 0, c3 = 0;
 			int k = 0;
+      int index=0;
 			String type = null;
 			
 			switch(getCommandNum(cmd)){
 			case INSERT:
 				value = i_scanner.nextInt();
-								
+        hashtable.insert(value);
+				System.out.printf("INSERT: %d\n", value);				
 				// fill your code			
 				
 				break;
 			case FIND:
 				value = i_scanner.nextInt();
-				
-				// fill your code
-				
+        index = hashtable.find(value);
+        if (index != -1)
+          System.out.printf("FIND: %d\n", index);				
+        else
+          System.out.printf("Cannot Find\n");				
 				break;
 			case START:
 				type = i_scanner.next();
 				c1 = i_scanner.nextInt();
 				c2 = i_scanner.nextInt();
 				c3 = i_scanner.nextInt();
+        hashtable.start(type, c1, c2, c3);
 				
 				// fill your code
 				
