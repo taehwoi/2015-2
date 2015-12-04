@@ -2,25 +2,25 @@ package ds.hash;
 //(h(K) + p(k,i)) mod M
 public class HashTable 
 {
-  int[] ht;
+  Integer[] ht;
   private int M;
   Probe probe;
   
 		
   public HashTable(int n) {
     M = n;
-    ht = new int[M];
+    ht = new Integer[M];
   }
 
-  public void Start(String policy, int c1, int c2, int c3){
+  public void start(String policy, int c1, int c2, int c3){
     probe = new Probe(policy, c1, c2, c3);
   }
 
-  public void Insert(int value) {
+  public void insert(int value) {
     int key=0;
     for (int i=0;;i++) {
       key = (h(value) + probe.p(i)) % M;
-      if (ht[key] == (Integer) null) {
+      if (ht[key] == null) {
         ht[key] = value;
         break;
       }
@@ -31,11 +31,11 @@ public class HashTable
     int key=0;
     for (int i=0;;i++) {
       key = (h(value) + probe.p(i)) % M;
-      if (ht[key] == value) 
-        return key;
-      else if (ht[key] == (Integer) null) {
+      if (ht[key] == null)
         break;
-      }
+      //place this afterwards to avoid null-pointer-exception
+      else if (ht[key] == value)
+        return key;
     }
     return -1;
   }
