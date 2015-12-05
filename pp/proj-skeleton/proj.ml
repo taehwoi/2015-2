@@ -36,11 +36,15 @@ let myeval (exp_string: string): value_t =
   let lexbuf = Lexing.from_string exp_string in
   let lexer () = Lexer.token lexbuf in
   let exp = Parser.parse lexer in
+
+  (*for debugging*)
   let _ = print_string "input: " in
   let _ = print_endline exp_string in
   let _ = print_string "exp: " in
   let _ = print_endline (exp_to_string exp) in
+  (*end of for debugging*)
 
+  (*TODO: add an environment to eval*)
   let rec eval (exp: exp_t) : value_t =
     match exp with
     | CONST (CINT n) -> INT n
@@ -76,15 +80,15 @@ and arith_eval op vals=
   | '+' -> 
       (match vals with 
       | ((INT a), (INT b)) -> INT (a + b) 
-      | _ -> raise (RUNTIME_EXCEPTION "+ with not-int" ) )
+      | _ -> raise (RUNTIME_EXCEPTION "trying to + non-ints" ) )
   | '-' -> 
       (match vals with 
       | ((INT a), (INT b)) -> INT (a - b) 
-      | _ -> raise (RUNTIME_EXCEPTION "- with not-int" ) )
+      | _ -> raise (RUNTIME_EXCEPTION "trying to - non-ints" ) )
   | '*' -> 
       (match vals with 
       | ((INT a), (INT b)) -> INT (a * b) 
-      | _ -> raise (RUNTIME_EXCEPTION "* with not-int" ) )
+      | _ -> raise (RUNTIME_EXCEPTION "trying to * non-ints" ) )
   | '=' -> 
       (match vals with 
       | ((INT a), (INT b)) -> BOOL (a = b) 
@@ -104,6 +108,6 @@ in eval exp
 (*let myeval_memo (exp_string: string): value_t =*)
 
   (*test like this: *)
-let exp1 = "(if (= 3 3) (cons 3 5) (cons 4 6))"
+let exp1 = ")"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
