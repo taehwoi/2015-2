@@ -3,3 +3,4 @@
 *.zip
 *.cmo
 *.cmi
+*.native
