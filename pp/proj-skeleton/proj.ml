@@ -13,7 +13,7 @@ type value_t =
   | NULL
   (*| CLOS of ...*)
   (*| CLOS_MEM of ... *)
-  (*| PAIR of ...*)
+  | PAIR of (value_t * value_t)
   (*| MPAIR of ...*)
   | VOID	       
 
@@ -27,7 +27,7 @@ let rec value_to_string (v:value_t): string =
   | NULL -> "'()"
   (*| CLOS _ -> "#<procedure>"*)
   (*| CLOS_MEM _ -> "#<procedure-memo>"*)
-  (*| PAIR (a, b) -> "(cons " ^ (value_to_string a) ^ " " ^ (value_to_string b) ^ ")"*)
+  | PAIR (a, b) -> "(" ^ (value_to_string a) ^ " . " ^ (value_to_string b) ^ ")"
   (*| MPAIR (a, b) -> "(mcons ? ?)"*)
   | VOID -> "#<void>"
 
@@ -47,21 +47,63 @@ let myeval (exp_string: string): value_t =
     | CONST (CTRUE) -> BOOL true
     | CONST (CFALSE) -> BOOL false
     | CONST (CNULL) -> VOID
-    | ADD (e0, e1) -> INT (arith_eval ('+', (eval e0), (eval e1)))
-    | SUB (e0, e1) -> INT (arith_eval ('-', (eval e0), (eval e1)))
-    | MUL (e0, e1) -> INT (arith_eval ('*', (eval e0), (eval e1)))
+    | ADD (e0, e1) -> (arith_eval '+' ((eval e0), (eval e1)))
+    | SUB (e0, e1) -> (arith_eval '-' ((eval e0), (eval e1)))
+    | MUL (e0, e1) -> (arith_eval '*' ((eval e0), (eval e1)))
+    | EQ (e0, e1) -> (arith_eval '=' ((eval e0), (eval e1)))
+    | LT (e0, e1) -> (arith_eval '<' ((eval e0), (eval e1)))
+    | GT (e0, e1) -> (arith_eval '>' ((eval e0), (eval e1)))
+    (*include this in arith_eval?*)
+    | CONS (e0, e1) -> PAIR ((eval e0), (eval e1))
+    (*FIXME: don't nest matches?*)
+    | CAR p -> 
+        (match p with
+        | CONS (e, _) -> (eval e)
+        | _ ->  raise (RUNTIME_EXCEPTION "pair expected"))
+    | CDR p -> 
+        (match p with
+        | CONS (_, e) -> (eval e)
+        | _ ->  raise (RUNTIME_EXCEPTION "pair expected"))
+    | IF (b, e0, e1) -> 
+        (match (eval b) with
+        | BOOL true -> (eval e0)
+        | BOOL false -> (eval e1)
+        | _ ->  raise (RUNTIME_EXCEPTION "boolean expected"))
+    | _ -> raise NOT_IMPLEMENTED
 
-and arith_eval exp =
-  match exp with
-  | ('+', (INT v0), (INT v1)) -> (v0 + v1)
-  | ('-', (INT v0), (INT v1)) -> (v0 - v1)
-  | ('*', (INT v0), (INT v1)) -> (v0 - v1)
+and arith_eval op vals=
+  match op with
+  | '+' -> 
+      (match vals with 
+      | ((INT a), (INT b)) -> INT (a + b) 
+      | _ -> raise (RUNTIME_EXCEPTION "+ with not-int" ) )
+  | '-' -> 
+      (match vals with 
+      | ((INT a), (INT b)) -> INT (a - b) 
+      | _ -> raise (RUNTIME_EXCEPTION "- with not-int" ) )
+  | '*' -> 
+      (match vals with 
+      | ((INT a), (INT b)) -> INT (a * b) 
+      | _ -> raise (RUNTIME_EXCEPTION "* with not-int" ) )
+  | '=' -> 
+      (match vals with 
+      | ((INT a), (INT b)) -> BOOL (a = b) 
+      | _ -> raise (RUNTIME_EXCEPTION "comparison of non-int not allowed" ) )
+  | '<' -> 
+      (match vals with 
+      | ((INT a), (INT b)) -> BOOL (a < b) 
+      | _ -> raise (RUNTIME_EXCEPTION "comparison of non-int not allowed" ) )
+  | '>' -> 
+      (match vals with 
+      | ((INT a), (INT b)) -> BOOL (a > b) 
+      | _ -> raise (RUNTIME_EXCEPTION "comparison of non-int not allowed" ) )
+  | _ -> raise NOT_IMPLEMENTED
 
 in eval exp
 
 (*let myeval_memo (exp_string: string): value_t =*)
 
   (*test like this: *)
-let exp1 = "(- (+ 1 2) 2)"
+let exp1 = "(if (= 3 3) (cons 3 5) (cons 4 6))"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
