@@ -84,6 +84,7 @@ let rec parse (lexer: unit -> token): Syn.exp_t =
       let exp = 
         match tok with
         | LPAREN -> (parse lexer)
+        | RPAREN -> raise (PARSE_ERROR "empty parenthesis")
         | PLUS -> Syn.ADD (rev ((parse lexer), (parse lexer))) 
         | MINUS -> Syn.SUB (rev ((parse lexer), (parse lexer))) 
         | TIMES -> Syn.MUL (rev ((parse lexer), (parse lexer))) 
@@ -106,12 +107,14 @@ let rec parse (lexer: unit -> token): Syn.exp_t =
         | MCDR -> Syn.MCDR (parse lexer)
         | SETMCAR -> Syn.SETMCAR (rev ( (parse lexer), (parse lexer) ))
         | SETMCDR -> Syn.SETMCDR (rev ( (parse lexer), (parse lexer) ))
+        | INT _ | ID _ | TRUE | FALSE -> 
+            raise ( PARSE_ERROR ((token_printer tok) ^ " is not a procedure") )
         | _ -> Syn.VAR "END" in
       if (lexer ()) <> RPAREN then
-        raise (PARSE_ERROR "unmatched ()") else
-        exp
-  | EOF -> Syn.VAR "end"
-  | _ -> Syn.VAR "WIP"
+        raise (PARSE_ERROR "unmatched parenthesis") else exp
+  | RPAREN -> raise (PARSE_ERROR  "need more operand")
+  | EOF -> raise (PARSE_ERROR  "premature eof")
+  | _ ->  raise (PARSE_ERROR  "not a part of the syntax")
 
 and var_to_list (lexer: unit -> token) (vl: Syntax.var_t list): Syntax.var_t list =
   let token = lexer () in
