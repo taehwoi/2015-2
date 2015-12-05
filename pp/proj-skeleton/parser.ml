@@ -71,7 +71,6 @@ let rev = function
 let rev_3 = function
   (a, b, c) -> (c, b, a)
 
-(*FIXME: tuples are evaluated from right, watch out for sideeffects*)
 let rec parse (lexer: unit -> token): Syn.exp_t =
   let token = lexer () in
   match token with 
@@ -86,6 +85,7 @@ let rec parse (lexer: unit -> token): Syn.exp_t =
         match tok with
         | LPAREN -> (parse lexer)
         | PLUS -> Syn.ADD (rev ((parse lexer), (parse lexer))) 
+        | MINUS -> Syn.SUB (rev ((parse lexer), (parse lexer))) 
         | TIMES -> Syn.MUL (rev ((parse lexer), (parse lexer))) 
         | IF -> Syn.IF (rev_3 ((parse lexer), (parse lexer), (parse lexer)))
         | CONS -> Syn.CONS (rev ((parse lexer), (parse lexer))) 
