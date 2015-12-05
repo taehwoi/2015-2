@@ -19,15 +19,15 @@ type token =
   | CDR
   | LAMBDA
   | LET
-  (*| LETREC*)
+  | LETREC
   | EQ
   | LT
   | GT
-  (*| MCONS*)
-  (*| MCAR*)
-  (*| MCDR*)
-  (*| SETMCAR*)
-  (*| SETMCDR*)
+  | MCONS
+  | MCAR
+  | MCDR
+  | SETMCAR
+  | SETMCDR
   (*| RAISE*)
   (*| HANDLERS*)
   | EOF
@@ -50,15 +50,15 @@ let token_printer = function
   | CDR -> "cdr"
   | LAMBDA -> "lambda"
   | LET -> "let"
-  (*| LETREC -> "letrec"*)
+  | LETREC -> "letrec"
   | EQ -> "="
   | LT -> "<"
   | GT -> ">"
-  (*| MCONS -> "mcons"*)
-  (*| MCAR -> "mcar"*)
-  (*| MCDR -> "mcdr"*)
-  (*| SETMCAR -> "set-mcar!"*)
-  (*| SETMCDR -> "set-mcdr!"*)
+  | MCONS -> "mcons"
+  | MCAR -> "mcar"
+  | MCDR -> "mcdr"
+  | SETMCAR -> "set-mcar!"
+  | SETMCDR -> "set-mcdr!"
   (*| RAISE -> "raise"*)
   (*| HANDLERS -> "with-handlers"*)
   | EOF -> "eof"
@@ -84,24 +84,32 @@ let rec parse (lexer: unit -> token): Syn.exp_t =
       let tok = lexer () in
       let exp = 
         match tok with
+        | LPAREN -> (parse lexer)
         | PLUS -> Syn.ADD (rev ((parse lexer), (parse lexer))) 
         | TIMES -> Syn.MUL (rev ((parse lexer), (parse lexer))) 
         | IF -> Syn.IF (rev_3 ((parse lexer), (parse lexer), (parse lexer)))
         | CONS -> Syn.CONS (rev ((parse lexer), (parse lexer))) 
+        | MCONS -> Syn.MCONS (rev ((parse lexer), (parse lexer))) 
         | CAR -> Syn.CAR (parse lexer) 
+        | CDR -> Syn.CDR (parse lexer) 
         | LAMBDA ->
           let _ = lexer() in
             Syn.LAMBDA (rev ((parse lexer), (var_to_list lexer [])))
         | LET -> 
             Syn.LET (rev ((parse lexer), (bind_to_list lexer [] 0)))
+        | LETREC -> 
+            Syn.LETREC (rev ((parse lexer), (bind_to_list lexer [] 0)))
         | EQ -> Syn.EQ (rev ((parse lexer), (parse lexer)))
         | LT -> Syn.LT (rev ((parse lexer), (parse lexer)))
         | GT -> Syn.GT (rev ((parse lexer), (parse lexer)))
-        | LPAREN -> (parse lexer)
-        | _ -> Syn.VAR "END"
-      in
-      let _ = lexer() in (*exhaust the right paren*)
-      exp
+        | MCAR -> Syn.MCAR (parse lexer)
+        | MCDR -> Syn.MCDR (parse lexer)
+        | SETMCAR -> Syn.SETMCAR (rev ( (parse lexer), (parse lexer) ))
+        | SETMCDR -> Syn.SETMCDR (rev ( (parse lexer), (parse lexer) ))
+        | _ -> Syn.VAR "END" in
+      if (lexer ()) <> RPAREN then
+        raise (PARSE_ERROR "unmatched ()") else
+        exp
   | EOF -> Syn.VAR "end"
   | _ -> Syn.VAR "WIP"
 
