@@ -1,5 +1,6 @@
 (* throw this exception with a proper message if you meet a parsing error. *)
 exception PARSE_ERROR of string
+module Syn= Syntax
 
 type token =
   | INT of int
@@ -71,34 +72,39 @@ let rev_3 = function
   (a, b, c) -> (c, b, a)
 
 (*FIXME: tuples are evaluated from right, watch out for sideeffects*)
-let rec parse (lexer: unit -> token): Syntax.exp_t =
+let rec parse (lexer: unit -> token): Syn.exp_t =
   let token = lexer () in
-  let _ = print_endline (token_printer token ) in
   match token with 
-  | INT n -> CONST (CINT n)
-  | ID v -> VAR v
-  | PLUS -> (ADD (rev ((parse lexer), (parse lexer))))
-  | MINUS -> (SUB (rev ((parse lexer), (parse lexer))))
-  | TIMES -> (MUL (rev ((parse lexer), (parse lexer))))
-  | LPAREN -> (parse lexer)
-  | RPAREN -> (parse lexer)
-  | TRUE -> CONST CTRUE
-  | FALSE -> CONST CFALSE
-  | NULL -> CONST CNULL
-  | IF -> IF (rev_3 ((parse lexer), (parse lexer), (parse lexer)))
-  | CONS -> CONS (rev ((parse lexer), (parse lexer)))
-  | CAR -> CAR (parse lexer)
-  | CDR -> CDR (parse lexer)
-  | LAMBDA ->
-      LAMBDA (rev ((parse lexer), (var_to_list lexer [])))
-  | LET -> 
-      let _ = lexer () in
-      let _ = lexer () in
-      LET (rev ((parse lexer), (bind_to_list lexer [])))
-  | EQ -> EQ (rev ((parse lexer), (parse lexer)))
-  | LT -> LT (rev ((parse lexer), (parse lexer)))
-  | GT -> GT (rev ((parse lexer), (parse lexer)))
-  | EOF -> VAR "end"
+  | INT n -> Syn.CONST (Syn.CINT n)
+  | ID v -> Syn.VAR v
+  | TRUE -> Syn.CONST Syn.CTRUE
+  | FALSE -> Syn.CONST Syn.CFALSE
+  | NULL -> Syn.CONST Syn.CNULL
+  | LPAREN -> 
+      let tok = lexer () in
+      let exp = 
+        match tok with
+        | PLUS -> Syn.ADD (rev ((parse lexer), (parse lexer))) 
+        | TIMES -> Syn.MUL (rev ((parse lexer), (parse lexer))) 
+        | IF -> Syn.IF (rev_3 ((parse lexer), (parse lexer), (parse lexer)))
+        | CONS -> Syn.CONS (rev ((parse lexer), (parse lexer))) 
+        | CAR -> Syn.CAR (parse lexer) 
+        | LAMBDA ->
+          let _ = lexer() in
+            Syn.LAMBDA (rev ((parse lexer), (var_to_list lexer [])))
+        | LET -> 
+            Syn.LET (rev ((parse lexer), (bind_to_list lexer [] 0)))
+        | EQ -> Syn.EQ (rev ((parse lexer), (parse lexer)))
+        | LT -> Syn.LT (rev ((parse lexer), (parse lexer)))
+        | GT -> Syn.GT (rev ((parse lexer), (parse lexer)))
+        | LPAREN -> (parse lexer)
+        | _ -> Syn.VAR "END"
+      in
+      let _ = lexer() in (*exhaust the right paren*)
+      exp
+  | EOF -> Syn.VAR "end"
+  | _ -> Syn.VAR "WIP"
+
 and var_to_list (lexer: unit -> token) (vl: Syntax.var_t list): Syntax.var_t list =
   let token = lexer () in
   match token with
@@ -106,21 +112,15 @@ and var_to_list (lexer: unit -> token) (vl: Syntax.var_t list): Syntax.var_t lis
   | ID v -> (var_to_list lexer (vl@[v]))
   | RPAREN -> vl
   | _ -> raise (PARSE_ERROR "not a variable")
-and bind_to_list (lexer: unit -> token) (bl: Syntax.binding_t list):Syntax.binding_t list =
+
+and bind_to_list (lexer: unit -> token) (bl: Syntax.binding_t list) cnt :Syntax.binding_t list =
   let token = lexer () in
-  let _ = print_string "at b_to_l: " in
-  let _ = print_endline (token_printer token ) in
   match token with
-  | LPAREN -> []
-  | ID v -> (bind_to_list lexer (bl@[(v,parse lexer)]))
+  | LPAREN -> (bind_to_list lexer bl (cnt+1))
+  | ID v -> 
+      (bind_to_list lexer (bl@[(v,parse lexer)]) cnt)
   | RPAREN -> 
-      if (next_token lexer) = RPAREN 
-      then 
-        let _ = print_string "end" in
-        bl
-      else (bind_to_list lexer bl)
+      if (cnt = 1)
+      then bl
+      else (bind_to_list lexer bl (cnt-1))
   | _ -> raise (PARSE_ERROR "not a variable")
-and next_token lexer: token =
-  let a = lexer () in 
-  let _ = print_endline (token_printer a ) in
-  a
