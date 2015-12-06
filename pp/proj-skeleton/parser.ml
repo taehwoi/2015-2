@@ -94,7 +94,6 @@ let rec parse (lexer: unit -> token): Syn.exp_t =
           | CAR -> Syn.CAR (parse_helper lexer) 
           | CDR -> Syn.CDR (parse_helper lexer) 
           | LAMBDA ->
-            let _ = lexer() in
               Syn.LAMBDA (rev ((parse_helper lexer), (var_to_list lexer [])))
           | LET -> 
               Syn.LET (rev ((parse_helper lexer), (bind_to_list lexer [] 0)))
