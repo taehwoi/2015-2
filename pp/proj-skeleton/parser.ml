@@ -121,7 +121,7 @@ let rec parse (lexer: unit -> token): Syn.exp_t =
       if lexer() = EOF then
         exp
       else
-        raise (PARSE_ERROR "trailing expressions")
+        raise (PARSE_ERROR "trailing characters")
 
 
 
