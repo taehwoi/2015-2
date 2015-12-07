@@ -62,12 +62,13 @@ public class HashTable
     public int p(int i)
     {
       int val = 0;
+      if (i == 0) return 0; 
       switch (policy) {
         case "linear" :
           val =  c1 * i;
           break;
         case "quadratic" :
-          val = (i==0? 0 : (c1 * i * i) + (c2 * i) + c3 ); 
+          val = (c1 * i * i) + (c2 * i) + c3 ; 
           break;
       }     
       return val;
