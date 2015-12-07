@@ -20,6 +20,7 @@ public class HashTable
     int key=0;
     for (int i=0;i<M;i++) {
       key = (h(value) + probe.p(i)) % M;
+      //System.out.printf("%d: %d\n", i, key);
       if (ht[key] == null) {
         ht[key] = value;
         break;
@@ -66,7 +67,7 @@ public class HashTable
           val =  c1 * i;
           break;
         case "quadratic" :
-          val = (c1 * i * i) + (c2 * i) + c3;
+          val = (i==0? 0 : (c1 * i * i) + (c2 * i) + c3 ); 
           break;
       }     
       return val;
