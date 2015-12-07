@@ -4,3 +4,4 @@
 *.cmo
 *.cmi
 *.native
+/_build
