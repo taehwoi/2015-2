@@ -81,9 +81,8 @@ let rec parse (lexer: unit -> token): Syn.exp_t =
     | FALSE -> Syn.CONST Syn.CFALSE
     | NULL -> Syn.CONST Syn.CNULL
     | LPAREN -> 
-        let tok = lexer () in
         let exp = 
-          match tok with
+          match lexer () with
           | LPAREN -> (parse_helper lexer)
           | PLUS -> Syn.ADD (rev ((parse_helper lexer), (parse_helper lexer))) 
           | MINUS -> Syn.SUB (rev ((parse_helper lexer), (parse_helper lexer))) 
