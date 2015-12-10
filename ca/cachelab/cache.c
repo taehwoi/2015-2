@@ -31,7 +31,7 @@ int lg(uint32 n)
 {//don't want to include math library,
  //n is known to be power of 2
   int cnt=0;
-  while(n <= 1) {
+  while(n > 1) {
     n /= 2;
     cnt++;
   }
@@ -45,21 +45,25 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
 {
   //get number of sets
   uint32 sets = capacity / (blocksize * ways);
-  uint32 tagshift = lg(blocksize) + lg(sets);
+  uint32 tagshift = lg(blocksize * sets);
   int i;
 
-  // TODO
-  //
-  // 1. check cache parameters
-  //    - capacity, blocksize, and ways must be powers of 2
-  //    - capacity must be > blocksize
-  //    - number of ways must be >= the number of blocks
-  // 2. allocate cache and initialize them
-  //    - use the above data structures Cache, Set, and Line
-  // 3. print cache configuration
-  // 4. return cache
+  // check cache parameters
+  //   - capacity, blocksize, and ways must be powers of 2
+  assert( ISPOW2(capacity) && ISPOW2(blocksize) && ISPOW2(ways) );
+  //   - capacity must be > blocksize
+  assert( capacity >= blocksize );
+  //   - number of ways must be >= the number of blocks
+  //FIXME
+  assert( ways <= blocksize );
 
   Cache* cache = malloc(sizeof(Cache));
+  //set parameters
+  cache->capacity = capacity;
+  cache->blocksize = blocksize;
+  cache->ways = ways;
+  cache->sets = sets;
+  cache->tagshift = tagshift;
 
   cache->set = malloc(sizeof(Set) * sets);
 
