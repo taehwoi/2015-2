@@ -27,10 +27,27 @@ char WP_STR[2][20] = {
   "write-allocate", "no write-allocate"
 };
 
+int lg(uint32 n)
+{//don't want to include math library,
+ //n is known to be power of 2
+  int cnt=0;
+  while(n <= 1) {
+    n /= 2;
+    cnt++;
+  }
+  return cnt;
+
+}
+
 
 Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
                     uint32 rp, uint32 wp, uint32 verbosity)
 {
+  //get number of sets
+  uint32 sets = capacity / (blocksize * ways);
+  uint32 tagshift = lg(blocksize) + lg(sets);
+  int i;
+
   // TODO
   //
   // 1. check cache parameters
@@ -42,7 +59,14 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
   // 3. print cache configuration
   // 4. return cache
 
+  Cache* cache = malloc(sizeof(Cache));
 
+  cache->set = malloc(sizeof(Set) * sets);
+
+  //for each set, allocate lines
+  for (i = 0; i < sets; i++) {
+    cache->set[i].way = malloc(sizeof(Line) * ways);
+  }
   // 3. print cache configuration
   printf("Cache configuration:\n"
          "  capacity:        %6u\n"
@@ -53,10 +77,10 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
          "  replacement:     %s\n"
          "  on write miss:   %s\n"
          "\n",
-         0, 0, 0, 0, 0, "", ""); // TODO
+         capacity, blocksize, ways, sets, tagshift, RP_STR[rp], WP_STR[wp]); 
 
   // 4. return cache
-  return NULL;
+  return cache;
 }
 
 void delete_cache(Cache *c)
