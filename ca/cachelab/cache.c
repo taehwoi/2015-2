@@ -88,10 +88,13 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
 }
 
 void delete_cache(Cache *c)
-{
-  // TODO
-  //
-  // clean-up the allocated memory
+{//free reversed order
+  int i;
+  for (i = 0; i < c->sets; i++) {
+    free(c->set[i].way);
+  }
+  free(c->set);
+  free(c);
 }
 
 void line_access(Cache *c, Line *l)
