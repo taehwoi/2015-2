@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cache.h"
+#include <string.h>
 
 char RP_STR[RP_MAX+1][32] = {
   "round robin", "random", "LRU (least-recently used)",
@@ -48,7 +49,7 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
   uint32 tagshift = lg(blocksize * sets);
   int i;
 
-  // check cache parameters
+  // check c parameters
   //   - capacity, blocksize, and ways must be powers of 2
   assert( ISPOW2(capacity) && ISPOW2(blocksize) && ISPOW2(ways) );
   //   - capacity must be > blocksize
@@ -57,22 +58,25 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
   //FIXME
   assert( ways <= blocksize );
 
-  Cache* cache = malloc(sizeof(Cache));
+  Cache *c = malloc(sizeof(Cache));
+  //reset values
+  memset(c, 0, sizeof(Cache));
   //set parameters
-  cache->capacity = capacity;
-  cache->blocksize = blocksize;
-  cache->ways = ways;
-  cache->sets = sets;
-  cache->tagshift = tagshift;
+  c->capacity = capacity;
+  c->blocksize = blocksize;
+  c->ways = ways;
+  c->sets = sets;
+  c->tagshift = tagshift;
+  
 
-  cache->set = malloc(sizeof(Set) * sets);
+  c->set = malloc(sizeof(Set) * sets);
 
   //for each set, allocate lines
   for (i = 0; i < sets; i++) {
-    cache->set[i].way = malloc(sizeof(Line) * ways);
+    c->set[i].way = malloc(sizeof(Line) * ways);
   }
   // 3. print cache configuration
-  printf("Cache configuration:\n"
+  printf("cache configuration:\n"
          "  capacity:        %6u\n"
          "  blocksize:       %6u\n"
          "  ways:            %6u\n"
@@ -83,8 +87,8 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
          "\n",
          capacity, blocksize, ways, sets, tagshift, RP_STR[rp], WP_STR[wp]); 
 
-  // 4. return cache
-  return cache;
+  // 4. return c
+  return c;
 }
 
 void delete_cache(Cache *c)
@@ -114,20 +118,50 @@ void line_alloc(Cache *c, Line *l, uint32 tag)
 
 uint32 set_find_victim(Cache *c, Set *s)
 {
+  switch (c->rp) {
+    case RP_RR: 
+      break;
+    case RP_RANDOM: 
+      break;
+    case RP_LRU: 
+      break;
+    default:
+      return EXIT_FAILURE;
+      
+  }
   // TODO
   //
   // for a given set, return the victim line where to place the new block
   return 0;
 }
 
+//the only visible interface (or supposed to be.)
 void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
 {
+
+  //compute block offset
+  uint32 bl_offset = c->blocksize - 1; //fill bitmask with 1s
+  bl_offset = address & bl_offset;
+
+  //compute set index
+  address >>= lg(c->blocksize); 
+  uint32 set_index = c->sets - 1;
+  set_index = address & set_index;
+
+  //compute tag
+  uint32 tag = (address >> lg(c->sets));
+
+  printf("t: %x s: %d\n", tag, set_index);
+
+
   // TODO
   //
   // simulate a cache access
-  // 1. compute set & tag
+  // 1. compute set & tag (v)
   // 2. check if we have a cache hit
   // 3. on a cache miss, find a victim block and allocate according to the
   //    current policies
   // 4. update statistics (# accesses, # hits, # misses)
+
+  c->s_access++;
 }
