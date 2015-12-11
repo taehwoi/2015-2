@@ -56,7 +56,7 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
   assert( capacity >= blocksize );
   //   - number of ways must be >= the number of blocks
   //FIXME
-  assert( ways <= blocksize );
+  assert( ways <= lg(blocksize) );
 
   Cache *c = malloc(sizeof(Cache));
   //reset values
@@ -151,7 +151,6 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
   //compute tag
   uint32 tag = (address >> lg(c->sets));
 
-  printf("t: %x s: %d\n", tag, set_index);
 
 
   // TODO
@@ -163,5 +162,6 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
   //    current policies
   // 4. update statistics (# accesses, # hits, # misses)
 
+  printf("t: %x s: %d\n", tag, set_index);
   c->s_access++;
 }
