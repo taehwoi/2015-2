@@ -77,6 +77,7 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
   //for each set, allocate lines
   for (i = 0; i < sets; i++) {
     c->set[i].way = malloc(sizeof(Line) * ways);
+    c->set[i].rr = 0;
   }
   // 3. print cache configuration
   printf("cache configuration:\n"
@@ -143,8 +144,8 @@ uint32 set_find_victim(Cache *c, Set *s)
   int i;
   switch (c->rp) {
     case RP_RR:
-      s->rr = ((s->rr + 1) % c->ways);
       victim = s->rr;
+      s->rr = ((s->rr + 1) % c->ways);
       break;
     case RP_RANDOM: 
       victim = rand() % c->ways;
@@ -200,7 +201,8 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
 
 
   // TODO
-  // 
+  // fix WP_NOWRITEALLOC
+  // fix round_robin
   // simulate a cache access
   // 1. compute set & tag (v)
   // 2. check if we have a cache hit (v)
