@@ -143,7 +143,8 @@ uint32 set_find_victim(Cache *c, Set *s)
   int i;
   switch (c->rp) {
     case RP_RR:
-      victim = s->rr++ % c->ways; //each set has one rr
+      s->rr = ((s->rr + 1) % c->ways);
+      victim = s->rr;
       break;
     case RP_RANDOM: 
       victim = rand() % c->ways;
