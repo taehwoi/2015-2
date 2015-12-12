@@ -107,8 +107,9 @@ void delete_cache(Cache *c)
 int line_access(Cache *c, Line *l, uint32 tag)
 {//move the accessed Line to the front, and shift the rest
   int i;
-  for (i = 0; i < c->ways ; i++) {
+  for (i = 0; i < c->ways ; i++) 
     l[i].age++;
+  for (i = 0; i < count; i++) {
     if (l[i].tag == tag && l[i].valid == 1) {
       l[i].age = 0;
       return 1;
