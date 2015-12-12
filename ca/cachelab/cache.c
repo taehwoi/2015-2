@@ -108,7 +108,9 @@ int line_access(Cache *c, Line *l, uint32 tag)
 {//move the accessed Line to the front, and shift the rest
   int i;
   for (i = 0; i < c->ways ; i++) {
+    l[i].age++;
     if (l[i].tag == tag && l[i].valid == 1) {
+      l[i].age = 0;
       return 1;
     }
   }
@@ -124,6 +126,7 @@ int line_alloc(Cache *c, Line *l, uint32 tag)
     if (l[i].valid == 0) {//empty line
       l[i].tag = tag;
       l[i].valid = 1;
+      l[i].age = 0;
       return 1; //success
     }
   }
@@ -134,22 +137,27 @@ int line_alloc(Cache *c, Line *l, uint32 tag)
 uint32 set_find_victim(Cache *c, Set *s)
 {
   int victim=0;
-  switch (c->rp) {
+  int max = -1;
+  int i;
+  switch (c->rp) { //choose victim
     case RP_RR: 
       break;
     case RP_RANDOM: 
       victim = rand() % c->ways;
-      s->way[victim].valid = 0;
       break;
     case RP_LRU: 
+      for (i = 0; i < c->ways; i++) {//search oldest line
+        if (max < s->way[i].age) {
+          max = s->way[i].age;
+          victim = i;
+        }
+      }
       break;
     default:
       return EXIT_FAILURE;
-      
   }
-  // TODO
-  //
-  // for a given set, return the victim line where to place the new block
+
+  s->way[victim].valid = 0;
   c->s_evict++;
   return 0;
 }
@@ -157,8 +165,6 @@ uint32 set_find_victim(Cache *c, Set *s)
 //the only visible interface (or supposed to be.)
 void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
 {
-  int i;
-
   //compute block offset (not needed in our implementation)
   uint32 bl_offset = c->blocksize - 1; //fill bitmask with 1s
   bl_offset = address & bl_offset;
@@ -195,6 +201,6 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
   //    current policies
   // 4. update statistics (# accesses, # hits, # misses) (v)
 
-  printf("t: %x s: %d\n", tag, set_i);
+  /*printf("t: %x s: %d\n", tag, set_i);*/
   c->s_access++;
 }
