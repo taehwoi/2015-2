@@ -30,7 +30,7 @@ char WP_STR[2][20] = {
 
 int lg(uint32 n)
 {//don't want to include math library,
- //n is known to be power of 2
+ //n is known to be power of 2 - cnt is int
   int cnt=0;
   while(n > 1) {
     n /= 2;
@@ -49,7 +49,7 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
   uint32 tagshift = lg(blocksize * sets);
   int i;
 
-  // check c parameters
+  // check cache parameters
   //   - capacity, blocksize, and ways must be powers of 2
   assert( ISPOW2(capacity) && ISPOW2(blocksize) && ISPOW2(ways) );
   //   - capacity must be > blocksize
@@ -77,7 +77,7 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
   //for each set, allocate lines
   for (i = 0; i < sets; i++) {
     c->set[i].way = malloc(sizeof(Line) * ways);
-    c->set[i].rr = 0;
+    c->set[i].rr = 0; //round robin base = 0
   }
   // 3. print cache configuration
   printf("cache configuration:\n"
@@ -106,7 +106,7 @@ void delete_cache(Cache *c)
 }
 
 int line_access(Cache *c, Line *l, uint32 tag)
-{//move the accessed Line to the front, and shift the rest
+{//increment unaccessed, valid line's age
   int i;
   int hit = 0;
 
@@ -118,7 +118,6 @@ int line_access(Cache *c, Line *l, uint32 tag)
     }
   }
   return hit;
-  // update data structures to reflect access to a cache line
 }
 
 
@@ -134,11 +133,10 @@ int line_alloc(Cache *c, Line *l, uint32 tag)
     }
   }
   return 0; //fail : cache is full
-  
 }
 
 uint32 set_find_victim(Cache *c, Set *s)
-{//choose victim
+{//choose victim according to c's replacement policy
   int victim=0;
   int max=0; 
   int i;
@@ -159,19 +157,23 @@ uint32 set_find_victim(Cache *c, Set *s)
         }
       }
       break;
-    default:
+    default: //not implemented
       return EXIT_FAILURE;
   }
 
-  //set validity to 0 : empty line
-  s->way[victim].valid = 0;
+  return victim;
+}
+void replace_victim(Cache *c, Set *s, uint32 tag, uint32 victim)
+{
+  s->way[victim].tag = tag;
+  s->way[victim].age = 0;
   c->s_evict++;
-  return 0;
 }
 
 //the only visible interface
 void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
 {
+  uint32 victim=0;
   //compute block offset (not needed in our implementation)
   uint32 bl_offset = c->blocksize - 1; //fill bitmask with 1s
   bl_offset = address & bl_offset;
@@ -189,13 +191,13 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
   else {
     if (!(type == 1 && c->wp == WP_NOWRITEALLOC)) {
       if ( !( line_alloc(c, c->set[set_i].way, tag) ) )
-      {//set full
-        set_find_victim(c, &c->set[set_i]);
-        line_alloc(c, c->set[set_i].way, tag);
+      {//fail to allocate: choose a victim
+        victim = set_find_victim(c, &c->set[set_i]);
+        replace_victim(c, &c->set[set_i], tag, victim);
       }
     }
     c->s_miss++;
   }
-
   c->s_access++;
+  return;
 }
