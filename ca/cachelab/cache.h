@@ -59,9 +59,7 @@ typedef struct __line {
 // Set: one set of the cache
 typedef struct __set {
   Line  *way;                         // cache lines
-
-  // TODO
-  // if necessary add more fields
+  uint32 rr; //value to keep track of round robin
 } Set;
 
 // Cache: the cache
@@ -81,8 +79,9 @@ typedef struct __cache {
   uint32 s_miss;                      // statistics: number of misses
   uint32 s_evict;                     // statistics: number of evictions
 
+
   uint32 rp;
-  uint32 wp;
+  uint8 wp;
 
 } Cache;
 
