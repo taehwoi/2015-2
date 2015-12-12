@@ -108,8 +108,9 @@ int line_access(Cache *c, Line *l, uint32 tag)
 {//move the accessed Line to the front, and shift the rest
   int i;
   for (i = 0; i < c->ways ; i++) 
-    l[i].age++;
-  for (i = 0; i < count; i++) {
+    if (l[i].valid == 1)
+      l[i].age++;
+  for (i = 0; i < c->ways; i++) {
     if (l[i].tag == tag && l[i].valid == 1) {
       l[i].age = 0;
       return 1;
@@ -138,7 +139,7 @@ int line_alloc(Cache *c, Line *l, uint32 tag)
 uint32 set_find_victim(Cache *c, Set *s)
 {
   int victim=0;
-  int max = -1;
+  int max = s->way[victim].age;
   int i;
   switch (c->rp) { //choose victim
     case RP_RR: 
@@ -147,8 +148,8 @@ uint32 set_find_victim(Cache *c, Set *s)
       victim = rand() % c->ways;
       break;
     case RP_LRU: 
-      for (i = 0; i < c->ways; i++) {//search oldest line
-        if (max < s->way[i].age) {
+      for (i = 1; i < c->ways; i++) {//search oldest line
+        if (s->way[i].valid == 1 && max < s->way[i].age) {
           max = s->way[i].age;
           victim = i;
         }
