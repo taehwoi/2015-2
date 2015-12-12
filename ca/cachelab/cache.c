@@ -187,11 +187,10 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
   if ( line_access(c, c->set[set_i].way, tag) )
     c->s_hit++;
   else {
-    if ( !( line_alloc(c, c->set[set_i].way, tag) ) )
-    {//set full
-      if (!(type == 1 && c->wp == WP_NOWRITEALLOC)) {
-        //FIXME
-        
+    if (!(type == 1 && c->wp == WP_NOWRITEALLOC)) {
+      //FIXME
+      if ( !( line_alloc(c, c->set[set_i].way, tag) ) )
+      {//set full
         set_find_victim(c, &c->set[set_i]);
         line_alloc(c, c->set[set_i].way, tag);
       }
@@ -202,7 +201,7 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
 
   // TODO
   // fix WP_NOWRITEALLOC
-  // fix round_robin
+  // fix round_robin (v)
   // simulate a cache access
   // 1. compute set & tag (v)
   // 2. check if we have a cache hit (v)
@@ -210,6 +209,5 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
   //    current policies (v)
   // 4. update statistics (# accesses, # hits, # misses) (v)
 
-  /*printf("t: %x s: %d\n", tag, set_i);*/
   c->s_access++;
 }
