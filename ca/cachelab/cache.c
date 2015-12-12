@@ -68,6 +68,9 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
   c->sets = sets;
   c->tagshift = tagshift;
   
+  c->rp = rp;
+  c->wp = wp;
+  
 
   c->set = malloc(sizeof(Set) * sets);
 
@@ -92,7 +95,7 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
 }
 
 void delete_cache(Cache *c)
-{//free reversed order
+{//free the cache
   int i;
   for (i = 0; i < c->sets; i++) {
     free(c->set[i].way);
@@ -101,27 +104,42 @@ void delete_cache(Cache *c)
   free(c);
 }
 
-void line_access(Cache *c, Line *l)
-{
-  // TODO
-  //
+int line_access(Cache *c, Line *l, uint32 tag)
+{//move the accessed Line to the front, and shift the rest
+  int i;
+  for (i = 0; i < c->ways ; i++) {
+    if (l[i].tag == tag && l[i].valid == 1) {
+      return 1;
+    }
+  }
+  return 0;
   // update data structures to reflect access to a cache line
 }
 
 
-void line_alloc(Cache *c, Line *l, uint32 tag)
-{
-  // TODO
-  //
-  // update data structures to reflect allocation of a new block into a line
+int line_alloc(Cache *c, Line *l, uint32 tag)
+{//search the way, and put it somewhere
+  int i;
+  for (i = 0; i < c->ways; i++) {
+    if (l[i].valid == 0) {//empty line
+      l[i].tag = tag;
+      l[i].valid = 1;
+      return 1; //success
+    }
+  }
+  return 0; //fail : cache is full
+  
 }
 
 uint32 set_find_victim(Cache *c, Set *s)
 {
+  int victim=0;
   switch (c->rp) {
     case RP_RR: 
       break;
     case RP_RANDOM: 
+      victim = rand() % c->ways;
+      s->way[victim].valid = 0;
       break;
     case RP_LRU: 
       break;
@@ -132,36 +150,51 @@ uint32 set_find_victim(Cache *c, Set *s)
   // TODO
   //
   // for a given set, return the victim line where to place the new block
+  c->s_evict++;
   return 0;
 }
 
 //the only visible interface (or supposed to be.)
 void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
 {
+  int i;
 
-  //compute block offset
+  //compute block offset (not needed in our implementation)
   uint32 bl_offset = c->blocksize - 1; //fill bitmask with 1s
   bl_offset = address & bl_offset;
 
   //compute set index
   address >>= lg(c->blocksize); 
-  uint32 set_index = c->sets - 1;
-  set_index = address & set_index;
+  uint32 set_i = c->sets - 1;
+  set_i = address & set_i;
 
   //compute tag
   uint32 tag = (address >> lg(c->sets));
 
+  if ( line_access(c, c->set[set_i].way, tag) )
+    c->s_hit++;
+  else {
+    if ( !( line_alloc(c, c->set[set_i].way, tag) ) )
+    {//set full
+      if (!(type == 1 && c->wp == WP_NOWRITEALLOC)) {
+        
+        set_find_victim(c, &c->set[set_i]);
+        line_alloc(c, c->set[set_i].way, tag);
+      }
+    }
+    c->s_miss++;
+  }
 
 
   // TODO
   //
   // simulate a cache access
   // 1. compute set & tag (v)
-  // 2. check if we have a cache hit
+  // 2. check if we have a cache hit (v)
   // 3. on a cache miss, find a victim block and allocate according to the
   //    current policies
-  // 4. update statistics (# accesses, # hits, # misses)
+  // 4. update statistics (# accesses, # hits, # misses) (v)
 
-  printf("t: %x s: %d\n", tag, set_index);
+  printf("t: %x s: %d\n", tag, set_i);
   c->s_access++;
 }
