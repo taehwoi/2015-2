@@ -137,12 +137,13 @@ int line_alloc(Cache *c, Line *l, uint32 tag)
 }
 
 uint32 set_find_victim(Cache *c, Set *s)
-{
+{//choose victim
   int victim=0;
   int max=0; 
   int i;
-  switch (c->rp) { //choose victim
-    case RP_RR: 
+  switch (c->rp) {
+    case RP_RR:
+      victim = s->rr++ % c->ways; //each set has one rr
       break;
     case RP_RANDOM: 
       victim = rand() % c->ways;
@@ -160,12 +161,13 @@ uint32 set_find_victim(Cache *c, Set *s)
       return EXIT_FAILURE;
   }
 
+  //set validity to 0 : empty line
   s->way[victim].valid = 0;
   c->s_evict++;
   return 0;
 }
 
-//the only visible interface (or supposed to be.)
+//the only visible interface
 void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
 {
   //compute block offset (not needed in our implementation)
@@ -201,7 +203,7 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
   // 1. compute set & tag (v)
   // 2. check if we have a cache hit (v)
   // 3. on a cache miss, find a victim block and allocate according to the
-  //    current policies
+  //    current policies (v)
   // 4. update statistics (# accesses, # hits, # misses) (v)
 
   /*printf("t: %x s: %d\n", tag, set_i);*/
