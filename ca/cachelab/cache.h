@@ -35,6 +35,9 @@
 #define WP_NOWRITEALLOC       1       // no write-alloate
 #define WP_MAX                WP_NOWRITEALLOC
 
+#define SUCCESS 1
+#define FAIL 0
+
 // use these to print replacement and write allocate policies
 extern char RP_STR[RP_MAX+1][32];
 extern char WP_STR[2][20];
@@ -98,12 +101,12 @@ void delete_cache(Cache *c);
 //
 // simulate access to a cache line
 //
-void line_access(Cache *c, Line *l);
+int line_access(Cache *c, Line *l, uint32 tag);
 
 //
 // allocate a tag into a given cache line
 //
-void line_alloc(Cache *c, Line *l, uint32 tag);
+int line_alloc(Cache *c, Line *l, uint32 tag);
 
 //
 // find a victim line for a given cache set
