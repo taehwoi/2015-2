@@ -189,6 +189,7 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
     if ( !( line_alloc(c, c->set[set_i].way, tag) ) )
     {//set full
       if (!(type == 1 && c->wp == WP_NOWRITEALLOC)) {
+        //FIXME
         
         set_find_victim(c, &c->set[set_i]);
         line_alloc(c, c->set[set_i].way, tag);
@@ -199,7 +200,7 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
 
 
   // TODO
-  //
+  // 
   // simulate a cache access
   // 1. compute set & tag (v)
   // 2. check if we have a cache hit (v)
