@@ -50,8 +50,9 @@ typedef unsigned int uint32;
 // (hint: for the simulation you do not need to store the actual data in the
 //        cache, the tag and management information is sufficient)
 typedef struct __line {
-  uint8 valid;
   uint32 tag;
+  uint32 hist; //count refer time for LRU policy
+  uint8 valid;
   // if necessary add more fields
 } Line;
 
