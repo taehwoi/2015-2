@@ -188,7 +188,6 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
     c->s_hit++;
   else {
     if (!(type == 1 && c->wp == WP_NOWRITEALLOC)) {
-      //FIXME
       if ( !( line_alloc(c, c->set[set_i].way, tag) ) )
       {//set full
         set_find_victim(c, &c->set[set_i]);
@@ -197,17 +196,6 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
     }
     c->s_miss++;
   }
-
-
-  // TODO
-  // fix WP_NOWRITEALLOC
-  // fix round_robin (v)
-  // simulate a cache access
-  // 1. compute set & tag (v)
-  // 2. check if we have a cache hit (v)
-  // 3. on a cache miss, find a victim block and allocate according to the
-  //    current policies (v)
-  // 4. update statistics (# accesses, # hits, # misses) (v)
 
   c->s_access++;
 }
