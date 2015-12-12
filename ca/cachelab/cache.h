@@ -51,7 +51,7 @@ typedef unsigned int uint32;
 //        cache, the tag and management information is sufficient)
 typedef struct __line {
   uint32 tag;
-  uint32 hist; //count refer time for LRU policy
+  uint32 age; //count refer time for LRU policy
   uint8 valid;
   // if necessary add more fields
 } Line;
