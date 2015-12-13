@@ -74,7 +74,6 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
   c->ways = ways;
   c->sets = sets;
   c->tagshift = tagshift;
-  
   c->rp = rp;
   c->wp = wp;
   
@@ -131,7 +130,7 @@ int line_access(Cache *c, Line *l, uint32 tag)
 
 
 int line_alloc(Cache *c, Line *l, uint32 tag)
-{//search the way, and put it somewhere
+{//search for empty lines to put tag
   int i;
   for (i = 0; i < c->ways; i++) {
     if (l[i].valid == 0) {//empty line
@@ -159,6 +158,7 @@ uint32 set_find_victim(Cache *c, Set *s)
     case RP_LRU: 
       max = s->way[0].age;
       for (i = 1; i < c->ways; i++) {//search oldest line
+        //every line would be valid, but check validity just in case
         if (s->way[i].valid == 1 && max < s->way[i].age) {
           max = s->way[i].age;
           victim = i;
@@ -171,24 +171,24 @@ uint32 set_find_victim(Cache *c, Set *s)
 
   return victim;
 }
+
 void replace_victim(Cache *c, Set *s, uint32 tag, uint32 victim)
-{
+{//change victim line's tag with new one
   s->way[victim].tag = tag;
   s->way[victim].age = 0;
-  c->s_evict++;
 }
 
 //the only visible interface
 void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
 {
   uint32 victim=0;
-  //compute block offset (not needed in our implementation)
+  //compute block offset (although not needed in this implementation)
   uint32 bl_offset = c->blocksize - 1; //fill bitmask with 1s
   bl_offset = address & bl_offset;
 
   //compute set index
   address >>= lg(c->blocksize); 
-  uint32 set_i = c->sets - 1;
+  uint32 set_i = c->sets - 1;//fill bitmask with 1s
   set_i = address & set_i;
 
   //compute tag
@@ -196,16 +196,20 @@ void cache_access(Cache *c, uint32 type, uint32 address, uint32 length)
 
   if ( line_access(c, c->set[set_i].way, tag) )
     c->s_hit++;
-  else {
-    if (!(type == 1 && c->wp == WP_NOWRITEALLOC)) {
+  else 
+  {//missed
+    c->s_miss++;
+    if ( !(type == WRITE && c->wp == WP_NOWRITEALLOC) ) 
+    {//if type=W && NO_WR_ALLOC, do nothing to the cache when there is a miss
       if ( !( line_alloc(c, c->set[set_i].way, tag) ) )
-      {//fail to allocate: choose a victim
+      {//failed to allocate new data: choose a victim
         victim = set_find_victim(c, &c->set[set_i]);
         replace_victim(c, &c->set[set_i], tag, victim);
+        c->s_evict++;
       }
     }
-    c->s_miss++;
   }
+
   c->s_access++;
   return;
 }
