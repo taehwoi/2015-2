@@ -51,9 +51,8 @@ typedef unsigned int uint32;
 //        cache, the tag and management information is sufficient)
 typedef struct __line {
   uint32 tag;
-  uint32 age; //count refer time for LRU policy
+  uint32 age; //count unreferenced time for LRU policy
   uint8 valid;
-  // if necessary add more fields
 } Line;
 
 // Set: one set of the cache
@@ -72,16 +71,13 @@ typedef struct __cache {
   uint32 ways;
   uint32 sets;
   uint32 tagshift;
+  uint32 rp;
+  uint32 wp;
   
-
   uint32 s_access;                    // statistics: number of accesses
   uint32 s_hit;                       // statistics: number of hits
   uint32 s_miss;                      // statistics: number of misses
   uint32 s_evict;                     // statistics: number of evictions
-
-
-  uint32 rp;
-  uint8 wp;
 
 } Cache;
 
