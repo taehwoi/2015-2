@@ -23,15 +23,8 @@ struct
     | BOX (SW, d)-> BOX (NW, d)
     | _ -> raise NON_BASIC_BOX
 
-  let pp b center = 
-    match b with
-    | BOX (NW,x) -> ()                  (* dummy, fill it if you want *)
-    | BOX (NE,x) -> ()                  (* dummy, fill it if you want *)
-    | BOX (SE,x) -> ()                  (* dummy, fill it if you want *)
-    | BOX (SW,x) -> ()                  (* dummy, fill it if you want *)
-    | _ -> raise NON_BASIC_BOX
-
   let size = 1
+  let pp b center = ()
 end
 
 module Rotate (Box:FRAME) : FRAME =
@@ -49,15 +42,9 @@ struct
 
   let box = rotate (Box.box)
 
-  let size = 1 (*FIXME*)
+  let size = Box.size
+  let pp b center = ()
 
-  let pp b center = 
-    match b with
-    | BOX (NW,x) -> ()                  (* dummy, fill it if you want *)
-    | BOX (NE,x) -> ()                  (* dummy, fill it if you want *)
-    | BOX (SE,x) -> ()                  (* dummy, fill it if you want *)
-    | BOX (SW,x) -> ()                  (* dummy, fill it if you want *)
-    | _ -> ()
 end
 
 module Glue (Nw:FRAME) (Ne:FRAME) (Se:FRAME) (Sw:FRAME) : FRAME =
@@ -65,7 +52,11 @@ struct
   exception DIFFERENT_SIZED_BOXES
 
   let box = 
-    GLUED (Nw.box, Ne.box, Se.box, Sw.box)
+    if List.for_all (fun (x) -> (x = Nw.size)) [Nw.size;Ne.size;Se.size;Sw.size] then
+      GLUED (Nw.box, Ne.box, Se.box, Sw.box) 
+    else
+      raise DIFFERENT_SIZED_BOXES
+
 
   let rec rotate (b:box) : box = 
     match b with
@@ -73,15 +64,12 @@ struct
     | BOX (NE, d)-> BOX (SE, d)
     | BOX (SE, d)-> BOX (SW, d)
     | BOX (SW, d)-> BOX (NW, d)
-    (*FIXME*)
     | GLUED (b0, b1, b2, b3) -> GLUED (rotate b3, rotate b0, rotate b1, rotate b2)
 
-  let size = 1 (*FIXME*)
-  let pp b center = 
-    match b with
-    | BOX (NW,x) -> ()                  (* dummy, fill it if you want *)
-    | BOX (NE,x) -> ()                  (* dummy, fill it if you want *)
-    | BOX (SE,x) -> ()                  (* dummy, fill it if you want *)
-    | BOX (SW,x) -> ()                  (* dummy, fill it if you want *)
-    | _ -> ()
+  let size =
+    if List.for_all (fun (x) -> (x = Nw.size)) [Nw.size;Ne.size;Se.size;Sw.size] then
+      4 * Nw.size
+    else
+      raise DIFFERENT_SIZED_BOXES
+  let pp b center = ()
 end

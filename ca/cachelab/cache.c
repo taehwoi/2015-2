@@ -40,28 +40,34 @@ int lg(uint32 n)
 
 }
 
-
-Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
-                    uint32 rp, uint32 wp, uint32 verbosity)
-{
-  //get number of sets
-  assert( (capacity * blocksize) >= ways );
-  uint32 sets = capacity / (blocksize * ways);
-  uint32 tagshift = lg(blocksize * sets);
-  int i;
-
-  // check cache parameters
+void check_param(uint32 capacity, uint32 blocksize, uint32 ways)
+{//test cache parameters
   //   - capacity, blocksize, and ways must be powers of 2
   assert( ISPOW2(capacity) && ISPOW2(blocksize) && ISPOW2(ways) );
   //   - capacity must be >= blocksize
   assert( capacity >= blocksize );
-  //   - number of ways must be <= the number of blocks
-  //FIXME
-  assert( ways <= lg(blocksize) );
+  //   - number of blocks >= the number of ways
+  assert( (capacity / blocksize) >= ways );
+}
 
-  Cache *c = malloc(sizeof(Cache));
-  //reset values
-  memset(c, 0, sizeof(Cache));
+
+Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
+                    uint32 rp, uint32 wp, uint32 verbosity)
+{
+  int i;
+  uint32 sets;
+  uint32 tagshift;
+  Cache *c;
+
+  /*check cache parameters*/
+  check_param(capacity, blocksize, ways);
+
+  //get number of sets
+  sets = capacity / (blocksize * ways);
+  tagshift = lg(blocksize * sets);
+
+
+  c = calloc(1, sizeof(Cache));
   //set parameters
   c->capacity = capacity;
   c->blocksize = blocksize;
@@ -73,11 +79,12 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
   c->wp = wp;
   
 
+  //allocate sets
   c->set = malloc(sizeof(Set) * sets);
 
   //for each set, allocate lines
   for (i = 0; i < sets; i++) {
-    c->set[i].way = malloc(sizeof(Line) * ways);
+    c->set[i].way = calloc(ways, sizeof(Line));
     c->set[i].rr = 0; //round robin base = 0
   }
   // 3. print cache configuration
@@ -107,13 +114,14 @@ void delete_cache(Cache *c)
 }
 
 int line_access(Cache *c, Line *l, uint32 tag)
-{//increment unaccessed, valid line's age
+{//access the cache and return hit/miss
   int i;
   int hit = 0;
 
   for (i = 0; i < c->ways; i++) {
+    //increment unaccessed, valid line's age
     l[i].age += l[i].valid; //use valid bit to increment age
-    if (l[i].tag == tag && l[i].valid == 1) {
+    if (l[i].valid == 1 && l[i].tag == tag) {
       l[i].age = 0;
       hit = 1;
     }
