@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cache.h"
-#include <string.h>
 
 char RP_STR[RP_MAX+1][32] = {
   "round robin", "random", "LRU (least-recently used)",
