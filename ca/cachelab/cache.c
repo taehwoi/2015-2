@@ -45,6 +45,7 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
                     uint32 rp, uint32 wp, uint32 verbosity)
 {
   //get number of sets
+  assert( (capacity * blocksize) >= ways );
   uint32 sets = capacity / (blocksize * ways);
   uint32 tagshift = lg(blocksize * sets);
   int i;
@@ -52,9 +53,9 @@ Cache* create_cache(uint32 capacity, uint32 blocksize, uint32 ways,
   // check cache parameters
   //   - capacity, blocksize, and ways must be powers of 2
   assert( ISPOW2(capacity) && ISPOW2(blocksize) && ISPOW2(ways) );
-  //   - capacity must be > blocksize
+  //   - capacity must be >= blocksize
   assert( capacity >= blocksize );
-  //   - number of ways must be >= the number of blocks
+  //   - number of ways must be <= the number of blocks
   //FIXME
   assert( ways <= lg(blocksize) );
 
