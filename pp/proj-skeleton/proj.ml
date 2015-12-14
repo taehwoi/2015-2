@@ -77,8 +77,10 @@ and eval (exp: exp_t) env: value_t =
         | BOOL true -> (eval e0 env)
         | BOOL false -> (eval e1 env)
         | _ ->  raise (RUNTIME_EXCEPTION "boolean expected"))
+        (*TODO: check how let & letrec works -> evaluate ATM : current implementation
+          or evaluate when variable is called: have to remember where the value was *)
     | LET (blist, e) -> 
-        begin
+        begin 
           let ht = Hashtbl.create (List.length blist) in
           let _ = List.iter (function (v, e) -> Hashtbl.add ht v (eval e env)) blist in
           (eval e (ht::env)) (*wrong?*)
