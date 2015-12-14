@@ -1,5 +1,6 @@
 open Syntax
 open Lexer
+open Hashtbl
 
 exception RUNTIME_EXCEPTION of string
 exception NOT_IMPLEMENTED
@@ -16,6 +17,9 @@ type value_t =
   | PAIR of (value_t * value_t)
   (*| MPAIR of ...*)
   | VOID	       
+
+(*type env_t = *)
+  (*Hashtbl of (var_t * exp_t) list*)
 
 (* If value_to_string does not work well for your code, *)
 (*  adjust this function manually to make it work *)
@@ -52,6 +56,7 @@ and eval (exp: exp_t) env: value_t =
     | CONST (CTRUE) -> BOOL true
     | CONST (CFALSE) -> BOOL false
     | CONST (CNULL) -> VOID
+    | VAR v -> (Hashtbl.find (List.hd env) v)(*FIXME: this won't work with letrec?*)
     | ADD (e0, e1) -> (binary_eval ('+', (eval e0 env), (eval e1 env)))
     | SUB (e0, e1) -> (binary_eval ('-', (eval e0 env), (eval e1 env)))
     | MUL (e0, e1) -> (binary_eval ('*', (eval e0 env), (eval e1 env)))
@@ -72,6 +77,18 @@ and eval (exp: exp_t) env: value_t =
         | BOOL true -> (eval e0 env)
         | BOOL false -> (eval e1 env)
         | _ ->  raise (RUNTIME_EXCEPTION "boolean expected"))
+    | LET (blist, e) -> 
+        begin
+          let ht = Hashtbl.create (List.length blist) in
+          let _ = List.iter (function (v, e) -> Hashtbl.add ht v (eval e env)) blist in
+          (eval e (ht::env)) (*wrong?*)
+        end
+    | LETREC (blist, e) -> 
+        begin
+          let ht = Hashtbl.create (List.length blist) in
+          let _ = List.iter (function (v, e) -> Hashtbl.add ht v (eval e (ht::env))) blist in
+          (eval e (ht::env)) (*wrong?*)
+        end
     | _ -> raise NOT_IMPLEMENTED
 
 and binary_eval exp =
@@ -93,6 +110,6 @@ and binary_eval exp =
 (*let myeval_memo (exp_string: string): value_t =*)
 
   (*test like this: *)
-let exp1 = "(+ 3 5)"
+let exp1 = "(let ((x 4) (z 3) (y (+ x z))) y)"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
