@@ -79,18 +79,18 @@ and eval (exp: exp_t) env: value_t =
 and binary_eval exp =
   match exp with
   | ('+', (INT a), (INT b)) ->  INT (a + b) 
-  | '+', _, _ ->  raise (RUNTIME_EXCEPTION "trying to + non-ints" ) 
   | ('-', (INT a), (INT b)) ->  INT (a - b) 
-  | '-', _, _ ->  raise (RUNTIME_EXCEPTION "trying to - non-ints" ) 
   | ('*', (INT a), (INT b)) ->  INT (a * b) 
-  | '*', _, _ ->  raise (RUNTIME_EXCEPTION "trying to * non-ints" ) 
   | ('=', (INT a), (INT b)) ->  BOOL (a = b) 
-  | '=', _, _ ->  raise (RUNTIME_EXCEPTION "trying to = non-ints" ) 
   | ('<', (INT a), (INT b)) ->  BOOL (a < b) 
-  | '<', _, _ ->  raise (RUNTIME_EXCEPTION "trying to < non-ints" ) 
   | ('>', (INT a), (INT b)) ->  BOOL (a > b) 
-  | '>', _, _ ->  raise (RUNTIME_EXCEPTION "trying to > non-ints" ) 
   | ('p', a, b) ->  PAIR (a , b) 
+  | '+', _, _ ->  raise (RUNTIME_EXCEPTION "trying to + non-ints" ) 
+  | '-', _, _ ->  raise (RUNTIME_EXCEPTION "trying to - non-ints" ) 
+  | '*', _, _ ->  raise (RUNTIME_EXCEPTION "trying to * non-ints" ) 
+  | '=', _, _ ->  raise (RUNTIME_EXCEPTION "trying to = non-ints" ) 
+  | '<', _, _ ->  raise (RUNTIME_EXCEPTION "trying to < non-ints" ) 
+  | '>', _, _ ->  raise (RUNTIME_EXCEPTION "trying to > non-ints" ) 
   | _ -> raise NOT_IMPLEMENTED
 
 
