@@ -31,47 +31,50 @@ let rec value_to_string (v:value_t): string =
   (*| MPAIR (a, b) -> "(mcons ? ?)"*)
   | VOID -> "#<void>"
 
+let debug exp exp_string =
+  let _ = print_string "input: " in
+  let _ = print_endline exp_string in
+  let _ = print_string "exp: " in
+  print_endline (exp_to_string exp)
 
-let myeval (exp_string: string): value_t =
+
+
+let rec myeval (exp_string: string): value_t =
   let lexbuf = Lexing.from_string exp_string in
   let lexer () = Lexer.token lexbuf in
   let exp = Parser.parse lexer in
 
-  (*for debugging*)
-  let _ = print_string "input: " in
-  let _ = print_endline exp_string in
-  let _ = print_string "exp: " in
-  let _ = print_endline (exp_to_string exp) in
-  (*end of for debugging*)
+  let _ = debug exp exp_string in
 
-  (*TODO: add an environment to eval*)
-  let rec eval (exp: exp_t) : value_t =
+  (eval exp []) (*empty list -> empty env*)
+
+and eval (exp: exp_t) env: value_t =
     match exp with
     | CONST (CINT n) -> INT n
     | CONST (CTRUE) -> BOOL true
     | CONST (CFALSE) -> BOOL false
     | CONST (CNULL) -> VOID
-    | ADD (e0, e1) -> (arith_eval '+' ((eval e0), (eval e1)))
-    | SUB (e0, e1) -> (arith_eval '-' ((eval e0), (eval e1)))
-    | MUL (e0, e1) -> (arith_eval '*' ((eval e0), (eval e1)))
-    | EQ (e0, e1) -> (arith_eval '=' ((eval e0), (eval e1)))
-    | LT (e0, e1) -> (arith_eval '<' ((eval e0), (eval e1)))
-    | GT (e0, e1) -> (arith_eval '>' ((eval e0), (eval e1)))
+    | ADD (e0, e1) -> (arith_eval '+' ((eval e0 env), (eval e1 env)))
+    | SUB (e0, e1) -> (arith_eval '-' ((eval e0 env), (eval e1 env)))
+    | MUL (e0, e1) -> (arith_eval '*' ((eval e0 env), (eval e1 env)))
+    | EQ (e0, e1) -> (arith_eval '=' ((eval e0 env), (eval e1 env)))
+    | LT (e0, e1) -> (arith_eval '<' ((eval e0 env), (eval e1 env)))
+    | GT (e0, e1) -> (arith_eval '>' ((eval e0 env), (eval e1 env)))
     (*include this in arith_eval?*)
-    | CONS (e0, e1) -> PAIR ((eval e0), (eval e1))
+    | CONS (e0, e1) -> PAIR ((eval e0 env), (eval e1 env))
     (*FIXME: don't nest matches?*)
     | CAR p -> 
         (match p with
-        | CONS (e, _) -> (eval e)
+        | CONS (e, _) -> (eval e env)
         | _ ->  raise (RUNTIME_EXCEPTION "pair expected"))
     | CDR p -> 
         (match p with
-        | CONS (_, e) -> (eval e)
+        | CONS (_, e) -> (eval e env)
         | _ ->  raise (RUNTIME_EXCEPTION "pair expected"))
     | IF (b, e0, e1) -> 
-        (match (eval b) with
-        | BOOL true -> (eval e0)
-        | BOOL false -> (eval e1)
+        (match (eval b env) with
+        | BOOL true -> (eval e0 env)
+        | BOOL false -> (eval e1 env)
         | _ ->  raise (RUNTIME_EXCEPTION "boolean expected"))
     | _ -> raise NOT_IMPLEMENTED
 
@@ -103,11 +106,10 @@ and arith_eval op vals=
       | _ -> raise (RUNTIME_EXCEPTION "comparison of non-int not allowed" ) )
   | _ -> raise NOT_IMPLEMENTED
 
-in eval exp
 
 (*let myeval_memo (exp_string: string): value_t =*)
 
   (*test like this: *)
-let exp1 = ")"
+let exp1 = "(lambda (x y z) (+ x y))"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
