@@ -54,15 +54,13 @@ and eval (exp: exp_t) env: value_t =
     | CONST (CTRUE) -> BOOL true
     | CONST (CFALSE) -> BOOL false
     | CONST (CNULL) -> VOID
-    | ADD (e0, e1) -> (arith_eval '+' ((eval e0 env), (eval e1 env)))
-    | SUB (e0, e1) -> (arith_eval '-' ((eval e0 env), (eval e1 env)))
-    | MUL (e0, e1) -> (arith_eval '*' ((eval e0 env), (eval e1 env)))
-    | EQ (e0, e1) -> (arith_eval '=' ((eval e0 env), (eval e1 env)))
-    | LT (e0, e1) -> (arith_eval '<' ((eval e0 env), (eval e1 env)))
-    | GT (e0, e1) -> (arith_eval '>' ((eval e0 env), (eval e1 env)))
-    (*include this in arith_eval?*)
-    | CONS (e0, e1) -> PAIR ((eval e0 env), (eval e1 env))
-    (*FIXME: don't nest matches?*)
+    | ADD (e0, e1) -> (binary_eval ('+', (eval e0 env), (eval e1 env)))
+    | SUB (e0, e1) -> (binary_eval ('-', (eval e0 env), (eval e1 env)))
+    | MUL (e0, e1) -> (binary_eval ('*', (eval e0 env), (eval e1 env)))
+    | EQ (e0, e1) -> (binary_eval ('=', (eval e0 env), (eval e1 env)))
+    | LT (e0, e1) -> (binary_eval ('<', (eval e0 env), (eval e1 env)))
+    | GT (e0, e1) -> (binary_eval ('>', (eval e0 env), (eval e1 env)))
+    | CONS (e0, e1) -> (binary_eval ('p', (eval e0 env), (eval e1 env)))
     | CAR p -> 
         (match p with
         | CONS (e, _) -> (eval e env)
@@ -78,32 +76,21 @@ and eval (exp: exp_t) env: value_t =
         | _ ->  raise (RUNTIME_EXCEPTION "boolean expected"))
     | _ -> raise NOT_IMPLEMENTED
 
-and arith_eval op vals=
-  match op with
-  | '+' -> 
-      (match vals with 
-      | ((INT a), (INT b)) -> INT (a + b) 
-      | _ -> raise (RUNTIME_EXCEPTION "trying to + non-ints" ) )
-  | '-' -> 
-      (match vals with 
-      | ((INT a), (INT b)) -> INT (a - b) 
-      | _ -> raise (RUNTIME_EXCEPTION "trying to - non-ints" ) )
-  | '*' -> 
-      (match vals with 
-      | ((INT a), (INT b)) -> INT (a * b) 
-      | _ -> raise (RUNTIME_EXCEPTION "trying to * non-ints" ) )
-  | '=' -> 
-      (match vals with 
-      | ((INT a), (INT b)) -> BOOL (a = b) 
-      | _ -> raise (RUNTIME_EXCEPTION "comparison of non-int not allowed" ) )
-  | '<' -> 
-      (match vals with 
-      | ((INT a), (INT b)) -> BOOL (a < b) 
-      | _ -> raise (RUNTIME_EXCEPTION "comparison of non-int not allowed" ) )
-  | '>' -> 
-      (match vals with 
-      | ((INT a), (INT b)) -> BOOL (a > b) 
-      | _ -> raise (RUNTIME_EXCEPTION "comparison of non-int not allowed" ) )
+and binary_eval exp =
+  match exp with
+  | ('+', (INT a), (INT b)) ->  INT (a + b) 
+  | '+', _, _ ->  raise (RUNTIME_EXCEPTION "trying to + non-ints" ) 
+  | ('-', (INT a), (INT b)) ->  INT (a - b) 
+  | '-', _, _ ->  raise (RUNTIME_EXCEPTION "trying to - non-ints" ) 
+  | ('*', (INT a), (INT b)) ->  INT (a * b) 
+  | '*', _, _ ->  raise (RUNTIME_EXCEPTION "trying to * non-ints" ) 
+  | ('=', (INT a), (INT b)) ->  BOOL (a = b) 
+  | '=', _, _ ->  raise (RUNTIME_EXCEPTION "trying to = non-ints" ) 
+  | ('<', (INT a), (INT b)) ->  BOOL (a < b) 
+  | '<', _, _ ->  raise (RUNTIME_EXCEPTION "trying to < non-ints" ) 
+  | ('>', (INT a), (INT b)) ->  BOOL (a > b) 
+  | '>', _, _ ->  raise (RUNTIME_EXCEPTION "trying to > non-ints" ) 
+  | ('p', a, b) ->  PAIR (a , b) 
   | _ -> raise NOT_IMPLEMENTED
 
 
