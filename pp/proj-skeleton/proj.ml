@@ -37,8 +37,6 @@ let debug exp exp_string =
   let _ = print_string "exp: " in
   print_endline (exp_to_string exp)
 
-
-
 let rec myeval (exp_string: string): value_t =
   let lexbuf = Lexing.from_string exp_string in
   let lexer () = Lexer.token lexbuf in
@@ -85,18 +83,16 @@ and binary_eval exp =
   | ('<', (INT a), (INT b)) ->  BOOL (a < b) 
   | ('>', (INT a), (INT b)) ->  BOOL (a > b) 
   | ('p', a, b) ->  PAIR (a , b) 
-  | '+', _, _ ->  raise (RUNTIME_EXCEPTION "trying to + non-ints" ) 
-  | '-', _, _ ->  raise (RUNTIME_EXCEPTION "trying to - non-ints" ) 
-  | '*', _, _ ->  raise (RUNTIME_EXCEPTION "trying to * non-ints" ) 
-  | '=', _, _ ->  raise (RUNTIME_EXCEPTION "trying to = non-ints" ) 
-  | '<', _, _ ->  raise (RUNTIME_EXCEPTION "trying to < non-ints" ) 
-  | '>', _, _ ->  raise (RUNTIME_EXCEPTION "trying to > non-ints" ) 
+  | '+', _, _ ->  raise (RUNTIME_EXCEPTION "addition of non-ints not allowed" ) 
+  | '-', _, _ ->  raise (RUNTIME_EXCEPTION "subtraction of non-ints not allowed" ) 
+  | '*', _, _ ->  raise (RUNTIME_EXCEPTION "multiplication of non-ints not allowed" ) 
+  | ('=' | '<' | '>'), _, _ ->  raise (RUNTIME_EXCEPTION "comparison of non-ints not allowed" ) 
   | _ -> raise NOT_IMPLEMENTED
 
 
 (*let myeval_memo (exp_string: string): value_t =*)
 
   (*test like this: *)
-let exp1 = "(lambda (x y z) (+ x y))"
+let exp1 = "(+ 3 5)"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
