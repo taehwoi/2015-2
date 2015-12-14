@@ -56,7 +56,7 @@ and eval (exp: exp_t) env: value_t =
     | CONST (CTRUE) -> BOOL true
     | CONST (CFALSE) -> BOOL false
     | CONST (CNULL) -> VOID
-    | VAR v -> (Hashtbl.find (List.hd env) v)(*FIXME: this won't work with letrec?*)
+    | VAR v -> (look_up v env) (*FIXME: use look_up env*)
     | ADD (e0, e1) -> (binary_eval ('+', (eval e0 env), (eval e1 env)))
     | SUB (e0, e1) -> (binary_eval ('-', (eval e0 env), (eval e1 env)))
     | MUL (e0, e1) -> (binary_eval ('*', (eval e0 env), (eval e1 env)))
@@ -106,10 +106,20 @@ and binary_eval exp =
   | ('=' | '<' | '>'), _, _ ->  raise (RUNTIME_EXCEPTION "comparison of non-ints not allowed" ) 
   | _ -> raise NOT_IMPLEMENTED
 
+and look_up v env =
+  match env with 
+  | [] -> raise (RUNTIME_EXCEPTION "variable undefined")
+  | ht::tl -> 
+      if (Hashtbl.mem ht v) then
+        Hashtbl.find ht v
+      else
+        look_up v tl
+
+
 
 (*let myeval_memo (exp_string: string): value_t =*)
 
   (*test like this: *)
-let exp1 = "(let ((x 4) (z 3) (y (+ x z))) y)"
+let exp1 = "(letrec ((x 4) (z 3) (y (+ x z))) (let ((x 3) (y 4)) y))"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
