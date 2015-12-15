@@ -28,8 +28,8 @@ type token =
   | MCDR
   | SETMCAR
   | SETMCDR
-  (*| RAISE*)
-  (*| HANDLERS*)
+  | RAISE
+  | HANDLERS
   | EOF
 
 (* you can use this for debugging *)
@@ -59,8 +59,8 @@ let token_printer = function
   | MCDR -> "mcdr"
   | SETMCAR -> "set-mcar!"
   | SETMCDR -> "set-mcdr!"
-  (*| RAISE -> "raise"*)
-  (*| HANDLERS -> "with-handlers"*)
+  | RAISE -> "raise"
+  | HANDLERS -> "with-handlers"
   | EOF -> "eof"
 
 (* You can get a token by calling `lexer` function like this example: *)
@@ -90,7 +90,18 @@ and parse_helper lexer =
       let exp = 
         let token = lexer () in
         match token  with
-        | LPAREN -> (parse_helper lexer)
+        | LPAREN -> 
+            begin
+              let exp = 
+              match lexer () with
+              | LAMBDA -> 
+                  let vl = (var_to_list lexer []) in
+                  let proc = (Syn.LAMBDA (rev ((parse_helper lexer), vl))) in
+                  let _ = lexer () in (*exhaust right parenthesis*)
+                  Syn.APP (rev ( (exp_to_list lexer [] (List.length vl)), proc))
+              | _ -> raise (PARSE_ERROR "expect a procedure") in
+              exp
+            end
         | PLUS -> Syn.ADD (rev ((parse_helper lexer), (parse_helper lexer))) 
         | MINUS -> Syn.SUB (rev ((parse_helper lexer), (parse_helper lexer))) 
         | TIMES -> Syn.MUL (rev ((parse_helper lexer), (parse_helper lexer))) 
@@ -112,12 +123,16 @@ and parse_helper lexer =
         | MCDR -> Syn.MCDR (parse_helper lexer)
         | SETMCAR -> Syn.SETMCAR (rev ( (parse_helper lexer), (parse_helper lexer) ))
         | SETMCDR -> Syn.SETMCDR (rev ( (parse_helper lexer), (parse_helper lexer) ))
-        | INT _ | ID _ | TRUE | FALSE -> 
+        | INT _ | TRUE | FALSE -> 
             raise ( PARSE_ERROR ("expected a procedure") )
+        (*FIXME*)
+        | ID x ->
+            Syn.APP (rev ( (exp_to_list lexer [] 1), Syn.VAR x))
         | RPAREN -> raise (PARSE_ERROR "empty parenthesis")
         | _ -> Syn.VAR "END" in
-      if (lexer ()) <> RPAREN then
-        raise (PARSE_ERROR "unmatched parenthesis") else exp
+      let p = lexer () in
+      if p <> RPAREN then
+        let _ = print_endline ("here\n"^(token_printer p)) in raise (PARSE_ERROR "unmatched parenthesis") else exp
   | RPAREN -> raise (PARSE_ERROR  "need more operand")
   | EOF -> raise (PARSE_ERROR  "premature eof")
   | _ ->  raise (PARSE_ERROR  "not a part of the syntax")
@@ -143,3 +158,12 @@ and bind_to_list (lexer: unit -> token) (bl: Syntax.binding_t list) cnt :Syntax.
       else 
         (bind_to_list lexer bl (cnt-1))
   | _ -> raise (PARSE_ERROR "not a variable")
+
+  (*parse exps for the number of variables in expression*)
+and exp_to_list (lexer: unit -> token) (el: Syntax.exp_t list) cnt :Syntax.exp_t list =
+  if cnt = 0 then el 
+  else (exp_to_list lexer (el@[parse_helper lexer]) (cnt - 1))
+
+and exp_to_list2 (lexer: unit -> token) (el: Syntax.exp_t list) cnt :Syntax.exp_t list =
+  if cnt = 0 then el 
+  else (exp_to_list lexer (el@[parse_helper lexer]) (cnt - 1))
