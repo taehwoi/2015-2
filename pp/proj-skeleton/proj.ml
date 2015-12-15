@@ -8,18 +8,18 @@ exception UNCAUGHT_EXCEPTION
 
 (* this is for testing the lexer and the parser *)
 
-type value_t = 
+type env_t = 
+  (Syntax.var_t , value_t) t list
+and value_t = 
   | INT of int
   | BOOL of bool
   | NULL
-  | CLOS of (var_t list * exp_t)
+  | CLOS of (var_t list * exp_t * env_t)
   (*| CLOS_MEM of ... *)
   | PAIR of (value_t * value_t)
   (*| MPAIR of ...*)
   | VOID	       
 
-(*type env_t = *)
-  (*Hashtbl of (var_t * exp_t) list*)
 
 (* If value_to_string does not work well for your code, *)
 (*  adjust this function manually to make it work *)
@@ -88,7 +88,8 @@ and eval (exp: exp_t) env: value_t =
     | LETREC (blist, e) -> 
         begin
           let ht = Hashtbl.create (List.length blist) in
-          let _ = List.iter (function (v, e) -> Hashtbl.add ht v (eval e (ht::env))) blist in
+          let _ = List.iter (function (v, e) -> Hashtbl.add ht v VOID) blist in
+          let _ = List.iter (function (v, e) -> Hashtbl.replace ht v (eval e (ht::env))) blist in
           (eval e (ht::env)) (*wrong?*)
         end
     | APP (e, elist) ->
@@ -101,13 +102,13 @@ and eval (exp: exp_t) env: value_t =
           | VAR x -> 
               let f = (look_up x env) in
               (match f with
-              | CLOS (vlist, e) -> 
+              | CLOS (vlist, e, en) -> 
                   let _ = List.iter2 (fun v e -> Hashtbl.add ht v (eval e env)) vlist elist in
-                  (eval e (ht::env))
+                  (eval e (ht::en))
               | _ -> raise (RUNTIME_EXCEPTION "procedure expected"))
           | _ -> raise (RUNTIME_EXCEPTION "procedure expected")
         end
-    | LAMBDA (vlist, e) -> CLOS (vlist, e) (*FIXME*)
+    | LAMBDA (vlist, e) -> CLOS (vlist, e, env)
     | _ -> raise NOT_IMPLEMENTED
 
 and binary_eval exp =
@@ -140,6 +141,8 @@ and look_up v env =
 
   (*test like this: *)
 (*let exp1 = "(let ((x (lambda (x) (+ x 1)))) ((lambda (x) (+ x 1)) 3))"*)
-let exp1 = "(let ((f (lambda (x) (if (= x 0) 0 (+ (f (- x 1)) x)) ))) (f 10))"
+let exp1 = "(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) (f 999999 0))"
+(*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1)))) ))) (f 100))"*)
+(*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1))))) )) (f 999999))"*)
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
