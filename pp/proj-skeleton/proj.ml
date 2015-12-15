@@ -32,7 +32,7 @@ let rec value_to_string (v:value_t): string =
   | CLOS _ -> "#<procedure>"
   (*| CLOS_MEM _ -> "#<procedure-memo>"*)
   | PAIR (a, b) -> "(" ^ (value_to_string a) ^ " . " ^ (value_to_string b) ^ ")"
-  (*| MPAIR (a, b) -> "(mcons ? ?)"*)
+  | MPAIR (a, b) -> "(mcons ? ?)"
   | VOID -> "#<void>"
 
 let debug exp exp_string =
@@ -48,71 +48,84 @@ let rec myeval (exp_string: string): value_t =
 
   let _ = debug exp exp_string in
 
-  (eval exp []) (*empty list -> empty env*)
+  (eval exp [] []) (*empty list -> empty env*)
 
-and eval (exp: exp_t) env: value_t =
+and eval (exp: exp_t) env hndl: value_t =
     match exp with
     | CONST (CINT n) -> INT n
     | CONST (CTRUE) -> BOOL true
     | CONST (CFALSE) -> BOOL false
     | CONST (CNULL) -> VOID
     | VAR v -> (look_up v env) (*FIXME: use look_up env*)
-    | ADD (e0, e1) -> (binary_eval ('+', (eval e0 env), (eval e1 env)))
-    | SUB (e0, e1) -> (binary_eval ('-', (eval e0 env), (eval e1 env)))
-    | MUL (e0, e1) -> (binary_eval ('*', (eval e0 env), (eval e1 env)))
-    | EQ (e0, e1) -> (binary_eval ('=', (eval e0 env), (eval e1 env)))
-    | LT (e0, e1) -> (binary_eval ('<', (eval e0 env), (eval e1 env)))
-    | GT (e0, e1) -> (binary_eval ('>', (eval e0 env), (eval e1 env)))
-    | CONS (e0, e1) -> (binary_eval ('p', (eval e0 env), (eval e1 env)))
+    | ADD (e0, e1) -> (binary_eval ('+', (eval e0 env hndl), (eval e1 env hndl)))
+    | SUB (e0, e1) -> (binary_eval ('-', (eval e0 env hndl), (eval e1 env hndl)))
+    | MUL (e0, e1) -> (binary_eval ('*', (eval e0 env hndl), (eval e1 env hndl)))
+    | EQ (e0, e1) -> (binary_eval ('=', (eval e0 env hndl), (eval e1 env hndl)))
+    | LT (e0, e1) -> (binary_eval ('<', (eval e0 env hndl), (eval e1 env hndl)))
+    | GT (e0, e1) -> (binary_eval ('>', (eval e0 env hndl), (eval e1 env hndl)))
+    | CONS (e0, e1) -> (binary_eval ('p', (eval e0 env hndl), (eval e1 env hndl)))
+    | MCONS (e0, e1) -> (binary_eval ('m', (eval e0 env hndl), (eval e1 env hndl)))
     | CAR p -> 
-        (match (eval p env) with
-        | PAIR (e, _) -> e
+        (match (eval p env hndl) with
+        | PAIR (el, _) -> el
         | _ ->  raise (RUNTIME_EXCEPTION "pair expected"))
     | CDR p -> 
-        (match (eval p env) with
-        | PAIR (_, e) -> e
+        (match (eval p env hndl) with
+        | PAIR (_, el) -> el
         | _ ->  raise (RUNTIME_EXCEPTION "pair expected"))
     | MCAR p -> 
-        (match p with
-        | MCONS (e, _) -> (eval e env)
+        (match (eval p env hndl) with
+        | MPAIR (el, _) -> el
         | _ ->  raise (RUNTIME_EXCEPTION "mutable pair expected"))
-    | MCAR p -> 
-        (match p with
-        | MCONS (_, e) -> (eval e env)
+    | MCDR p -> 
+        (match (eval p env hndl) with
+        | MPAIR (_, el) -> el
         | _ ->  raise (RUNTIME_EXCEPTION "mutable pair expected"))
+    | SETMCAR (VAR v, el_new) ->
+        (match (look_up v env) with
+        | MPAIR (_, el)  -> 
+            let _ = (set_var v (MPAIR ((eval el_new env hndl), el)) env) in VOID
+        | _ ->  raise (RUNTIME_EXCEPTION "mutable pair expected"))
+    | SETMCDR (VAR v, el_new) ->
+        (match (look_up v env) with
+        | MPAIR (el, _)  -> 
+            let _ = (set_var v (MPAIR (el, (eval el_new env hndl))) env) in VOID
+        | _ ->  raise (RUNTIME_EXCEPTION "mutable pair expected"))
+    | SETMCDR (MCONS (_, _), _) | SETMCAR (MCONS (_, _), _)->
+        VOID
     | IF (b, e0, e1) -> 
-        (match (eval b env) with
-        | BOOL true -> (eval e0 env)
-        | BOOL false -> (eval e1 env)
+        (match (eval b env hndl) with
+        | BOOL true -> (eval e0 env hndl)
+        | BOOL false -> (eval e1 env hndl)
         | _ ->  raise (RUNTIME_EXCEPTION "boolean expected"))
     | LET (blist, e) -> 
-        begin 
-          let ht = Hashtbl.create (List.length blist) in
-          let _ = List.iter (function (v, e) -> Hashtbl.add ht v (eval e env)) blist in
-          (eval e (ht::env)) 
-        end
+        (let ht = Hashtbl.create (List.length blist) in
+        let _ = List.iter (fun (v, e) -> Hashtbl.add ht v (eval e env hndl)) blist in
+        (eval e (ht::env) hndl))
     | LETREC (blist, e) -> 
-        begin
-          let ht = Hashtbl.create (List.length blist) in
-          let _ = List.iter (function (v, e) -> Hashtbl.add ht v (eval e (ht::env))) blist in
-          (eval e (ht::env))
-        end
+        (let ht = Hashtbl.create (List.length blist) in
+        let _ = List.iter (fun (v, e) -> Hashtbl.add ht v (eval e (ht::env) hndl)) blist in
+        (eval e (ht::env) hndl))
     | APP (e, elist) ->
         begin
           let ht = Hashtbl.create (List.length elist) in
           match e with 
           | LAMBDA (vlist, e) -> 
-              let _ = List.iter2 (fun v e -> Hashtbl.add ht v (eval e env)) vlist elist in
-              (eval e (ht::env))
+              let _ = List.iter2 
+                (fun v e -> Hashtbl.add ht v (eval e env hndl)) vlist elist in
+              (eval e (ht::env) hndl)
           | VAR x -> 
               let f = (look_up x env) in
               (match f with
               | CLOS (vlist, e, en) -> 
-                  let _ = List.iter2 (fun v e -> Hashtbl.add ht v (eval e env)) vlist elist in
-                  (eval e (ht::en))
+                  let _ = List.iter2
+                    (fun v e -> Hashtbl.add ht v (eval e env hndl)) vlist elist in
+                  (eval e (ht::en) hndl)
               | _ -> raise (RUNTIME_EXCEPTION "procedure expected"))
           | _ -> raise (RUNTIME_EXCEPTION "procedure expected")
         end
+    | HANDLERS (hndls_list, e) ->
+        (eval e env hndls_list)
     | LAMBDA (vlist, e) -> CLOS (vlist, e, env)
     | _ -> raise NOT_IMPLEMENTED
 
@@ -125,6 +138,7 @@ and binary_eval exp =
   | ('<', (INT a), (INT b)) ->  BOOL (a < b) 
   | ('>', (INT a), (INT b)) ->  BOOL (a > b) 
   | ('p', a, b) ->  PAIR (a , b) 
+  | ('m', a, b) ->  MPAIR (a , b) 
   | '+', _, _ ->  raise (RUNTIME_EXCEPTION "addition of non-ints not allowed" ) 
   | '-', _, _ ->  raise (RUNTIME_EXCEPTION "subtraction of non-ints not allowed" ) 
   | '*', _, _ ->  raise (RUNTIME_EXCEPTION "multiplication of non-ints not allowed" ) 
@@ -140,6 +154,15 @@ and look_up v env =
       else
         look_up v tl
 
+and set_var v value env =
+  match env with 
+  | [] -> raise (RUNTIME_EXCEPTION "variable undefined")
+  | ht::tl -> 
+      if (Hashtbl.mem ht v) then
+        Hashtbl.replace ht v value
+      else
+        set_var v value tl
+
 
 
 (*let myeval_memo (exp_string: string): value_t =*)
@@ -148,6 +171,6 @@ and look_up v env =
 (*let exp1 = "(let ((x (lambda (x) (+ x 1)))) ((lambda (x) (+ x 1)) 3))"*)
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1)))) ))) (f 100))"*)
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1))))) )) (f 999999))"*)
-let exp1 = "(let ((mp (cons 1 2))) (cdr mp))"
+let exp1 = "(with-handlers ( ((lambda (x) #t) (lambda (x) #f))((lambda (x) #t) (lambda (x) (+ x 1))) ) (+ 3 3))"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
