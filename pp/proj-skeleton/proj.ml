@@ -17,7 +17,7 @@ and value_t =
   | CLOS of (var_t list * exp_t * env_t)
   (*| CLOS_MEM of ... *)
   | PAIR of (value_t * value_t)
-  (*| MPAIR of ...*)
+  | MPAIR of (value_t * value_t)
   | VOID	       
 
 
@@ -65,32 +65,37 @@ and eval (exp: exp_t) env: value_t =
     | GT (e0, e1) -> (binary_eval ('>', (eval e0 env), (eval e1 env)))
     | CONS (e0, e1) -> (binary_eval ('p', (eval e0 env), (eval e1 env)))
     | CAR p -> 
-        (match p with
-        | CONS (e, _) -> (eval e env)
+        (match (eval p env) with
+        | PAIR (e, _) -> e
         | _ ->  raise (RUNTIME_EXCEPTION "pair expected"))
     | CDR p -> 
-        (match p with
-        | CONS (_, e) -> (eval e env)
+        (match (eval p env) with
+        | PAIR (_, e) -> e
         | _ ->  raise (RUNTIME_EXCEPTION "pair expected"))
+    | MCAR p -> 
+        (match p with
+        | MCONS (e, _) -> (eval e env)
+        | _ ->  raise (RUNTIME_EXCEPTION "mutable pair expected"))
+    | MCAR p -> 
+        (match p with
+        | MCONS (_, e) -> (eval e env)
+        | _ ->  raise (RUNTIME_EXCEPTION "mutable pair expected"))
     | IF (b, e0, e1) -> 
         (match (eval b env) with
         | BOOL true -> (eval e0 env)
         | BOOL false -> (eval e1 env)
         | _ ->  raise (RUNTIME_EXCEPTION "boolean expected"))
-        (*TODO: check how let & letrec works -> evaluate ATM : current implementation
-          or evaluate when variable is called: have to remember where the value was *)
     | LET (blist, e) -> 
         begin 
           let ht = Hashtbl.create (List.length blist) in
           let _ = List.iter (function (v, e) -> Hashtbl.add ht v (eval e env)) blist in
-          (eval e (ht::env)) (*wrong?*)
+          (eval e (ht::env)) 
         end
     | LETREC (blist, e) -> 
         begin
           let ht = Hashtbl.create (List.length blist) in
-          let _ = List.iter (function (v, e) -> Hashtbl.add ht v VOID) blist in
-          let _ = List.iter (function (v, e) -> Hashtbl.replace ht v (eval e (ht::env))) blist in
-          (eval e (ht::env)) (*wrong?*)
+          let _ = List.iter (function (v, e) -> Hashtbl.add ht v (eval e (ht::env))) blist in
+          (eval e (ht::env))
         end
     | APP (e, elist) ->
         begin
@@ -141,8 +146,8 @@ and look_up v env =
 
   (*test like this: *)
 (*let exp1 = "(let ((x (lambda (x) (+ x 1)))) ((lambda (x) (+ x 1)) 3))"*)
-let exp1 = "(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) (f 999999 0))"
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1)))) ))) (f 100))"*)
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1))))) )) (f 999999))"*)
+let exp1 = "(let ((mp (cons 1 2))) (cdr mp))"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
