@@ -89,6 +89,7 @@ and parse_helper lexer =
   | LPAREN -> 
       let exp = 
         let token = lexer () in
+        let _ = print_endline (token_printer token) in
         match token  with
         | LPAREN -> 
             begin
@@ -127,15 +128,22 @@ and parse_helper lexer =
             raise ( PARSE_ERROR ("expected a procedure") )
         (*FIXME*)
         | ID x ->
+            (*FIXME*)
             Syn.APP (rev ( (exp_to_list lexer [] 1), Syn.VAR x))
+        | RAISE -> Syn.RAISE (parse_helper lexer)
+        | HANDLERS -> 
+            Syn.HANDLERS (rev ((parse_helper lexer), (hdls_to_list lexer [])))
         | RPAREN -> raise (PARSE_ERROR "empty parenthesis")
         | _ -> Syn.VAR "END" in
       let p = lexer () in
       if p <> RPAREN then
-        let _ = print_endline ("here\n"^(token_printer p)) in raise (PARSE_ERROR "unmatched parenthesis") else exp
+        let _ = print_endline ("met :"^(token_printer p)) in 
+        raise (PARSE_ERROR "unmatched parenthesis") 
+      else 
+        exp
   | RPAREN -> raise (PARSE_ERROR  "need more operand")
   | EOF -> raise (PARSE_ERROR  "premature eof")
-  | _ ->  raise (PARSE_ERROR  "not a part of the syntax")
+  | _ ->  raise (PARSE_ERROR  ((token_printer token)^"is not a part of the syntax"))
 
 
 and var_to_list (lexer: unit -> token) (vl: Syntax.var_t list): Syntax.var_t list =
@@ -164,6 +172,16 @@ and exp_to_list (lexer: unit -> token) (el: Syntax.exp_t list) cnt :Syntax.exp_t
   if cnt = 0 then el 
   else (exp_to_list lexer (el@[parse_helper lexer]) (cnt - 1))
 
-and exp_to_list2 (lexer: unit -> token) (el: Syntax.exp_t list) cnt :Syntax.exp_t list =
+and exp_to_list2 (lexer: unit -> token) (el: Syn.exp_t list) cnt :Syntax.exp_t list =
   if cnt = 0 then el 
   else (exp_to_list lexer (el@[parse_helper lexer]) (cnt - 1))
+
+and hdls_to_list lexer hl :(Syn.exp_t * Syn.exp_t) list =
+  let token = lexer () in
+  match token with
+  | LPAREN -> 
+      (hdls_to_list lexer (hl@[(rev ((parse_helper lexer), (parse_helper lexer)))]))
+  | RPAREN -> 
+      hl
+  | _ -> raise (PARSE_ERROR "expected a procedure")
+
