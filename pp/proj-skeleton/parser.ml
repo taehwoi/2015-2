@@ -132,7 +132,7 @@ and parse_helper lexer =
             Syn.APP (rev ( (exp_to_list lexer [] 1), Syn.VAR x))
         | RAISE -> Syn.RAISE (parse_helper lexer)
         | HANDLERS -> 
-            Syn.HANDLERS (rev ((parse_helper lexer), (hdls_to_list lexer [])))
+            Syn.HANDLERS (rev ((parse_helper lexer), (hndls_to_list lexer [])))
         | RPAREN -> raise (PARSE_ERROR "empty parenthesis")
         | _ -> Syn.VAR "END" in
       let p = lexer () in
@@ -175,11 +175,11 @@ and exp_to_list2 (lexer: unit -> token) (el: Syn.exp_t list) cnt :Syntax.exp_t l
   if cnt = 0 then el 
   else (exp_to_list lexer (el@[parse_helper lexer]) (cnt - 1))
 
-and hdls_to_list lexer hl :(Syn.exp_t * Syn.exp_t) list =
+and hndls_to_list lexer hl :(Syn.exp_t * Syn.exp_t) list =
   let token = lexer () in
   match token with
   | LPAREN -> 
-      (hdls_to_list lexer (hl@[(rev ((parse_helper lexer), (parse_helper lexer)))]))
+      (hndls_to_list lexer (hl@[(rev ((parse_helper lexer), (parse_helper lexer)))]))
   | RPAREN -> 
       hl
   | _ -> raise (PARSE_ERROR "expected a procedure")
