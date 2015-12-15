@@ -12,7 +12,7 @@ type value_t =
   | INT of int
   | BOOL of bool
   | NULL
-  (*| CLOS of ...*)
+  | CLOS of (var_t list * exp_t)
   (*| CLOS_MEM of ... *)
   | PAIR of (value_t * value_t)
   (*| MPAIR of ...*)
@@ -29,7 +29,7 @@ let rec value_to_string (v:value_t): string =
   | INT n -> string_of_int n
   | BOOL b -> if b then "#t" else "#f"
   | NULL -> "'()"
-  (*| CLOS _ -> "#<procedure>"*)
+  | CLOS _ -> "#<procedure>"
   (*| CLOS_MEM _ -> "#<procedure-memo>"*)
   | PAIR (a, b) -> "(" ^ (value_to_string a) ^ " . " ^ (value_to_string b) ^ ")"
   (*| MPAIR (a, b) -> "(mcons ? ?)"*)
@@ -91,6 +91,23 @@ and eval (exp: exp_t) env: value_t =
           let _ = List.iter (function (v, e) -> Hashtbl.add ht v (eval e (ht::env))) blist in
           (eval e (ht::env)) (*wrong?*)
         end
+    | APP (e, elist) ->
+        begin
+          let ht = Hashtbl.create (List.length elist) in
+          match e with 
+          | LAMBDA (vlist, e) -> 
+              let _ = List.iter2 (fun v e -> Hashtbl.add ht v (eval e env)) vlist elist in
+              (eval e (ht::env))
+          | VAR x -> 
+              let f = (look_up x env) in
+              (match f with
+              | CLOS (vlist, e) -> 
+                  let _ = List.iter2 (fun v e -> Hashtbl.add ht v (eval e env)) vlist elist in
+                  (eval e (ht::env))
+              | _ -> raise (RUNTIME_EXCEPTION "procedure expected"))
+          | _ -> raise (RUNTIME_EXCEPTION "procedure expected")
+        end
+    | LAMBDA (vlist, e) -> CLOS (vlist, e) (*FIXME*)
     | _ -> raise NOT_IMPLEMENTED
 
 and binary_eval exp =
@@ -122,6 +139,7 @@ and look_up v env =
 (*let myeval_memo (exp_string: string): value_t =*)
 
   (*test like this: *)
-let exp1 = "(letrec ((x 4) (z 3) (y (+ x z))) (let ((x 3) (y 4)) y))"
+(*let exp1 = "(let ((x (lambda (x) (+ x 1)))) ((lambda (x) (+ x 1)) 3))"*)
+let exp1 = "(let ((f (lambda (x) (if (= x 0) 0 (+ (f (- x 1)) x)) ))) (f 10))"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
