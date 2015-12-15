@@ -89,7 +89,7 @@ and parse_helper lexer =
   | LPAREN -> 
       let exp = 
         let token = lexer () in
-        let _ = print_endline (token_printer token) in
+        (*let _ = print_endline (token_printer token) in*)
         match token  with
         | LPAREN -> 
             begin
@@ -137,13 +137,12 @@ and parse_helper lexer =
         | _ -> Syn.VAR "END" in
       let p = lexer () in
       if p <> RPAREN then
-        let _ = print_endline ("met :"^(token_printer p)) in 
         raise (PARSE_ERROR "unmatched parenthesis") 
       else 
         exp
   | RPAREN -> raise (PARSE_ERROR  "need more operand")
   | EOF -> raise (PARSE_ERROR  "premature eof")
-  | _ ->  raise (PARSE_ERROR  ((token_printer token)^"is not a part of the syntax"))
+  | _ ->  raise (PARSE_ERROR  ((token_printer token)^" is not a part of the syntax"))
 
 
 and var_to_list (lexer: unit -> token) (vl: Syntax.var_t list): Syntax.var_t list =
