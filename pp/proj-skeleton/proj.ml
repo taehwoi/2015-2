@@ -19,6 +19,7 @@ and value_t =
   | PAIR of (value_t * value_t)
   | MPAIR of (value_t * value_t)
   | VOID	       
+exception EXCEPTION_HANDLER of value_t
 
 
 (* If value_to_string does not work well for your code, *)
@@ -48,7 +49,9 @@ let rec myeval (exp_string: string): value_t =
 
   let _ = debug exp exp_string in
 
-  (eval exp [] []) (*empty list -> empty env*)
+  try
+    (eval exp [] []) (*empty list -> empty env*)
+  with EXCEPTION_HANDLER a -> a
 
 and eval (exp: exp_t) env hndl: value_t =
     match exp with
@@ -124,8 +127,10 @@ and eval (exp: exp_t) env hndl: value_t =
               | _ -> raise (RUNTIME_EXCEPTION "procedure expected"))
           | _ -> raise (RUNTIME_EXCEPTION "procedure expected")
         end
-    | HANDLERS (hndls_list, e) ->
-        (eval e env hndls_list)
+    | RAISE e ->  (*lookup handlers environment*)
+        exception_handler e env hndl
+    | HANDLERS (hndl, e) ->
+        (eval e env hndl)
     | LAMBDA (vlist, e) -> CLOS (vlist, e, env)
     | _ -> raise NOT_IMPLEMENTED
 
@@ -163,6 +168,16 @@ and set_var v value env =
       else
         set_var v value tl
 
+and exception_handler e env hndls =
+  match hndls with 
+  | [] -> raise UNCAUGHT_EXCEPTION
+  | (proc, act)::tl -> 
+      if ( (eval (APP (proc, [e])) env hndls) = BOOL true) then
+        raise (EXCEPTION_HANDLER (eval (APP (act, [e])) env hndls))
+      else
+        exception_handler e env tl
+
+
 
 
 (*let myeval_memo (exp_string: string): value_t =*)
@@ -171,6 +186,6 @@ and set_var v value env =
 (*let exp1 = "(let ((x (lambda (x) (+ x 1)))) ((lambda (x) (+ x 1)) 3))"*)
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1)))) ))) (f 100))"*)
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1))))) )) (f 999999))"*)
-let exp1 = "(with-handlers ( ((lambda (x) #t) (lambda (x) #f))((lambda (x) #t) (lambda (x) (+ x 1))) ) (+ 3 3))"
+let exp1 = "(with-handlers ( ((lambda (x) (= x 5)) (lambda (x) #f))  ) (+ 3 (raise 5)))"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
