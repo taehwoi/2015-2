@@ -21,9 +21,6 @@ and value_t =
   | VOID	       
 exception EXCEPTION_HANDLER of value_t
 
-let rev = function
-  (a, b) -> (b, a)
-
 (* If value_to_string does not work well for your code, *)
 (*  adjust this function manually to make it work *)
 (* Content of mpair is hidden when printing *)
@@ -50,7 +47,7 @@ let debug exp exp_string =
   let _ = print_string "input: " in
   let _ = print_endline exp_string in
   let _ = print_string "exp: " in
-    print_endline (exp_to_string exp)
+  print_endline (exp_to_string exp)
 
 let rec myeval (exp_string: string): value_t =
   let lexbuf = Lexing.from_string exp_string in
@@ -60,9 +57,9 @@ let rec myeval (exp_string: string): value_t =
   let _ = debug exp exp_string in
   let env = [] in 
   let hndl_env = [] in
-    try
-      (eval exp env hndl_env)
-    with EXCEPTION_HANDLER a -> a
+  try
+    (eval exp env hndl_env)
+  with EXCEPTION_HANDLER a -> a
 
 and eval (exp: exp_t) env hndl: value_t =
     match exp with
@@ -106,14 +103,16 @@ and eval (exp: exp_t) env hndl: value_t =
     | SETMCAR (VAR v, el_new) ->
         (match (look_up v env) with
         | MPAIR (_, el)  -> 
-            let _ = (set_var v (MPAIR ((eval el_new env hndl), el)) env) in 
-              VOID
+            let _ = 
+              (set_var v (MPAIR ((eval el_new env hndl), el)) env) in 
+            VOID
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair))
     | SETMCDR (VAR v, el_new) ->
         (match (look_up v env) with
         | MPAIR (el, _)  -> 
-            let _ = (set_var v (MPAIR (el, (eval el_new env hndl))) env) in 
-              VOID
+            let _ = 
+              (set_var v (MPAIR (el, (eval el_new env hndl))) env) in 
+            VOID
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair))
     | SETMCDR (MCONS _, _) | SETMCAR (MCONS _, _) -> VOID
     | IF (b, e0, e1) -> 
@@ -124,43 +123,43 @@ and eval (exp: exp_t) env hndl: value_t =
     | LET (blist, exp) -> 
         begin
           let ht = Hashtbl.create (List.length blist) in
-          let to_env = 
+          let add_to_env = 
             (fun (v, e) -> Hashtbl.add ht v (eval e env hndl)) in
-          let _ = List.iter to_env blist in
-            (eval exp (ht::env) hndl)
+          let _ = List.iter add_to_env blist in
+          (eval exp (ht::env) hndl)
         end
     | LETREC (blist, exp) -> 
         begin
           let ht = Hashtbl.create (List.length blist) in
-          let to_env_rec = 
+          let add_to_env_rec = 
             (fun (v, e) -> Hashtbl.add ht v (eval e (ht::env) hndl)) in
-          let _ = List.iter to_env_rec blist in
-            (eval exp (ht::env) hndl)
+          let _ = List.iter add_to_env_rec blist in
+          (eval exp (ht::env) hndl)
         end
     | APP (LAMBDA (vlist, exp), elist) ->
           let ht = Hashtbl.create (List.length elist) in
-          let to_env = 
+          let add_to_env = 
             (fun v e -> Hashtbl.add ht v (eval e env hndl)) in
-          let _ = List.iter2 to_env vlist elist in
-            (eval exp (ht::env) hndl)
+          let _ = List.iter2 add_to_env vlist elist in
+          (eval exp (ht::env) hndl)
     | APP (VAR x, elist) ->
         let ht = Hashtbl.create (List.length elist) in
         let f = (look_up x env) in
-        let to_env = 
-          (fun v e -> Hashtbl.add ht v (eval e env hndl)) in
-          (match f with
-          | CLOS (vlist, exp, en) -> 
-              let _ = List.iter2 to_env vlist elist in
-                (eval exp (ht::en) hndl)
-          | _ -> raise (RUNTIME_EXCEPTION e_msg_need_proc))
+        let add_to_env = 
+        (fun v e -> Hashtbl.add ht v (eval e env hndl)) in
+        (match f with
+        | CLOS (vlist, exp, en) -> 
+            let _ = List.iter2 add_to_env vlist elist in
+            (eval exp (ht::en) hndl)
+        | _ -> raise (RUNTIME_EXCEPTION e_msg_need_proc))
     | RAISE excp ->  (*lookup handlers environment*)
         (exception_handler excp env hndl)
     | HANDLERS (hdl_list, exp) ->
-        let to_hndl_env = 
+        let add_to_hndl_env = 
           (fun (p, e) -> ((eval p env hndl), (eval e env hndl))) in
         let h_list = 
-          List.map to_hndl_env hdl_list in
-          (eval exp env h_list)
+          List.map add_to_hndl_env hdl_list in
+        (eval exp env h_list)
     | LAMBDA (vlist, exp) -> CLOS (vlist, exp, env)
     | APP (_, elist) ->
         raise (RUNTIME_EXCEPTION e_msg_need_proc)
@@ -204,18 +203,19 @@ and set_var v value env =
       else
         set_var v value tl
 
+(*raise appropriate exception to be caught at the top*)
 and exception_handler e env hndls =
   let ht = Hashtbl.create 1 in
-    match hndls with 
-    | [] -> raise UNCAUGHT_EXCEPTION
-    | ((CLOS ([v], e0, en)), (CLOS (_, e1, _))) :: tl ->
-        (*closures in handlers only have one parameter*)
-        let _ = Hashtbl.add ht v (eval e env hndls) in
-          if ( (eval e0 (ht::en) hndls) = BOOL true) then
-            raise (EXCEPTION_HANDLER (eval e1 (ht::en) hndls))
-          else
-            exception_handler e env tl
-    | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_proc)
+  match hndls with 
+  | [] -> raise UNCAUGHT_EXCEPTION
+  | ((CLOS ([v], e0, en)), (CLOS (_, e1, _))) :: tl ->
+      (*closures in handlers only have one parameter*)
+      let _ = Hashtbl.add ht v (eval e env hndls) in
+      if ( (eval e0 (ht::en) hndls) = BOOL true) then
+        raise (EXCEPTION_HANDLER (eval e1 (ht::en) hndls))
+      else
+        exception_handler e env tl
+  | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_proc)
 
 
 
@@ -226,6 +226,6 @@ and exception_handler e env hndls =
 (*let exp1 = "(let ((x (lambda (x) (+ x 1)))) ((lambda (x) (+ x 1)) 3))"*)
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1)))) ))) (f 100))"*)
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1))))) )) (f 999999))"*)
-let exp1 = "(let ((x (cons 3 5))) (car x))"
+let exp1 = "(mcar (let ((x (mcons 3 5))) x))"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
