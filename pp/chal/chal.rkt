@@ -7,8 +7,6 @@
 ;TODO: allow multiple variables (use map)
 (define (myeval E)
   (define (eval-helper E env) ;eval-helper: (Expression) List -> E
-    ;(write env)(newline)
-    ;(write E)(newline)
     (if (equal? E ''())
       '()
       (if (or (number? E) (boolean? E))
@@ -45,37 +43,39 @@
                  (define ht (make-hash))
                  (for-each 
                    (lambda (x) 
-                     (hash-set! ht (car x) (eval-helper (cadr x) env))) (cadr E)) ;TODO:ask question
-                 ;change occurrence of variable with appropriate value?
-                 (eval-helper (caddr E) (cons ht env)))) ;use mutable pair
+                     (hash-set! ht (car x) (eval-helper (cadr x) env))) (cadr E))
+                 (eval-helper (caddr E) (cons ht env))))
 
               ((equal? t 'letrec) 
                (let ()
                  (define ht (make-hash))
                  (for-each 
                    (lambda (x) 
-                     (hash-set! ht (car x) 'UNDEF)) (cadr E)) ;TODO:ask question
-                 (for-each 
-                   (lambda (x) 
                      (hash-set! ht (car x) (eval-helper (cadr x) (cons ht env)))) (cadr E))
                  (eval-helper (caddr E) (cons ht env)))) ;use mutable pair
 
-              ((equal? t 'lambda) ;TODO: ERROR?
-               (list 'lambda (cadr E) (caddr E) env))
+              ((equal? t 'lambda) ;TODO: ERROR
+               (list (list 'lambda (cadr E) (caddr E)) env))
 
               ;APPLICATION
-              ((list? t)
+              ((and (list? t)(equal? 'lambda (car t)))
                (let ()
                  (define ht (make-hash))
                  (for-each 
                    (lambda (x y) 
-                     (hash-set! ht x (eval-helper y env))) (cadr t) (cdr E))
+                     (hash-set! ht x (eval-helper y env))) (cadar (eval-helper t env)) (cdr E))
                  (eval-helper (caddr t) (cons ht env))))
 
-              ((equal? (car (look-up t env)) 'lambda)
-               (eval-helper (cons (look-up t env) (cdr E)) env)) ;FIXME for multi-variables
+              ;APPLICATION with variable
+              ((equal? (caar (look-up t env)) 'lambda)
+                 (let ()
+                   (define ht (make-hash))
+                   (define clos (look-up t env))
+                   (for-each 
+                     (lambda (x y)
+                       (hash-set! ht x (eval-helper y env))) (cadar clos) (cdr E))
+                 (eval-helper (caddar clos) (cons ht (cadr clos)))))
 
-              ;((or (equal? (car (look-up t env)) 'lambda) (list? t))
 
 
 
@@ -89,13 +89,12 @@
       (hash-ref (car env) v 'nil)
       (look-up v (cdr env)))))
 
-;(define tail-rec '(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) (f 100 0)))
+(define sum '(let ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ x n)))))) (f 999999 0)))
 
 ;(cdr (caddr tail-rec))
 
-;(define t18 '((lambda (x y) (+ x y)) 3 5))
-;(cdr t18)
+;(define t18 '((lambda (x y) (* x y)) 3 5))
+;(myeval t18)
 
 
-(define tail-rec '(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) f))
-(myeval tail-rec)
+(myeval sum)
