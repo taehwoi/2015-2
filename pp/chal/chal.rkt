@@ -84,7 +84,7 @@
 
 (define (look-up v env)
   (if (null? env) 
-    ERROR ;no such variable -> throw error
+    (error 'undefined-variable)
     (if (not (equal? (hash-ref (car env) v 'nil) 'nil))
       (hash-ref (car env) v 'nil)
       (look-up v (cdr env)))))
