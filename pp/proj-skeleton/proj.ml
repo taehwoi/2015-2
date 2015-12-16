@@ -121,21 +121,17 @@ and eval (exp: exp_t) env hndl: value_t =
         | BOOL false -> (eval e1 env hndl)
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_bool))
     | LET (blist, exp) -> 
-        begin
           let ht = Hashtbl.create (List.length blist) in
           let add_to_env = 
             (fun (v, e) -> Hashtbl.add ht v (eval e env hndl)) in
           let _ = List.iter add_to_env blist in
           (eval exp (ht::env) hndl)
-        end
     | LETREC (blist, exp) -> 
-        begin
           let ht = Hashtbl.create (List.length blist) in
           let add_to_env_rec = 
             (fun (v, e) -> Hashtbl.add ht v (eval e (ht::env) hndl)) in
           let _ = List.iter add_to_env_rec blist in
           (eval exp (ht::env) hndl)
-        end
     | APP (LAMBDA (vlist, exp), elist) ->
           let ht = Hashtbl.create (List.length elist) in
           let add_to_env = 
