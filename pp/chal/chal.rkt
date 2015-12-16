@@ -61,7 +61,7 @@
                  (eval-helper (caddr E) (cons ht env)))) ;use mutable pair
 
               ((equal? t 'lambda) ;TODO: ERROR?
-               (list 'lambda (cadr E) (caddr E)))
+               (list 'lambda (cadr E) (caddr E) env))
 
               ;APPLICATION
               ((list? t)
@@ -97,5 +97,5 @@
 ;(cdr t18)
 
 
-(define tail-rec '(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) (f 5 0)))
+(define tail-rec '(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) f))
 (myeval tail-rec)
