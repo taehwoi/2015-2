@@ -57,9 +57,9 @@ let rec myeval (exp_string: string): value_t =
   let _ = debug exp exp_string in
   let env = [] in 
   let hndl_env = [] in
-  try
-    (eval exp env hndl_env)
-  with EXCEPTION_HANDLER a -> a
+
+  try (eval exp env hndl_env) with 
+  | EXCEPTION_HANDLER a -> a
 
 and eval (exp: exp_t) env hndl: value_t =
     match exp with
@@ -85,41 +85,48 @@ and eval (exp: exp_t) env hndl: value_t =
     | MCONS (e0, e1) -> 
         (binary_eval ('m', (eval e0 env hndl), (eval e1 env hndl)))
     | CAR p -> 
-        (match (eval p env hndl) with
+        begin match (eval p env hndl) with
         | PAIR (el, _) -> el
-        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_pair))
+        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_pair)
+        end
     | CDR p -> 
-        (match (eval p env hndl) with
+        begin match (eval p env hndl) with
         | PAIR (_, el) -> el
-        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_pair))
+        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_pair)
+        end
     | MCAR p -> 
-        (match (eval p env hndl) with
+        begin match (eval p env hndl) with
         | MPAIR (el, _) -> el
-        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair))
+        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
+        end
     | MCDR p -> 
-        (match (eval p env hndl) with
+        begin match (eval p env hndl) with
         | MPAIR (_, el) -> el
-        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair))
+        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
+        end
     | SETMCAR (VAR v, el_new) ->
-        (match (look_up v env) with
+        begin match (look_up v env) with
         | MPAIR (_, el)  -> 
             let _ = 
               (set_var v (MPAIR ((eval el_new env hndl), el)) env) in 
             VOID
-        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair))
+        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
+        end
     | SETMCDR (VAR v, el_new) ->
-        (match (look_up v env) with
+        begin match (look_up v env) with
         | MPAIR (el, _)  -> 
             let _ = 
               (set_var v (MPAIR (el, (eval el_new env hndl))) env) in 
             VOID
-        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair))
+        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
+        end
     | SETMCDR (MCONS _, _) | SETMCAR (MCONS _, _) -> VOID
     | IF (b, e0, e1) -> 
-        (match (eval b env hndl) with
+        begin match (eval b env hndl) with
         | BOOL true -> (eval e0 env hndl)
         | BOOL false -> (eval e1 env hndl)
-        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_bool))
+        | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_bool)
+        end
     | LET (blist, exp) -> 
           let ht = Hashtbl.create (List.length blist) in
           let add_to_env = 
@@ -143,11 +150,12 @@ and eval (exp: exp_t) env hndl: value_t =
         let f = (look_up x env) in
         let add_to_env = 
         (fun v e -> Hashtbl.add ht v (eval e env hndl)) in
-        (match f with
+        begin match f with
         | CLOS (vlist, exp, en) -> 
             let _ = List.iter2 add_to_env vlist elist in
             (eval exp (ht::en) hndl)
-        | _ -> raise (RUNTIME_EXCEPTION e_msg_need_proc))
+        | _ -> raise (RUNTIME_EXCEPTION e_msg_need_proc)
+        end
     | RAISE excp ->  (*lookup handlers environment*)
         (exception_handler excp env hndl)
     | HANDLERS (hdl_list, exp) ->
