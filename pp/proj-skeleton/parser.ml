@@ -93,6 +93,7 @@ and parse_helper lexer =
         match token  with
         | LPAREN -> 
             begin
+              (*let _ = print_endline "here" in*)
               let exp = 
               match lexer () with
               | LAMBDA -> 
@@ -137,7 +138,7 @@ and parse_helper lexer =
         | _ -> Syn.VAR "END" in
       let p = lexer () in
       if p <> RPAREN then
-        raise (PARSE_ERROR "unmatched parenthesis") 
+        raise (PARSE_ERROR "unmatched parenthesis")
       else 
         exp
   | RPAREN -> raise (PARSE_ERROR  "need more operand")
@@ -176,6 +177,7 @@ and exp_to_list2 (lexer: unit -> token) (el: Syn.exp_t list) cnt :Syntax.exp_t l
   else (exp_to_list lexer (el@[parse_helper lexer]) (cnt - 1))
 
 and hndls_to_list lexer hl :(Syn.exp_t * Syn.exp_t) list =
+  let _ = lexer () in (*exhaust one left paren*)
   let token = lexer () in
   match token with
   | LPAREN -> 
@@ -183,4 +185,3 @@ and hndls_to_list lexer hl :(Syn.exp_t * Syn.exp_t) list =
   | RPAREN -> 
       hl
   | _ -> raise (PARSE_ERROR "expected a procedure")
-
