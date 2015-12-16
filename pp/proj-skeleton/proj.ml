@@ -21,6 +21,8 @@ and value_t =
   | VOID	       
 exception EXCEPTION_HANDLER of value_t
 
+let rev = function
+  (a, b) -> (b, a)
 
 (* If value_to_string does not work well for your code, *)
 (*  adjust this function manually to make it work *)
@@ -48,9 +50,10 @@ let rec myeval (exp_string: string): value_t =
   let exp = Parser.parse lexer in
 
   let _ = debug exp exp_string in
+  let env = [] in let hndl_env = [] in
 
   try
-    (eval exp [] []) (*empty list -> empty env*)
+    (eval exp env hndl_env)
   with EXCEPTION_HANDLER a -> a
 
 and eval (exp: exp_t) env hndl: value_t =
@@ -59,7 +62,7 @@ and eval (exp: exp_t) env hndl: value_t =
     | CONST (CTRUE) -> BOOL true
     | CONST (CFALSE) -> BOOL false
     | CONST (CNULL) -> VOID
-    | VAR v -> (look_up v env) (*FIXME: use look_up env*)
+    | VAR v -> (look_up v env)
     | ADD (e0, e1) -> (binary_eval ('+', (eval e0 env hndl), (eval e1 env hndl)))
     | SUB (e0, e1) -> (binary_eval ('-', (eval e0 env hndl), (eval e1 env hndl)))
     | MUL (e0, e1) -> (binary_eval ('*', (eval e0 env hndl), (eval e1 env hndl)))
@@ -128,9 +131,11 @@ and eval (exp: exp_t) env hndl: value_t =
           | _ -> raise (RUNTIME_EXCEPTION "procedure expected")
         end
     | RAISE e ->  (*lookup handlers environment*)
-        exception_handler e env hndl
-    | HANDLERS (hndl, e) ->
-        (eval e env hndl)
+        (exception_handler e env hndl)
+    | HANDLERS (hdl_list, e) ->
+        (*FIXME: change order to avoid side effect?*)
+        let h_list = List.map (fun (p, e) -> (rev ((eval e env hndl), (eval p env hndl)))) hdl_list in
+        (eval e env h_list)
     | LAMBDA (vlist, e) -> CLOS (vlist, e, env)
     | _ -> raise NOT_IMPLEMENTED
 
@@ -169,13 +174,16 @@ and set_var v value env =
         set_var v value tl
 
 and exception_handler e env hndls =
+  let ht = Hashtbl.create 1 in
   match hndls with 
   | [] -> raise UNCAUGHT_EXCEPTION
-  | (proc, act)::tl -> 
-      if ( (eval (APP (proc, [e])) env hndls) = BOOL true) then
-        raise (EXCEPTION_HANDLER (eval (APP (act, [e])) env hndls))
+  | ((CLOS (v0, e0, en0)), (CLOS (v1, e1, en1)))::tl ->
+      let _ = List.iter (fun v -> Hashtbl.add ht v (eval e env hndls)) v0 in
+      if ( (eval e0 (ht::en0) hndls) = BOOL true) then
+        raise (EXCEPTION_HANDLER (eval e1 (ht::en1) hndls))
       else
         exception_handler e env tl
+  | _ ->  raise (RUNTIME_EXCEPTION "handlers should have procedures")
 
 
 
@@ -186,6 +194,7 @@ and exception_handler e env hndls =
 (*let exp1 = "(let ((x (lambda (x) (+ x 1)))) ((lambda (x) (+ x 1)) 3))"*)
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1)))) ))) (f 100))"*)
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1))))) )) (f 999999))"*)
-let exp1 = "(with-handlers ( ((lambda (x) (= x 5)) (lambda (x) #f))  ) (+ 3 (raise 5)))"
+let exp1 ="(let ((a 3))
+          (with-handlers (((lambda (x) (= x 5)) (lambda (x) a))) (let ((a 5)) (raise (+ 3 3)))))"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
