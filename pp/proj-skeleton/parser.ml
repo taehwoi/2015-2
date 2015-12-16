@@ -135,7 +135,8 @@ and parse_helper lexer =
         | HANDLERS -> 
             Syn.HANDLERS (rev ((parse_helper lexer), (hndls_to_list lexer [])))
         | RPAREN -> raise (PARSE_ERROR "empty parenthesis")
-        | _ -> Syn.VAR "END" in
+        | _ ->  raise (PARSE_ERROR
+                ((token_printer token)^" is not a part of the syntax")) in
       let p = lexer () in
       if p <> RPAREN then
         raise (PARSE_ERROR "unmatched parenthesis")
