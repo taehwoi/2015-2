@@ -177,10 +177,11 @@ and exception_handler e env hndls =
   let ht = Hashtbl.create 1 in
   match hndls with 
   | [] -> raise UNCAUGHT_EXCEPTION
-  | ((CLOS (v0, e0, en0)), (CLOS (v1, e1, en1)))::tl ->
-      let _ = List.iter (fun v -> Hashtbl.add ht v (eval e env hndls)) v0 in
-      if ( (eval e0 (ht::en0) hndls) = BOOL true) then
-        raise (EXCEPTION_HANDLER (eval e1 (ht::en1) hndls))
+  | ((CLOS ([v], e0, en)), (CLOS (_, e1, _))) :: tl ->
+      (*closures in handlers only have one parameter*)
+      let _ = Hashtbl.add ht v (eval e env hndls) in
+      if ( (eval e0 (ht::en) hndls) = BOOL true) then
+        raise (EXCEPTION_HANDLER (eval e1 (ht::en) hndls))
       else
         exception_handler e env tl
   | _ ->  raise (RUNTIME_EXCEPTION "handlers should have procedures")
@@ -195,6 +196,6 @@ and exception_handler e env hndls =
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1)))) ))) (f 100))"*)
 (*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1))))) )) (f 999999))"*)
 let exp1 ="(let ((a 3))
-          (with-handlers (((lambda (x) (= x 5)) (lambda (x) a))) (let ((a 5)) (raise (+ 3 3)))))"
+          (with-handlers (((lambda (x) (= x 6)) (lambda (x) a))) (let ((a 5)) (raise (+ 3 3)))))"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
