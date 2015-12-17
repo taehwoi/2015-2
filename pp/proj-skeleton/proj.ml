@@ -148,7 +148,7 @@ and eval (exp: exp_t) env hndl: value_t =
     | APP (VAR x, elist) ->
         let ht = Hashtbl.create (List.length elist) in
         let f = (look_up x env) in
-        let add_to_env = 
+        let add_to_env =
         (fun v e -> Hashtbl.add ht v (eval e env hndl)) in
         begin match f with
         | CLOS (vlist, exp, en) -> 
@@ -227,9 +227,11 @@ and exception_handler e env hndls =
 (*let myeval_memo (exp_string: string): value_t =*)
 
   (*test like this: *)
-(*let exp1 = "(let ((x (lambda (x) (+ x 1)))) ((lambda (x) (+ x 1)) 3))"*)
-(*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1)))) ))) (f 100))"*)
-(*let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1))))) )) (f 999999))"*)
-let exp1 = "(mcar (let ((x (mcons 3 5))) x))"
+(*let exp1 = "((lambda (x y z) (+ x y)) 3 4 5)"*)
+(*let exp1 = "(let ((f (lambda (x y) (+ x y)))) (f 3 4))"*)
+(*let exp1 = "(f 1 2 (+ x 1))"*)
+let exp1 = "(letrec ((f (lambda (x) (if (= x 0) 0 (+ x (f (- x 1))) )))) (f 10))"
+(*let exp1 = "(let ((x (mcons 3 5))) x)"*)
+(*let exp1 = "((lambda (x y z w) (+ x y)) (+ 1 1) 4 5 6)"*)
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
