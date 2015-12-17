@@ -5,12 +5,12 @@
 
 (define (myeval E)
 
-  (define (eval-helper E env) ;eval-helper: (Expression) List -> E
+  (define (eval-helper E env) ;eval-helper: (Expression) -> E
     (if (equal? E ''()) '() ;Null
       (if (or (number? E) (boolean? E)) E ;Value
         (if (not (list? E)) ;start evaluation
           (let ()
-            (look-up E env)) ;variable -> look up environment
+            (look-up E env)) ;Variable
           (let () ;composite expressions
             (define type (car E))
             (cond 
@@ -50,7 +50,8 @@
       (let ()
         (cond
           ((or (not (number? a)) (not (number? b))) 
-           (raise (string-append "Error: " (~a op) " expects Int, given: " (~a a) ", " (~a b))))
+           (raise (string-append "Error: " (~a op) " expects Int, 
+                                 given: " (~a a) ", " (~a b))))
           ((equal? op '+) (+ a b)) 
           ((equal? op '-) (- a b))
           ((equal? op '*) (* a b))
@@ -72,7 +73,8 @@
         ((equal? op 'car) (car p))
         ((equal? op 'cdr) (cdr p))
         (else (raise "undefined pair operation")))
-      (raise (string-append "Error: Expect a Pair, given: " (~a p)))))
+      (raise (string-append "Error: Expect a Pair, 
+                            given: " (~a p)))))
 
   (define (if-op? op)
     (cond
@@ -97,18 +99,22 @@
         ((equal? op 'let)
          (for-each
            (lambda (x) 
-             (hash-set! ht (car x) (eval-helper (cadr x) env))) (cadr E)))
+             (hash-set! ht (car x) (eval-helper (cadr x) env))) 
+           (cadr E)))
         ((equal? op 'letrec)
          (for-each
            (lambda (x) 
-             (hash-set! ht (car x) (eval-helper (cadr x) (cons ht env)))) (cadr E))))
+             (hash-set! ht (car x) (eval-helper (cadr x) (cons ht env)))) 
+           (cadr E))))
          (eval-helper (caddr E) (cons ht env))))
 
   (define (app-op? op E env)
     (cond
       ((and (list? op) (equal? (car op) 'lambda )) #t)
-      ((not (list? (eval-helper op env))) (raise "Error: Expected a procedure"))
-      ((equal? (caar (look-up op env)) 'lambda) #t)))
+      ((not (list? (eval-helper op env))) 
+       (raise "Error: Expected a procedure"))
+      ((equal? (caar (eval-helper op env)) 'lambda) #t)
+      (else #f)))
 
    (define (app-eval op E env)
     (define ht (make-hash))
@@ -118,7 +124,8 @@
          (let ()
            (for-each 
              (lambda (x y) 
-               (hash-set! ht x (eval-helper y env))) (cadar (eval-helper op env)) (cdr E))
+               (hash-set! ht x (eval-helper y env))) 
+                 (cadar (eval-helper op env)) (cdr E))
            (eval-helper (caddr op) (cons ht env))))
         ((equal? (caar (look-up op env)) 'lambda)
          (let ()
@@ -132,8 +139,10 @@
 
   ;here comes the pokemon master
   ( with-handlers 
-    ( ((lambda (x) (string? x)) (lambda (x) (raise x))) ;Error raised during run-time
-      ((lambda (x) #t) (lambda (x) (raise "Error: Ill-formed-syntax"))) ) ;Error raised during parsing
+      ;Error raised during run-time
+    ( ((lambda (x) (string? x)) (lambda (x) (raise x))) 
+      ;Error raised during parsing
+      ((lambda (x) #t) (lambda (x) (raise "Error: Ill-formed-syntax"))) )
     (eval-helper E '()) )
   )
 
