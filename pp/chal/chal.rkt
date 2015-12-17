@@ -20,33 +20,14 @@
               ((pair-op? type) (pair-eval type E env))
               ; IF (b, t, f) operation
               ((if-op? type) (if-eval type E env))
-
               ; LET, LETREC
               ((assign-op? type) (assign-eval type E env))
-
+              ; LAMBDA
               ((equal? type 'lambda)
                (list (list 'lambda (cadr E) (caddr E)) env))
-
               ;APPLICATION
-              ((and (list? type) (equal? 'lambda (car type)))
-               (let ()
-                 (define ht (make-hash))
-                 (for-each 
-                   (lambda (x y) 
-                     (hash-set! ht x (eval-helper y env))) (cadar (eval-helper type env)) (cdr E))
-                 (eval-helper (caddr type) (cons ht env))))
-
-              ((not (list? (look-up type env))) ;var in app. is not a procedure
-                   (raise "Error: Expected a procedure"))
-              ;APPLICATION with variable
-              ((equal? (caar (look-up type env)) 'lambda)
-                 (let ()
-                   (define ht (make-hash))
-                   (define clos (look-up type env))
-                   (for-each 
-                     (lambda (x y)
-                       (hash-set! ht x (eval-helper y env))) (cadar clos) (cdr E))
-                 (eval-helper (caddar clos) (cons ht (cadr clos)))))
+              ((app-op? type E env) (app-eval type E env))
+              (else (raise "unimplmented keyword"))
 
               ))))))
 
@@ -122,6 +103,32 @@
            (lambda (x) 
              (hash-set! ht (car x) (eval-helper (cadr x) (cons ht env)))) (cadr E))))
          (eval-helper (caddr E) (cons ht env))))
+
+  (define (app-op? op E env)
+    (cond
+      ((and (list? op) (equal? (car op) 'lambda )) #t)
+      ((not (list? (eval-helper op env))) (raise "Error: Expected a procedure"))
+      ((equal? (caar (look-up op env)) 'lambda) #t)))
+
+   (define (app-eval op E env)
+    (define ht (make-hash))
+    (let ()
+      (cond  
+        ((and (list? op) (equal? 'lambda (car op)))
+         (let ()
+           (for-each 
+             (lambda (x y) 
+               (hash-set! ht x (eval-helper y env))) (cadar (eval-helper op env)) (cdr E))
+           (eval-helper (caddr op) (cons ht env))))
+        ((equal? (caar (look-up op env)) 'lambda)
+         (let ()
+           (define fun (look-up op env))
+           (for-each 
+             (lambda (x y)
+               (hash-set! ht x (eval-helper y env))) (cadar fun) (cdr E))
+           (eval-helper (caddar fun) (cons ht (cadr fun)))))
+        (else (raise "Error: undefined application operation"))
+        )))
 
   ;here comes the pokemon master
   ( with-handlers 
