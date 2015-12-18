@@ -42,6 +42,7 @@ let e_msg_need_bool = "boolean " ^ e_msg_need
 let e_msg_need_proc = "procedure " ^ e_msg_need
 let e_msg_non_int = " of non-ints not allowed"
 let e_msg_undef = "variable undefined"
+let e_msg_operand = "Number of operands doesn't match"
 
 let debug exp exp_string =
   let _ = print_string "input: " in
@@ -70,21 +71,29 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
     | CONST (CNULL) -> VOID
     | VAR v -> (look_up v env)
     | ADD (e0, e1) -> 
-        (binary_eval ('+', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+        (binary_eval 
+          ('+', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | SUB (e0, e1) -> 
-        (binary_eval ('-', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+        (binary_eval 
+          ('-', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | MUL (e0, e1) -> 
-        (binary_eval ('*', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+        (binary_eval 
+          ('*', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | EQ (e0, e1) -> 
-        (binary_eval ('=', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+        (binary_eval 
+          ('=', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | LT (e0, e1) -> 
-        (binary_eval ('<', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+        (binary_eval 
+          ('<', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | GT (e0, e1) -> 
-        (binary_eval ('>', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+        (binary_eval 
+          ('>', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | CONS (e0, e1) -> 
-        (binary_eval ('p', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+        (binary_eval 
+          ('p', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | MCONS (e0, e1) -> 
-        (binary_eval ('m', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+        (binary_eval 
+          ('m', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | CAR p -> 
         begin match (eval p env hndl to_mem tbl) with
         | PAIR (el, _) -> el
@@ -109,7 +118,8 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
         begin match (look_up v env) with
         | MPAIR (_, el)  -> 
             let _ = 
-              (set_var v (MPAIR ((eval el_new env hndl to_mem tbl), el)) env) in 
+              (set_var v 
+                (MPAIR ((eval el_new env hndl to_mem tbl), el)) env) in 
             VOID
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
         end
@@ -117,7 +127,8 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
         begin match (look_up v env) with
         | MPAIR (el, _)  -> 
             let _ = 
-              (set_var v (MPAIR (el, (eval el_new env hndl to_mem tbl))) env) in 
+              (set_var v 
+                (MPAIR (el, (eval el_new env hndl to_mem tbl))) env) in 
             VOID
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
         end
@@ -131,24 +142,27 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
     | LET (blist, exp) -> 
           let ht = Hashtbl.create (List.length blist) in
           let add_to_env = 
-            (fun (v, e) -> Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
+            (fun (v, e) -> 
+              Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
           let _ = List.iter add_to_env blist in
           (eval exp (ht::env) hndl to_mem tbl)
     | LETREC (blist, exp) -> 
           let ht = Hashtbl.create (List.length blist) in
           let add_to_env_rec = 
-            (fun (v, e) -> Hashtbl.add ht v (eval e (ht::env) hndl to_mem tbl)) in
+            (fun (v, e) -> 
+              Hashtbl.add ht v (eval e (ht::env) hndl to_mem tbl)) in
           let _ = List.iter add_to_env_rec blist in
           (eval exp (ht::env) hndl to_mem tbl)
-    (*FIXME: evaluate sth in APP first?*)
+    (*FIXME: memoize lambda also?*)
     | APP (LAMBDA (vlist, exp), elist) ->
         let ht = Hashtbl.create (List.length elist) in
         let add_to_env = 
-          (fun v e -> Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
+          (fun v e ->
+            Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
         let _ = 
           try (let l = List.iter2 add_to_env vlist elist in l) with 
           | Invalid_argument "List.iter2" -> 
-              raise (RUNTIME_EXCEPTION "Number of operands doesn't match") in
+              raise (RUNTIME_EXCEPTION e_msg_operand) in
         (eval exp (ht::env) hndl to_mem tbl)
     | APP (e, elist) ->
         let ht = Hashtbl.create (List.length elist) in
@@ -160,13 +174,13 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
             let _ = 
               try (let l = List.iter2 add_to_env vlist elist in l) with 
               | Invalid_argument "List.iter2" -> 
-                  raise (RUNTIME_EXCEPTION "Number of operands doesn't match") in
+                  raise (RUNTIME_EXCEPTION e_msg_operand) in
             (eval exp (ht::en) hndl to_mem tbl)
         | CLOS (vlist, exp, en), true -> 
             let _ = 
               try (let l = List.iter2 add_to_env vlist elist in l) with 
               | Invalid_argument "List.iter2" -> 
-                  raise (RUNTIME_EXCEPTION "Number of operands doesn't match") in
+                  raise (RUNTIME_EXCEPTION e_msg_operand) in
             let arg_list = List.map 
               (fun e -> (eval e env hndl true tbl)) elist in
             let f_memo = (e, arg_list) in
@@ -182,7 +196,8 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
         (exception_handler excp env hndl to_mem tbl)
     | HANDLERS (hdl_list, exp) ->
         let add_to_hndl_env = 
-          (fun (p, e) -> ((eval p env hndl to_mem tbl), (eval e env hndl to_mem tbl))) in
+          (fun (p, e) -> 
+            ((eval p env hndl to_mem tbl), (eval e env hndl to_mem tbl))) in
         let h_list = 
           List.map add_to_hndl_env hdl_list in
         (eval exp env (h_list::hndl) to_mem tbl)
@@ -264,8 +279,8 @@ and pure (exp) : bool =
 
 
   (*test like this: *)
-(*let exp1 = "(letrec ((y 3) (z 5) (x (mcons y z))) x)"*)
-let exp1 = "(letrec ((fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))) ))) )) (fib 48))" 
+(*let exp1 = "(let ((x 3)) x)"*)
+let exp1 = "((lambda () 3))" 
 (*let exp1 = "((cdr (cons 3 (let ((x (lambda (x) (+ x 1)))) x))) 3)"*)
 let v = myeval_memo exp1
 let _ = print_endline (value_to_string v)
