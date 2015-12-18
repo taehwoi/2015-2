@@ -98,7 +98,7 @@ and parse_helper lexer =
               match t with
               | LAMBDA ->
                   (parse_LAM lexer)
-              | LET | LETREC-> 
+              | LET | LETREC -> 
                   (parse_LETS t lexer)
               | CAR | CDR | MCAR | MCDR ->
                   (parse_UNARY t lexer)
@@ -124,7 +124,7 @@ and parse_helper lexer =
             raise ( PARSE_ERROR ("expected a procedure") )
         | RPAREN -> raise (PARSE_ERROR "empty parenthesis")
         | _ ->  raise (PARSE_ERROR
-                ((token_printer token)^" is not a part of the syntax"))
+                ((token_printer tok)^" is not a part of the syntax"))
         end
   | RPAREN -> raise (PARSE_ERROR  "missing operand")
   | EOF -> raise (PARSE_ERROR  "premature eof")
