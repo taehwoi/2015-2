@@ -150,9 +150,9 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
           | Invalid_argument "List.iter2" -> 
               raise (RUNTIME_EXCEPTION "Number of operands doesn't match") in
         (eval exp (ht::env) hndl to_mem tbl)
-    | APP (VAR x, elist) ->
+    | APP (e, elist) ->
         let ht = Hashtbl.create (List.length elist) in
-        let f = (look_up x env) in
+        let f = (eval e env hndl to_mem tbl) in
         let add_to_env =
           (fun v e -> Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
         begin match (f, to_mem) with
@@ -169,7 +169,7 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
                   raise (RUNTIME_EXCEPTION "Number of operands doesn't match") in
             let arg_list = List.map 
               (fun e -> (eval e env hndl true tbl)) elist in
-            let f_memo = (x, arg_list) in
+            let f_memo = (e, arg_list) in
             if (Hashtbl.mem tbl f_memo) then
               (Hashtbl.find tbl f_memo)
             else
@@ -187,8 +187,6 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
           List.map add_to_hndl_env hdl_list in
         (eval exp env (h_list::hndl) to_mem tbl)
     | LAMBDA (vlist, exp) -> CLOS (vlist, exp, env)
-    | APP (_, elist) ->
-        raise (RUNTIME_EXCEPTION e_msg_need_proc)
     | _ -> raise NOT_IMPLEMENTED
 
 and binary_eval exp =
@@ -267,8 +265,7 @@ and pure (exp) : bool =
 
   (*test like this: *)
 (*let exp1 = "(letrec ((y 3) (z 5) (x (mcons y z))) x)"*)
-(*let exp1 = "(letrec ((fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))) ))) )) (fib 48))" *)
-let exp1 = 
-  "(with-handlers (((lambda (x) #f) (lambda (x) (* x 3)))) (with-handlers (((lambda (x) (raise (+ x 2))) (lambda (x) (* x 3)))) (raise 1)))"
-let v = myeval exp1
+let exp1 = "(letrec ((fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))) ))) )) (fib 48))" 
+(*let exp1 = "((cdr (cons 3 (let ((x (lambda (x) (+ x 1)))) x))) 3)"*)
+let v = myeval_memo exp1
 let _ = print_endline (value_to_string v)
