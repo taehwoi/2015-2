@@ -50,8 +50,7 @@
       (let ()
         (cond
           ((or (not (number? a)) (not (number? b))) 
-           (raise (string-append "Error: " (~a op) " expects Int, 
-                                 given: " (~a a) ", " (~a b))))
+           (raise (~a "Error: " op " expects Int, given: " a ", " b)))
           ((equal? op '+) (+ a b)) 
           ((equal? op '-) (- a b))
           ((equal? op '*) (* a b))
@@ -73,8 +72,7 @@
         ((equal? op 'car) (car p))
         ((equal? op 'cdr) (cdr p))
         (else (raise "undefined pair operation")))
-      (raise (string-append "Error: Expect a Pair, 
-                            given: " (~a p)))))
+      (raise (~a "Error: " op " expects a Pair, given: " p))))
 
   (define (if-op? op)
     (cond
@@ -140,9 +138,9 @@
 
 (define (look-up v env)
   (if (null? env) 
-    (raise (string-append "Error: " (~a v) " is undefined"))
+    (raise (~a "Error: " v " is undefined"))
     (if (not (equal? (hash-ref (car env) v 'nil) 'nil))
       (hash-ref (car env) v 'nil)
       (look-up v (cdr env)))))
 
-(myeval '(+ 1 3) )
+(myeval '(+ 3 3))
