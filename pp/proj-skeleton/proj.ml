@@ -70,7 +70,7 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
     | CONST (CFALSE) -> BOOL false
     | CONST (CNULL) -> VOID
     | VAR v -> (look_up v env)
-    | ADD (e0, e1) -> 
+    | ADD (e0, e1) ->
         (binary_eval 
           ('+', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | SUB (e0, e1) -> 
@@ -273,14 +273,14 @@ let rec myeval_memo (exp_string: string): value_t =
     (eval exp [] [] false table)) with
   | EXCEPTION_HANDLER a -> a
 
-(*TODO*)
+(*checks if a function is pure*)
 and pure (exp) : bool =
   true
 
 
   (*test like this: *)
 (*let exp1 = "(let ((x 3)) x)"*)
-let exp1 = "((lambda () 3))" 
-(*let exp1 = "((cdr (cons 3 (let ((x (lambda (x) (+ x 1)))) x))) 3)"*)
+(*let exp1 = "((lambda () 3))" *)
+let exp1 = "((cdr (cons (let ((x (lambda (x) (raise 5))) )x) (let ((x (lambda (x) (+ x 1)))) x))) 3)"
 let v = myeval_memo exp1
 let _ = print_endline (value_to_string v)
