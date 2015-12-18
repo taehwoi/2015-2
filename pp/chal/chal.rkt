@@ -110,7 +110,7 @@
 
   (define (app-op? op E env)
     (cond
-      ((and (list? op) (equal? (car op) 'lambda )) #t)
+      ;((and (list? op) (equal? (car op) 'lambda )) #t)
       ((not (list? (eval-helper op env))) 
        (raise "Error: Expected a procedure"))
       ((equal? (caar (eval-helper op env)) 'lambda) #t)
@@ -120,16 +120,9 @@
     (define ht (make-hash))
     (let ()
       (cond  
-        ((and (list? op) (equal? 'lambda (car op)))
+        ((equal? (caar (eval-helper op env)) 'lambda)
          (let ()
-           (for-each 
-             (lambda (x y) 
-               (hash-set! ht x (eval-helper y env))) 
-                 (cadar (eval-helper op env)) (cdr E))
-           (eval-helper (caddr op) (cons ht env))))
-        ((equal? (caar (look-up op env)) 'lambda)
-         (let ()
-           (define fun (look-up op env))
+           (define fun (eval-helper op env))
            (for-each 
              (lambda (x y)
                (hash-set! ht x (eval-helper y env))) (cadar fun) (cdr E))
@@ -152,3 +145,5 @@
     (if (not (equal? (hash-ref (car env) v 'nil) 'nil))
       (hash-ref (car env) v 'nil)
       (look-up v (cdr env)))))
+
+(myeval '((lambda (x) (+ x 3)) 3) )
