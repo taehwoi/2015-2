@@ -267,14 +267,14 @@ let rec myeval_memo (exp_string: string): value_t =
   let _ = debug exp exp_string in
 
   try
-  (if (pure exp) then  (*check for purity*)
+  (if (is_pure exp) then  (*check for purity*)
     (eval exp [] [] true table)
   else
     (eval exp [] [] false table)) with
   | EXCEPTION_HANDLER a -> a
 
 (*checks if a function is pure*)
-and pure (exp) : bool =
+and is_pure (exp) : bool =
   true
 
 
