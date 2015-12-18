@@ -286,10 +286,6 @@ and exp_to_list (lexer: unit -> token) (el: Syntax.exp_t list) :Syntax.exp_t lis
   | Syn.CONST Syn.CNULL -> (List.rev el)
   | _ -> (exp_to_list lexer (exp::el))
 
-and exp_to_list2 (lexer: unit -> token) (el: Syn.exp_t list) cnt :Syntax.exp_t list =
-  if cnt = 0 then el 
-  else (exp_to_list2 lexer (el@[parse_helper lexer]) (cnt - 1))
-
 and hndls_to_list lexer hl :(Syn.exp_t * Syn.exp_t) list =
   let _ = lexer () in (*exhaust one left paren*)
   let token = lexer () in
