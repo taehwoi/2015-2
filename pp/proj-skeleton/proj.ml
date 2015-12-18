@@ -192,8 +192,8 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
               (Hashtbl.find tbl f_memo)
         | _ -> raise (RUNTIME_EXCEPTION e_msg_need_proc)
         end
-    | RAISE excp ->  (*lookup handlers environment*)
-        (exception_handler excp env hndl to_mem tbl)
+    | RAISE excptn ->  (*lookup handlers environment*)
+        (exception_handler excptn env hndl to_mem tbl)
     | HANDLERS (hdl_list, exp) ->
         let add_to_hndl_env = 
           (fun (p, e) -> 
@@ -243,18 +243,18 @@ and set_var v value env =
         set_var v value tl
 
 (*raise appropriate exception to be caught at the top*)
-and exception_handler e env hndls to_mem tbl=
+and exception_handler excptn env hndls to_mem tbl=
   let ht = Hashtbl.create 1 in
   match hndls with 
   | [] -> raise UNCAUGHT_EXCEPTION
   | []::tl -> raise UNCAUGHT_EXCEPTION
   | ((((CLOS ([v], e0, en)), (CLOS (_, e1, _))))::tail) :: tl ->
       (*closures in handlers only have one parameter*)
-      let _ = Hashtbl.add ht v (eval e env hndls to_mem tbl) in
+      let _ = Hashtbl.add ht v (eval excptn env hndls to_mem tbl) in
       if ( (eval e0 (ht::en) tl to_mem tbl) = BOOL true) then
         raise (EXCEPTION_HANDLER (eval e1 (ht::en) tl to_mem tbl))
       else
-        exception_handler e env (tail::tl) to_mem tbl
+        exception_handler excptn env (tail::tl) to_mem tbl
   | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_proc)
 
 
@@ -279,8 +279,7 @@ and is_pure (exp) : bool =
 
 
   (*test like this: *)
-(*let exp1 = "(let ((x 3)) x)"*)
-(*let exp1 = "((lambda () 3))" *)
-let exp1 = "((cdr (cons (let ((x (lambda (x) (raise 5))) )x) (let ((x (lambda (x) (+ x 1)))) x))) 3)"
+let exp1 = "(let ((x 3)) x)"
+(*let exp1 = "((lambda () (+ 1 1)))" *)
 let v = myeval_memo exp1
 let _ = print_endline (value_to_string v)
