@@ -36,10 +36,10 @@ let rec value_to_string (v:value_t): string =
   | VOID -> "#<void>"
 
 let e_msg_need = "expected"
-let e_msg_need_pair = "pair" ^ e_msg_need
-let e_msg_need_mpair = "mutable" ^ e_msg_need_pair
-let e_msg_need_bool = "boolean" ^ e_msg_need
-let e_msg_need_proc = "procedure" ^ e_msg_need
+let e_msg_need_pair = "pair " ^ e_msg_need
+let e_msg_need_mpair = "mutable " ^ e_msg_need_pair
+let e_msg_need_bool = "boolean " ^ e_msg_need
+let e_msg_need_proc = "procedure " ^ e_msg_need
 let e_msg_non_int = " of non-ints not allowed"
 let e_msg_undef = "variable undefined"
 
@@ -185,7 +185,7 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
           (fun (p, e) -> ((eval p env hndl to_mem tbl), (eval e env hndl to_mem tbl))) in
         let h_list = 
           List.map add_to_hndl_env hdl_list in
-        (eval exp env h_list to_mem tbl)
+        (eval exp env (h_list::hndl) to_mem tbl)
     | LAMBDA (vlist, exp) -> CLOS (vlist, exp, env)
     | APP (_, elist) ->
         raise (RUNTIME_EXCEPTION e_msg_need_proc)
@@ -234,13 +234,14 @@ and exception_handler e env hndls to_mem tbl=
   let ht = Hashtbl.create 1 in
   match hndls with 
   | [] -> raise UNCAUGHT_EXCEPTION
-  | ((CLOS ([v], e0, en)), (CLOS (_, e1, _))) :: tl ->
+  | []::tl -> raise UNCAUGHT_EXCEPTION
+  | ((((CLOS ([v], e0, en)), (CLOS (_, e1, _))))::tail) :: tl ->
       (*closures in handlers only have one parameter*)
       let _ = Hashtbl.add ht v (eval e env hndls to_mem tbl) in
-      if ( (eval e0 (ht::en) hndls to_mem tbl) = BOOL true) then
-        raise (EXCEPTION_HANDLER (eval e1 (ht::en) hndls to_mem tbl))
+      if ( (eval e0 (ht::en) tl to_mem tbl) = BOOL true) then
+        raise (EXCEPTION_HANDLER (eval e1 (ht::en) tl to_mem tbl))
       else
-        exception_handler e env tl to_mem tbl
+        exception_handler e env (tail::tl) to_mem tbl
   | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_proc)
 
 
@@ -267,6 +268,7 @@ and pure (exp) : bool =
   (*test like this: *)
 (*let exp1 = "(letrec ((y 3) (z 5) (x (mcons y z))) x)"*)
 (*let exp1 = "(letrec ((fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))) ))) )) (fib 48))" *)
-(*let exp1 = "(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)))))) (f 99999 0))"*)
+let exp1 = 
+  "(with-handlers (((lambda (x) #f) (lambda (x) (* x 3)))) (with-handlers (((lambda (x) (raise (+ x 2))) (lambda (x) (* x 3)))) (raise 1)))"
 let v = myeval exp1
 let _ = print_endline (value_to_string v)
