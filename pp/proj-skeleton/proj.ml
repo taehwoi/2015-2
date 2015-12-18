@@ -53,6 +53,7 @@ let rec myeval (exp_string: string): value_t =
   let lexbuf = Lexing.from_string exp_string in
   let lexer () = Lexer.token lexbuf in
   let exp = Parser.parse lexer in
+  let _ = debug exp exp_string in
 
   let env = [] in 
   let hndl_env = [] in
@@ -143,7 +144,10 @@ and eval (exp: exp_t) env hndl mem tbl: value_t =
         let ht = Hashtbl.create (List.length elist) in
         let add_to_env = 
           (fun v e -> Hashtbl.add ht v (eval e env hndl mem tbl)) in
-        let _ = List.iter2 add_to_env vlist elist in
+        let _ = 
+          try (let l = List.iter2 add_to_env vlist elist in l) with 
+          | Invalid_argument "List.iter2" -> 
+              raise (RUNTIME_EXCEPTION "Number of operands doesn't match") in
         (eval exp (ht::env) hndl mem tbl)
     | APP (VAR x, elist) ->
         let ht = Hashtbl.create (List.length elist) in
@@ -152,11 +156,17 @@ and eval (exp: exp_t) env hndl mem tbl: value_t =
           (fun v e -> Hashtbl.add ht v (eval e env hndl mem tbl)) in
         begin match (f, mem) with
         | CLOS (vlist, exp, en), false -> 
-            let _ = List.iter2 add_to_env vlist elist in
+            let _ = 
+              try (let l = List.iter2 add_to_env vlist elist in l) with 
+              | Invalid_argument "List.iter2" -> 
+                  raise (RUNTIME_EXCEPTION "Number of operands doesn't match") in
             (eval exp (ht::en) hndl mem tbl)
         (*FIXME*)
         | CLOS (vlist, exp, en), true -> 
-            let _ = List.iter2 add_to_env vlist elist in
+            let _ = 
+              try (let l = List.iter2 add_to_env vlist elist in l) with 
+              | Invalid_argument "List.iter2" -> 
+                  raise (RUNTIME_EXCEPTION "Number of operands doesn't match") in
             let arg_list = List.map 
               (fun e -> (eval e env hndl true tbl)) elist in
             let f_memo = (x, arg_list) in
@@ -255,11 +265,8 @@ and pure (exp) : bool =
 
 
   (*test like this: *)
-(*let exp1 = "((lambda (x y z) (+ x y)) 3 4 5)"*)
-(*let exp1 = "(let ((f (lambda (x y) (+ x y)))) (f 3 4))"*)
-(*let exp1 = "(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)) )))) (f 99 0))"*)
-(*let exp1 = "(let ((x (mcons 3 5))) x)"*)
-(*let exp1 = "((lambda (x y z w) (+ x y)) (+ 1 1) 4 5 6)"*)
-let exp1 = "(letrec ((fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))) ))) )) (fib 48))"
-let v = myeval_memo exp1
+(*let exp1 = "(letrec ((y 3) (z 5) (x (mcons y z))) x)"*)
+(*let exp1 = "(letrec ((fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))) ))) )) (fib 48))" *)
+(*let exp1 = "(letrec ((f (lambda (x n) (if (= x 0) n (f (- x 1) (+ n x)))))) (f 99999 0))"*)
+let v = myeval exp1
 let _ = print_endline (value_to_string v)
