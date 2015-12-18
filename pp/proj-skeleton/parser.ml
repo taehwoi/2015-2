@@ -88,229 +88,38 @@ and parse_helper lexer =
   | FALSE -> Syn.CONST Syn.CFALSE
   | NULL -> Syn.CONST Syn.CNULL
   | LPAREN -> 
-        begin match lexer () with
+      let tok = lexer () in
+        begin match tok with
         | ID x ->
             Syn.APP (rev ( (exp_to_list lexer []), Syn.VAR x))
         | LPAREN -> 
-            begin match lexer () with
+            let proc =
+              let t = lexer () in
+              match t with
               | LAMBDA ->
-                  let vl = (var_to_list lexer []) in
-                  let proc = (Syn.LAMBDA (rev ((parse_helper lexer), vl))) in
-                  let _ = lexer () in (*exhaust right parenthesis*)
-                  let _ = lexer () in (*exhaust right parenthesis*)
-                  let exp = Syn.APP (rev ( (exp_to_list lexer []), proc)) in
-                  exp
-              | LET -> 
-                  let proc = 
-                    let e = Syn.LET (rev ((parse_helper lexer), (bind_to_list lexer [] 0))) in
-                      if (lexer () = RPAREN) then
-                        e
-                      else
-                        raise (PARSE_ERROR unmatched_paren) in
-                  let exp = Syn.APP (rev ( (exp_to_list lexer []), proc)) in
-                  exp
-              | LETREC -> 
-                  let proc = 
-                    let exp = 
-                      Syn.LETREC (rev ((parse_helper lexer), (bind_to_list lexer [] 0))) in
-                    if (lexer () = RPAREN) then
-                      exp
-                    else
-                      raise (PARSE_ERROR unmatched_paren) in
-                  let exp = Syn.APP (rev ( (exp_to_list lexer []), proc)) in
-                  exp
-              | CAR ->
-                  let proc =
-                    let exp = 
-                      Syn.CAR (parse_helper lexer) in
-                    if (lexer () = RPAREN) then
-                      exp
-                    else
-                      raise (PARSE_ERROR unmatched_paren) in
-                  let exp = Syn.APP (rev ( (exp_to_list lexer []), proc)) in
-                  exp
-              | CDR ->
-                  let proc =
-                    let exp = 
-                      Syn.CDR (parse_helper lexer) in
-                    if (lexer () = RPAREN) then
-                      exp
-                    else
-                      raise (PARSE_ERROR unmatched_paren) in
-                  let exp = Syn.APP (rev ( (exp_to_list lexer []), proc)) in
-                  exp
-              | MCAR ->
-                  let proc =
-                    let exp = 
-                      Syn.MCAR (parse_helper lexer) in
-                    if (lexer () = RPAREN) then
-                      exp
-                    else
-                      raise (PARSE_ERROR unmatched_paren) in
-                  let exp = Syn.APP (rev ( (exp_to_list lexer []), proc)) in
-                  exp
-              | MCDR ->
-                  let proc =
-                    let exp = 
-                      Syn.MCDR (parse_helper lexer) in
-                    if (lexer () = RPAREN) then
-                      exp
-                    else
-                      raise (PARSE_ERROR unmatched_paren) in
-                  let exp = Syn.APP (rev ( (exp_to_list lexer []), proc)) in
-                  exp
+                  (parse_LAM lexer)
+              | LET | LETREC-> 
+                  (parse_LETS t lexer)
+              | CAR | CDR | MCAR | MCDR ->
+                  (parse_UNARY t lexer)
               | IF ->
-                  let proc =
-                    let exp = 
-                      Syn.IF (rev_3 ((parse_helper lexer), (parse_helper lexer), (parse_helper lexer))) in
-                    if (lexer () = RPAREN) then
-                      exp
-                    else
-                      raise (PARSE_ERROR unmatched_paren) in
-                  let exp = Syn.APP (rev ( (exp_to_list lexer []), proc)) in
-                  exp
-              | _ -> raise (PARSE_ERROR "expect a procedure")
-            end
-        | PLUS -> 
-            let exp = 
-              Syn.ADD (rev ((parse_helper lexer), (parse_helper lexer))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | MINUS -> 
-            let exp = 
-              Syn.SUB (rev ((parse_helper lexer), (parse_helper lexer))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | TIMES ->
-            let exp = 
-              Syn.MUL (rev ((parse_helper lexer), (parse_helper lexer))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
+                  (parse_IF lexer)
+              | _ -> raise (PARSE_ERROR "expect a procedure") in
+            Syn.APP (proc, (exp_to_list lexer []))
+        | PLUS | MINUS | TIMES | CONS | MCONS | EQ | LT | GT -> 
+            (parse_BINOP tok lexer)
+        | SETMCAR | SETMCDR ->
+            (parse_BINOP tok lexer)
+        | CAR | CDR | MCAR | MCDR | RAISE ->
+            (parse_UNARY tok lexer)
         | IF ->
-            let exp = 
-              Syn.IF (rev_3 ((parse_helper lexer), (parse_helper lexer), (parse_helper lexer))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | CONS ->
-            let exp = 
-              Syn.CONS (rev ((parse_helper lexer), (parse_helper lexer))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | MCONS ->
-            let exp = 
-              Syn.MCONS (rev ((parse_helper lexer), (parse_helper lexer))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | CAR ->
-            let exp = 
-              Syn.CAR (parse_helper lexer) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | CDR ->
-            let exp = 
-              Syn.CDR (parse_helper lexer) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
+           (parse_IF lexer)
         | LAMBDA ->
-            let exp = 
-              Syn.LAMBDA (rev ((parse_helper lexer), (var_to_list lexer []))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | LET -> 
-            let exp = 
-              Syn.LET (rev ((parse_helper lexer), (bind_to_list lexer [] 0))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | LETREC -> 
-            let exp = 
-              Syn.LETREC (rev ((parse_helper lexer), (bind_to_list lexer [] 0))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | EQ -> 
-            let exp = 
-              Syn.EQ (rev ((parse_helper lexer), (parse_helper lexer))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | LT ->
-            let exp = 
-              Syn.LT (rev ((parse_helper lexer), (parse_helper lexer))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | GT ->
-            let exp = 
-              Syn.GT (rev ((parse_helper lexer), (parse_helper lexer))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | MCAR ->
-            let exp = 
-              Syn.MCAR (parse_helper lexer) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | MCDR ->
-            let exp = 
-              Syn.MCDR (parse_helper lexer) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | SETMCAR ->
-            let exp = 
-              Syn.SETMCAR (rev ( (parse_helper lexer), (parse_helper lexer) )) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | SETMCDR ->
-            let exp = 
-              Syn.SETMCDR (rev ( (parse_helper lexer), (parse_helper lexer) )) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
-        | RAISE ->
-            let exp = 
-              Syn.RAISE (parse_helper lexer)  in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
+            (parse_LAM lexer) 
+        | LET | LETREC -> 
+            (parse_LETS tok lexer)
         | HANDLERS -> 
-            let exp = 
-              Syn.HANDLERS (rev ((parse_helper lexer), (hndls_to_list lexer []))) in
-            if (lexer () = RPAREN) then
-              exp
-            else
-              raise (PARSE_ERROR unmatched_paren)
+            (parse_HNDL lexer)
         | INT _ | TRUE | FALSE -> 
             raise ( PARSE_ERROR ("expected a procedure") )
         | RPAREN -> raise (PARSE_ERROR "empty parenthesis")
@@ -321,6 +130,61 @@ and parse_helper lexer =
   | EOF -> raise (PARSE_ERROR  "premature eof")
   | _ ->  raise (PARSE_ERROR  ((token_printer token)^" is not a part of the syntax"))
 
+and parse_BINOP op lexer =
+  let exp = 
+    match op with
+    | PLUS -> (fun x -> Syn.ADD x)
+    | MINUS -> (fun x -> Syn.SUB x)
+    | TIMES -> (fun x -> Syn.MUL x)
+    | CONS -> (fun x -> Syn.CONS x)
+    | MCONS -> (fun x -> Syn.MCONS x)
+    | EQ -> (fun x -> Syn.EQ x)
+    | LT -> (fun x -> Syn.LT x)
+    | GT -> (fun x -> Syn.GT x) 
+    | SETMCAR -> (fun x -> Syn.SETMCAR x) 
+    | SETMCDR -> (fun x -> Syn.SETMCDR x) 
+    | _ -> raise (PARSE_ERROR "undefined BINOP") in
+
+  let ret = (exp (rev ((parse_helper lexer), (parse_helper lexer)))) in
+  (match_pair ret lexer)
+
+and parse_UNARY op lexer =
+  let exp = 
+    match op with
+    | CAR -> (fun x -> Syn.CAR x)
+    | CDR -> (fun x -> Syn.CDR x)
+    | MCAR -> (fun x -> Syn.MCAR x)
+    | MCDR -> (fun x -> Syn.MCDR x)
+    | RAISE -> (fun x -> Syn.RAISE x)
+    | _ -> raise (PARSE_ERROR "undefined UNARY") in
+
+  let ret = exp (parse_helper lexer) in
+  (match_pair ret lexer)
+
+and parse_LETS op lexer =
+  let exp = 
+    match op with
+    | LET -> (fun x -> Syn.LET x)
+    | LETREC -> (fun x -> Syn.LETREC x)
+    | _ -> raise (PARSE_ERROR "undefined LET") in
+
+    let ret = exp (rev ((parse_helper lexer), (bind_to_list lexer [] 0))) in
+  (match_pair ret lexer)
+
+and parse_LAM lexer =
+  let exp = 
+    Syn.LAMBDA (rev ((parse_helper lexer), (var_to_list lexer []))) in
+  (match_pair exp lexer)
+
+and parse_IF lexer =
+  let exp = 
+    Syn.IF (rev_3 ((parse_helper lexer), (parse_helper lexer), (parse_helper lexer))) in
+  (match_pair exp lexer)
+
+and parse_HNDL lexer =
+  let exp = 
+    Syn.HANDLERS (rev ((parse_helper lexer), (hndls_to_list lexer []))) in
+  (match_pair exp lexer)
 
 and var_to_list (lexer: unit -> token) (vl: Syntax.var_t list): Syntax.var_t list =
   let token = lexer () in
@@ -343,8 +207,6 @@ and bind_to_list (lexer: unit -> token) (bl: Syntax.binding_t list) cnt :Syntax.
         (bind_to_list lexer bl (cnt-1))
   | _ -> raise (PARSE_ERROR "not a variable")
 
-  (*parse exps for the number of variables in expression*)
-  (*FIXME*)
 and exp_to_list (lexer: unit -> token) (el: Syntax.exp_t list) :Syntax.exp_t list =
   let exp =  
     try (parse_helper lexer) with
@@ -362,3 +224,9 @@ and hndls_to_list lexer hl :(Syn.exp_t * Syn.exp_t) list =
   | RPAREN -> 
       hl
   | _ -> raise (PARSE_ERROR "expected a procedure")
+
+and match_pair exp lexer =
+  if (lexer () = RPAREN) then
+    exp
+  else
+    raise (PARSE_ERROR unmatched_paren)
