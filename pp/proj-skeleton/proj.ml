@@ -62,7 +62,7 @@ let rec myeval (exp_string: string): value_t =
   try (eval exp env hndl_env false table) with 
   | EXCEPTION_HANDLER a -> a
 
-and eval (exp: exp_t) env hndl mem tbl: value_t =
+and eval (exp: exp_t) env hndl to_mem tbl: value_t =
     match exp with
     | CONST (CINT n) -> INT n
     | CONST (CTRUE) -> BOOL true
@@ -70,38 +70,38 @@ and eval (exp: exp_t) env hndl mem tbl: value_t =
     | CONST (CNULL) -> VOID
     | VAR v -> (look_up v env)
     | ADD (e0, e1) -> 
-        (binary_eval ('+', (eval e0 env hndl mem tbl), (eval e1 env hndl mem tbl)))
+        (binary_eval ('+', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | SUB (e0, e1) -> 
-        (binary_eval ('-', (eval e0 env hndl mem tbl), (eval e1 env hndl mem tbl)))
+        (binary_eval ('-', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | MUL (e0, e1) -> 
-        (binary_eval ('*', (eval e0 env hndl mem tbl), (eval e1 env hndl mem tbl)))
+        (binary_eval ('*', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | EQ (e0, e1) -> 
-        (binary_eval ('=', (eval e0 env hndl mem tbl), (eval e1 env hndl mem tbl)))
+        (binary_eval ('=', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | LT (e0, e1) -> 
-        (binary_eval ('<', (eval e0 env hndl mem tbl), (eval e1 env hndl mem tbl)))
+        (binary_eval ('<', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | GT (e0, e1) -> 
-        (binary_eval ('>', (eval e0 env hndl mem tbl), (eval e1 env hndl mem tbl)))
+        (binary_eval ('>', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | CONS (e0, e1) -> 
-        (binary_eval ('p', (eval e0 env hndl mem tbl), (eval e1 env hndl mem tbl)))
+        (binary_eval ('p', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | MCONS (e0, e1) -> 
-        (binary_eval ('m', (eval e0 env hndl mem tbl), (eval e1 env hndl mem tbl)))
+        (binary_eval ('m', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
     | CAR p -> 
-        begin match (eval p env hndl mem tbl) with
+        begin match (eval p env hndl to_mem tbl) with
         | PAIR (el, _) -> el
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_pair)
         end
     | CDR p -> 
-        begin match (eval p env hndl mem tbl) with
+        begin match (eval p env hndl to_mem tbl) with
         | PAIR (_, el) -> el
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_pair)
         end
     | MCAR p -> 
-        begin match (eval p env hndl mem tbl) with
+        begin match (eval p env hndl to_mem tbl) with
         | MPAIR (el, _) -> el
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
         end
     | MCDR p -> 
-        begin match (eval p env hndl mem tbl) with
+        begin match (eval p env hndl to_mem tbl) with
         | MPAIR (_, el) -> el
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
         end
@@ -109,7 +109,7 @@ and eval (exp: exp_t) env hndl mem tbl: value_t =
         begin match (look_up v env) with
         | MPAIR (_, el)  -> 
             let _ = 
-              (set_var v (MPAIR ((eval el_new env hndl mem tbl), el)) env) in 
+              (set_var v (MPAIR ((eval el_new env hndl to_mem tbl), el)) env) in 
             VOID
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
         end
@@ -117,51 +117,51 @@ and eval (exp: exp_t) env hndl mem tbl: value_t =
         begin match (look_up v env) with
         | MPAIR (el, _)  -> 
             let _ = 
-              (set_var v (MPAIR (el, (eval el_new env hndl mem tbl))) env) in 
+              (set_var v (MPAIR (el, (eval el_new env hndl to_mem tbl))) env) in 
             VOID
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
         end
     | SETMCDR (MCONS _, _) | SETMCAR (MCONS _, _) -> VOID
     | IF (b, e0, e1) -> 
-        begin match (eval b env hndl mem tbl) with
-        | BOOL true -> (eval e0 env hndl mem tbl)
-        | BOOL false -> (eval e1 env hndl mem tbl)
+        begin match (eval b env hndl to_mem tbl) with
+        | BOOL true -> (eval e0 env hndl to_mem tbl)
+        | BOOL false -> (eval e1 env hndl to_mem tbl)
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_bool)
         end
     | LET (blist, exp) -> 
           let ht = Hashtbl.create (List.length blist) in
           let add_to_env = 
-            (fun (v, e) -> Hashtbl.add ht v (eval e env hndl mem tbl)) in
+            (fun (v, e) -> Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
           let _ = List.iter add_to_env blist in
-          (eval exp (ht::env) hndl mem tbl)
+          (eval exp (ht::env) hndl to_mem tbl)
     | LETREC (blist, exp) -> 
           let ht = Hashtbl.create (List.length blist) in
           let add_to_env_rec = 
-            (fun (v, e) -> Hashtbl.add ht v (eval e (ht::env) hndl mem tbl)) in
+            (fun (v, e) -> Hashtbl.add ht v (eval e (ht::env) hndl to_mem tbl)) in
           let _ = List.iter add_to_env_rec blist in
-          (eval exp (ht::env) hndl mem tbl)
+          (eval exp (ht::env) hndl to_mem tbl)
+    (*FIXME: evaluate sth in APP first?*)
     | APP (LAMBDA (vlist, exp), elist) ->
         let ht = Hashtbl.create (List.length elist) in
         let add_to_env = 
-          (fun v e -> Hashtbl.add ht v (eval e env hndl mem tbl)) in
+          (fun v e -> Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
         let _ = 
           try (let l = List.iter2 add_to_env vlist elist in l) with 
           | Invalid_argument "List.iter2" -> 
               raise (RUNTIME_EXCEPTION "Number of operands doesn't match") in
-        (eval exp (ht::env) hndl mem tbl)
+        (eval exp (ht::env) hndl to_mem tbl)
     | APP (VAR x, elist) ->
         let ht = Hashtbl.create (List.length elist) in
         let f = (look_up x env) in
         let add_to_env =
-          (fun v e -> Hashtbl.add ht v (eval e env hndl mem tbl)) in
-        begin match (f, mem) with
+          (fun v e -> Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
+        begin match (f, to_mem) with
         | CLOS (vlist, exp, en), false -> 
             let _ = 
               try (let l = List.iter2 add_to_env vlist elist in l) with 
               | Invalid_argument "List.iter2" -> 
                   raise (RUNTIME_EXCEPTION "Number of operands doesn't match") in
-            (eval exp (ht::en) hndl mem tbl)
-        (*FIXME*)
+            (eval exp (ht::en) hndl to_mem tbl)
         | CLOS (vlist, exp, en), true -> 
             let _ = 
               try (let l = List.iter2 add_to_env vlist elist in l) with 
@@ -179,13 +179,13 @@ and eval (exp: exp_t) env hndl mem tbl: value_t =
         | _ -> raise (RUNTIME_EXCEPTION e_msg_need_proc)
         end
     | RAISE excp ->  (*lookup handlers environment*)
-        (exception_handler excp env hndl mem tbl)
+        (exception_handler excp env hndl to_mem tbl)
     | HANDLERS (hdl_list, exp) ->
         let add_to_hndl_env = 
-          (fun (p, e) -> ((eval p env hndl mem tbl), (eval e env hndl mem tbl))) in
+          (fun (p, e) -> ((eval p env hndl to_mem tbl), (eval e env hndl to_mem tbl))) in
         let h_list = 
           List.map add_to_hndl_env hdl_list in
-        (eval exp env h_list mem tbl)
+        (eval exp env h_list to_mem tbl)
     | LAMBDA (vlist, exp) -> CLOS (vlist, exp, env)
     | APP (_, elist) ->
         raise (RUNTIME_EXCEPTION e_msg_need_proc)
@@ -230,17 +230,17 @@ and set_var v value env =
         set_var v value tl
 
 (*raise appropriate exception to be caught at the top*)
-and exception_handler e env hndls mem tbl=
+and exception_handler e env hndls to_mem tbl=
   let ht = Hashtbl.create 1 in
   match hndls with 
   | [] -> raise UNCAUGHT_EXCEPTION
   | ((CLOS ([v], e0, en)), (CLOS (_, e1, _))) :: tl ->
       (*closures in handlers only have one parameter*)
-      let _ = Hashtbl.add ht v (eval e env hndls mem tbl) in
-      if ( (eval e0 (ht::en) hndls mem tbl) = BOOL true) then
-        raise (EXCEPTION_HANDLER (eval e1 (ht::en) hndls mem tbl))
+      let _ = Hashtbl.add ht v (eval e env hndls to_mem tbl) in
+      if ( (eval e0 (ht::en) hndls to_mem tbl) = BOOL true) then
+        raise (EXCEPTION_HANDLER (eval e1 (ht::en) hndls to_mem tbl))
       else
-        exception_handler e env tl mem tbl
+        exception_handler e env tl to_mem tbl
   | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_proc)
 
 
