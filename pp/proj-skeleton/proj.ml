@@ -19,6 +19,7 @@ and value_t =
   | PAIR of (value_t * value_t)
   | MPAIR of (value_t * value_t)
   | VOID	       
+  | UNDEF (*internal usage*)
 exception EXCEPTION_HANDLER of value_t
 
 (* If value_to_string does not work well for your code, *)
@@ -34,6 +35,7 @@ let rec value_to_string (v:value_t): string =
   | PAIR (a, b) -> "(" ^ (value_to_string a) ^ " . " ^ (value_to_string b) ^ ")"
   | MPAIR (a, b) -> "(mcons ? ?)"
   | VOID -> "#<void>"
+  | UNDEF -> "'UNDEF"
 
 let e_msg_need = "expected"
 let e_msg_need_pair = "pair " ^ e_msg_need
@@ -143,7 +145,7 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
           let ht = Hashtbl.create (List.length blist) in
           let add_to_env = 
             (fun (v, e) -> 
-              if Hashtbl.mem ht v then
+              if (Hashtbl.mem ht v ) && (Hashtbl.find ht v <> UNDEF) then
                 raise (RUNTIME_EXCEPTION "already defined")
               else
                 Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
@@ -151,9 +153,10 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
           (eval exp (ht::env) hndl to_mem tbl)
     | LETREC (blist, exp) -> 
           let ht = Hashtbl.create (List.length blist) in
+          let _ = List.iter (fun (v, _) -> Hashtbl.add ht v UNDEF) blist in
           let add_to_env_rec = 
             (fun (v, e) -> 
-              if Hashtbl.mem ht v then
+              if (Hashtbl.mem ht v ) && (Hashtbl.find ht v <> UNDEF) then
                 raise (RUNTIME_EXCEPTION "already defined")
               else
                 Hashtbl.add ht v (eval e (ht::env) hndl to_mem tbl)) in
@@ -235,7 +238,10 @@ and look_up v env =
   | [] -> raise (RUNTIME_EXCEPTION e_msg_undef)
   | ht::tl -> 
       if (Hashtbl.mem ht v) then
-        Hashtbl.find ht v
+        let value = Hashtbl.find ht v in
+        (match value with
+        | UNDEF -> raise (RUNTIME_EXCEPTION "undefined")
+        | _ -> value)
       else
         look_up v tl
 
@@ -287,7 +293,6 @@ and is_pure (exp) : bool =
 
 
   (*test like this: *)
-let exp1 = "'()"
-let exp1 = "(let ((a 3) (a 5)) a)" 
-let v = myeval_memo exp1
-let _ = print_endline (value_to_string v)
+let exp1 = "(letrec ((x 1) (y (+ x 1))) (letrec ((x y) (y (+ x 2))) y))"
+(*let v = myeval_memo exp1*)
+(*let _ = print_endline (value_to_string v)*)
