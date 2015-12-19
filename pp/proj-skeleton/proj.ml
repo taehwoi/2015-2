@@ -310,7 +310,7 @@ and can_memo exp : bool =
       let b = (eval exp [] [] true table false) in
       let _ = Hashtbl.reset table in
       a = b
-    end then true
+    end then false
   else
     false
 
@@ -318,7 +318,8 @@ and all_pure exp : bool =
   match exp with
   | CONST _ -> true
   | VAR _ -> true
-  | SETMCAR (_, _) | SETMCDR (_, _) -> false
+  | SETMCAR (_, e) | SETMCDR (_, e) -> 
+      (all_pure e)
   | ADD (e0, e1) -> (all_pure e0) && (all_pure e1)
   | SUB (e0, e1) -> (all_pure e0) && (all_pure e1)
   | MUL (e0, e1) -> (all_pure e0) && (all_pure e1)
