@@ -143,14 +143,20 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
           let ht = Hashtbl.create (List.length blist) in
           let add_to_env = 
             (fun (v, e) -> 
-              Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
+              if Hashtbl.mem ht v then
+                raise (RUNTIME_EXCEPTION "already defined")
+              else
+                Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
           let _ = List.iter add_to_env blist in
           (eval exp (ht::env) hndl to_mem tbl)
     | LETREC (blist, exp) -> 
           let ht = Hashtbl.create (List.length blist) in
           let add_to_env_rec = 
             (fun (v, e) -> 
-              Hashtbl.add ht v (eval e (ht::env) hndl to_mem tbl)) in
+              if Hashtbl.mem ht v then
+                raise (RUNTIME_EXCEPTION "already defined")
+              else
+                Hashtbl.add ht v (eval e (ht::env) hndl to_mem tbl)) in
           let _ = List.iter add_to_env_rec blist in
           (eval exp (ht::env) hndl to_mem tbl)
     (*FIXME: memoize lambda also?*)
@@ -282,6 +288,6 @@ and is_pure (exp) : bool =
 
   (*test like this: *)
 let exp1 = "'()"
-(*let exp1 = "((lambda () (+ 1 1)))" *)
+let exp1 = "(let ((a 3) (a 5)) a)" 
 let v = myeval_memo exp1
 let _ = print_endline (value_to_string v)
