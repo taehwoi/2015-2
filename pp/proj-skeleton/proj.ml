@@ -68,7 +68,7 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
     | CONST (CINT n) -> INT n
     | CONST (CTRUE) -> BOOL true
     | CONST (CFALSE) -> BOOL false
-    | CONST (CNULL) -> VOID
+    | CONST (CNULL) -> NULL
     | VAR v -> (look_up v env)
     | ADD (e0, e1) ->
         (binary_eval 
@@ -275,11 +275,13 @@ let rec myeval_memo (exp_string: string): value_t =
 
 (*checks if a function is pure*)
 and is_pure (exp) : bool =
-  true
+
+  (*a function is pure if everything is *)
+  false
 
 
   (*test like this: *)
-let exp1 = "(let ((x 3)) x)"
+let exp1 = "'()"
 (*let exp1 = "((lambda () (+ 1 1)))" *)
 let v = myeval_memo exp1
 let _ = print_endline (value_to_string v)
