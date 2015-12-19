@@ -65,9 +65,10 @@ let rec myeval (exp_string: string): value_t =
   let hndl_env = [] in
   let table = Hashtbl.create 100 in
 
-  (eval exp env hndl_env false table) 
+  let ret = (eval exp env hndl_env false table true) in
+  let _ = Hashtbl.reset table in ret
 
-and eval (exp: exp_t) env hndl to_mem tbl: value_t =
+and eval (exp: exp_t) env hndl to_mem tbl to_mut: value_t =
     match exp with
     | CONST (CINT n) -> INT n
     | CONST (CTRUE) -> BOOL true
@@ -76,66 +77,72 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
     | VAR v -> (look_up v env)
     | ADD (e0, e1) ->
         (binary_eval 
-          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '+')))
+          (rev_3 ((eval e1 env hndl to_mem tbl to_mut), (eval e0 env hndl to_mem tbl to_mut), '+')))
     | SUB (e0, e1) -> 
         (binary_eval 
-          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '-')))
+          (rev_3 ((eval e1 env hndl to_mem tbl to_mut), (eval e0 env hndl to_mem tbl to_mut), '-')))
     | MUL (e0, e1) -> 
         (binary_eval 
-          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '*')))
+          (rev_3 ((eval e1 env hndl to_mem tbl to_mut), (eval e0 env hndl to_mem tbl to_mut), '*')))
     | EQ (e0, e1) -> 
         (binary_eval 
-          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '=')))
+          (rev_3 ((eval e1 env hndl to_mem tbl to_mut), (eval e0 env hndl to_mem tbl to_mut), '=')))
     | LT (e0, e1) -> 
         (binary_eval 
-          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '<')))
+          (rev_3 ((eval e1 env hndl to_mem tbl to_mut), (eval e0 env hndl to_mem tbl to_mut), '<')))
     | GT (e0, e1) -> 
         (binary_eval 
-          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '>')))
+          (rev_3 ((eval e1 env hndl to_mem tbl to_mut), (eval e0 env hndl to_mem tbl to_mut), '>')))
     | CONS (e0, e1) -> 
         (binary_eval 
-          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), 'p')))
+          (rev_3 ((eval e1 env hndl to_mem tbl to_mut), (eval e0 env hndl to_mem tbl to_mut), 'p')))
     | MCONS (e0, e1) -> 
         (binary_eval 
-          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), 'm')))
+          (rev_3 ((eval e1 env hndl to_mem tbl to_mut), (eval e0 env hndl to_mem tbl to_mut), 'm')))
     | CAR p -> 
-        begin match (eval p env hndl to_mem tbl) with
+        begin match (eval p env hndl to_mem tbl to_mut) with
         | PAIR (el, _) -> el
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_pair)
         end
     | CDR p -> 
-        begin match (eval p env hndl to_mem tbl) with
+        begin match (eval p env hndl to_mem tbl to_mut) with
         | PAIR (_, el) -> el
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_pair)
         end
     | MCAR p -> 
-        begin match (eval p env hndl to_mem tbl) with
+        begin match (eval p env hndl to_mem tbl to_mut) with
         | MPAIR (el, _) -> !el
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
         end
     | MCDR p -> 
-        begin match (eval p env hndl to_mem tbl) with
+        begin match (eval p env hndl to_mem tbl to_mut) with
         | MPAIR (_, er) -> !er
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
         end
     | SETMCAR (e, el_new) ->
-        begin match (eval e env hndl to_mem tbl) with
+        if (to_mut = false) then
+          VOID
+        else
+        (begin match (eval e env hndl to_mem tbl to_mut) with
         | MPAIR (el, _)  ->
-            let _ = el:= (eval el_new env hndl to_mem tbl) in
+            let _ = el:= (eval el_new env hndl to_mem tbl to_mut) in
             VOID
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
-        end
+        end)
     | SETMCDR (e, er_new) ->
-        begin match (eval e env hndl to_mem tbl) with
+        if (to_mut = false) then
+          VOID
+        else
+        (begin match (eval e env hndl to_mem tbl to_mut) with
         | MPAIR (_, er)  ->
-            let _ = er:= (eval er_new env hndl to_mem tbl) in
+            let _ = er:= (eval er_new env hndl to_mem tbl to_mut) in
             VOID
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
-        end
+        end)
     | IF (b, e0, e1) -> 
-        begin match (eval b env hndl to_mem tbl) with
-        | BOOL true -> (eval e0 env hndl to_mem tbl)
-        | BOOL false -> (eval e1 env hndl to_mem tbl)
+        begin match (eval b env hndl to_mem tbl to_mut) with
+        | BOOL true -> (eval e0 env hndl to_mem tbl to_mut)
+        | BOOL false -> (eval e1 env hndl to_mem tbl to_mut)
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_bool)
         end
     | LET (blist, exp) -> 
@@ -145,9 +152,9 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
               if (Hashtbl.mem ht v ) && (Hashtbl.find ht v <> UNDEF) then
                 raise (RUNTIME_EXCEPTION "already defined")
               else
-                Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
+                Hashtbl.add ht v (eval e env hndl to_mem tbl to_mut)) in
           let _ = List.iter add_to_env blist in
-          (eval exp (ht::env) hndl to_mem tbl)
+          (eval exp (ht::env) hndl to_mem tbl to_mut)
     | LETREC (blist, exp) -> 
           let ht = Hashtbl.create (List.length blist) in
           let _ = List.iter (fun (v, _) -> Hashtbl.add ht v UNDEF) blist in
@@ -156,9 +163,9 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
               if (Hashtbl.mem ht v ) && (Hashtbl.find ht v <> UNDEF) then
                 raise (RUNTIME_EXCEPTION "already defined")
               else
-                Hashtbl.add ht v (eval e (ht::env) hndl to_mem tbl)) in
+                Hashtbl.add ht v (eval e (ht::env) hndl to_mem tbl to_mut)) in
           let _ = List.iter add_to_env_rec blist in
-          (eval exp (ht::env) hndl to_mem tbl)
+          (eval exp (ht::env) hndl to_mem tbl to_mut)
     (*FIXME: memoize lambda also?*)
     | APP (LAMBDA (vlist, exp), elist) ->
         if has_dup vlist then
@@ -167,51 +174,51 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
         (let ht = Hashtbl.create (List.length elist) in
         let add_to_env = 
           (fun v e ->
-            Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
+            Hashtbl.add ht v (eval e env hndl to_mem tbl to_mut)) in
         let _ = 
           try (let l = List.iter2 add_to_env vlist elist in l) with 
           | Invalid_argument "List.iter2" -> 
               raise (RUNTIME_EXCEPTION e_msg_operand) in
-        (eval exp (ht::env) hndl to_mem tbl) )
+        (eval exp (ht::env) hndl to_mem tbl to_mut) )
     | APP (e, elist) ->
         let ht = Hashtbl.create (List.length elist) in
-        let f = (eval e env hndl to_mem tbl) in
+        let f = (eval e env hndl to_mem tbl to_mut) in
         let add_to_env =
-          (fun v e -> Hashtbl.add ht v (eval e env hndl to_mem tbl)) in
+          (fun v e -> Hashtbl.add ht v (eval e env hndl to_mem tbl to_mut)) in
         begin match (f, to_mem) with
         | CLOS (vlist, exp, en), false -> 
             let _ = 
               try (let l = List.iter2 add_to_env vlist elist in l) with 
               | Invalid_argument "List.iter2" -> 
                   raise (RUNTIME_EXCEPTION e_msg_operand) in
-            (eval exp (ht::en) hndl to_mem tbl)
+            (eval exp (ht::en) hndl to_mem tbl to_mut)
         | CLOS (vlist, exp, en), true -> 
             let _ = 
               try (let l = List.iter2 add_to_env vlist elist in l) with 
               | Invalid_argument "List.iter2" -> 
                   raise (RUNTIME_EXCEPTION e_msg_operand) in
             let arg_list = List.map 
-              (fun e -> (eval e env hndl true tbl)) elist in
+              (fun e -> (eval e env hndl true tbl to_mut)) elist in
             let f_memo = (f, arg_list) in
             if (Hashtbl.mem tbl f_memo) then
               (Hashtbl.find tbl f_memo)
             else
               let _ = 
-                (Hashtbl.add tbl f_memo (eval exp (ht::en) hndl true tbl)) in
+                (Hashtbl.add tbl f_memo (eval exp (ht::en) hndl true tbl to_mut)) in
               (Hashtbl.find tbl f_memo)
         | _ -> raise (RUNTIME_EXCEPTION e_msg_need_proc)
         end
     | RAISE excptn ->  (*lookup handlers environment*)
-        (exception_handler excptn env hndl to_mem tbl)
+        (exception_handler excptn env hndl to_mem tbl to_mut)
     | HANDLERS (hdl_list, exp) ->
         begin
           try 
             let add_to_hndl_env = 
               (fun (p, e) -> 
-                ((eval p env hndl to_mem tbl), (eval e env hndl to_mem tbl))) in
+                ((eval p env hndl to_mem tbl to_mut), (eval e env hndl to_mem tbl to_mut))) in
             let h_list = 
               List.map add_to_hndl_env hdl_list in
-            (eval exp env (h_list::hndl) to_mem tbl) 
+            (eval exp env (h_list::hndl) to_mem tbl to_mut) 
           with EXCEPTION_HANDLER a -> a
         end
     | LAMBDA (vlist, exp) ->
@@ -254,18 +261,18 @@ and look_up v env =
         look_up v tl
 
 (*raise appropriate exception to be caught at the top*)
-and exception_handler excptn env hndls to_mem tbl=
+and exception_handler excptn env hndls to_mem tbl  to_mut=
   let ht = Hashtbl.create 1 in
   match hndls with 
   | [] -> raise UNCAUGHT_EXCEPTION
-  | []::tl -> (exception_handler excptn env tl to_mem tbl)
+  | []::tl -> (exception_handler excptn env tl to_mem tbl to_mut)
   | ((((CLOS ([v], e0, en)), (CLOS ([x], e1, _))))::tail) :: tl ->
       (*closures in handlers only have one parameter*)
-      let _ = Hashtbl.add ht v (eval excptn env hndls to_mem tbl) in
-      if ( (eval e0 (ht::en) tl to_mem tbl) = BOOL true) then
-        raise (EXCEPTION_HANDLER (eval e1 (ht::en) tl to_mem tbl))
+      let _ = Hashtbl.add ht v (eval excptn env hndls to_mem tbl to_mut) in
+      if ( (eval e0 (ht::en) tl to_mem tbl to_mut) = BOOL true) then
+        raise (EXCEPTION_HANDLER (eval e1 (ht::en) tl to_mem tbl to_mut))
       else
-        exception_handler excptn env (tail::tl) to_mem tbl
+        exception_handler excptn env (tail::tl) to_mem tbl to_mut
   | _ ->  raise (RUNTIME_EXCEPTION "with-handlers expect proc. with 1 argument")
 
 and has_dup l =
@@ -284,19 +291,26 @@ let rec myeval_memo (exp_string: string): value_t =
   let _ = debug exp exp_string in
 
   if (can_memo exp) then (*check for purity*)
-    (eval exp [] [] true table)
+    (eval exp [] [] true table true)
   else
-    (eval exp [] [] false table)
+    (eval exp [] [] false table true)
 
 (*checks if a function is referentially transparent*)
 and can_memo exp : bool =
-
+  let table = Hashtbl.create 100 in
   (*1st net: a function can be memoized if everything is pure*)
   if (all_pure exp) then
     true
   (*2nd net: a function can be memoized if mutables don't matter to results*)
-  else if true then
-    false
+  (*compare the results of doing mset!, and not doing it (whilst memoizing) *)
+  else if  
+    begin
+      let a = (eval exp [] [] true table true) in
+      let _ = Hashtbl.reset table in
+      let b = (eval exp [] [] true table false) in
+      let _ = Hashtbl.reset table in
+      a = b
+    end then true
   else
     false
 
@@ -330,7 +344,20 @@ and all_pure exp : bool =
       (all_pure exp) && 
       (List.fold_left (fun x (e0, e1) -> x && (all_pure e0) && (all_pure e1)) true hdl_list)
 
-  (*test like this: *)
-let exp1 = "(cons 3 5)"
-let v = myeval exp1
+(*test like this: *)
+let exp1 =
+  "(let ((k (mcons 0 0)))
+    (let ((tmp 
+        (letrec ( (fib (lambda (a)
+                         (if (= 1 a)
+                           1
+                           (if (= 2 a)
+                             1
+                             (let ((x (set-mcar! k (+ 1 (mcar k)))) )
+                               (+ (fib (- a 1)) (fib (- a 2))) ))) ) ) ) (fib 8))))
+                               (if (= (mcar k) 20)
+                                 #t
+                                 #f)))"
+
+let v = myeval_memo exp1
 let _ = print_endline (value_to_string v)
