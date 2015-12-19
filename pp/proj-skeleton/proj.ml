@@ -46,6 +46,9 @@ let e_msg_non_int = " of non-ints not allowed"
 let e_msg_undef = "variable undefined"
 let e_msg_operand = "Number of operands doesn't match"
 
+let rev_3 = function
+  (a, b, c) -> (c, b, a)
+
 let debug exp exp_string =
   let _ = print_string "input: " in
   let _ = print_endline exp_string in
@@ -73,28 +76,28 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
     | VAR v -> (look_up v env)
     | ADD (e0, e1) ->
         (binary_eval 
-          ('+', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '+')))
     | SUB (e0, e1) -> 
         (binary_eval 
-          ('-', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '-')))
     | MUL (e0, e1) -> 
         (binary_eval 
-          ('*', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '*')))
     | EQ (e0, e1) -> 
         (binary_eval 
-          ('=', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '=')))
     | LT (e0, e1) -> 
         (binary_eval 
-          ('<', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '<')))
     | GT (e0, e1) -> 
         (binary_eval 
-          ('>', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), '>')))
     | CONS (e0, e1) -> 
         (binary_eval 
-          ('p', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), 'p')))
     | MCONS (e0, e1) -> 
         (binary_eval 
-          ('m', (eval e0 env hndl to_mem tbl), (eval e1 env hndl to_mem tbl)))
+          (rev_3 ((eval e1 env hndl to_mem tbl), (eval e0 env hndl to_mem tbl), 'm')))
     | CAR p -> 
         begin match (eval p env hndl to_mem tbl) with
         | PAIR (el, _) -> el
@@ -112,19 +115,19 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
         end
     | MCDR p -> 
         begin match (eval p env hndl to_mem tbl) with
-        | MPAIR (_, el) -> !el
+        | MPAIR (_, er) -> !er
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
         end
     | SETMCAR (e, el_new) ->
         begin match (eval e env hndl to_mem tbl) with
-        | MPAIR (el, er)  ->
+        | MPAIR (el, _)  ->
             let _ = el:= (eval el_new env hndl to_mem tbl) in
             VOID
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
         end
     | SETMCDR (e, er_new) ->
         begin match (eval e env hndl to_mem tbl) with
-        | MPAIR (el, er)  ->
+        | MPAIR (_, er)  ->
             let _ = er:= (eval er_new env hndl to_mem tbl) in
             VOID
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
@@ -288,11 +291,13 @@ let rec myeval_memo (exp_string: string): value_t =
 (*checks if a function is referentially transparent*)
 and can_memo exp : bool =
 
-  (*1st net: a function is pure if everything is pure*)
+  (*1st net: a function can be memoized if everything is pure*)
   if (all_pure exp) then
     true
-  else 
-    (*2nd net: TODO*)
+  (*2nd net: a function can be memoized if mutables don't matter to results*)
+  else if true then
+    false
+  else
     false
 
 and all_pure exp : bool =
@@ -313,7 +318,9 @@ and all_pure exp : bool =
   | MCAR p -> (all_pure p)
   | MCDR p -> (all_pure p)
   | IF (b, e0, e1) -> (all_pure b) && (all_pure e0) && (all_pure e1)
-  | LET (_, exp) | LETREC (_, exp) -> (all_pure exp)
+  | LET (b_list, exp) | LETREC (b_list, exp) -> 
+      (all_pure exp) &&
+      (List.fold_left (fun x (_, e) -> x && (all_pure e)) true b_list)
   | APP (e, elist) ->
       (all_pure e) && 
       (List.fold_left (fun x y -> x && (all_pure y)) true elist)
@@ -323,11 +330,7 @@ and all_pure exp : bool =
       (all_pure exp) && 
       (List.fold_left (fun x (e0, e1) -> x && (all_pure e0) && (all_pure e1)) true hdl_list)
 
-
-
-
   (*test like this: *)
-let exp1 =
-  "(letrec ((sigma (lambda (a b f) (if (= a b) (f b) (+ (f a) (sigma (+ a 1) b f))))) (cartalan (lambda (n) (if (= n 0) 1 (sigma 0 (- n 1) (lambda (i) (* (cartalan i) (cartalan (- n (+ i 1)))))))))) (cartalan 3))"
-let v = myeval_memo exp1
+let exp1 = "(cons 3 5)"
+let v = myeval exp1
 let _ = print_endline (value_to_string v)
