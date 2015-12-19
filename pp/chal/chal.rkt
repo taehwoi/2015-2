@@ -97,9 +97,16 @@
         ((equal? op 'let)
          (for-each
            (lambda (x) 
-             (hash-set! ht (car x) (eval-helper (cadr x) env))) 
+             (if (hash-has-key? ht (car x)) 
+               (raise "duplicate definition")
+             (hash-set! ht (car x) (eval-helper (cadr x) env))))
            (cadr E)))
         ((equal? op 'letrec)
+         (for-each
+           (lambda (x) 
+             (if (hash-has-key? ht (car x)) 
+               (raise "duplicate definition")
+             (hash-set! ht (car x) 'UNDEF))) (cadr E))
          (for-each
            (lambda (x) 
              (hash-set! ht (car x) (eval-helper (cadr x) (cons ht env)))) 
@@ -124,8 +131,7 @@
              (lambda (x y)
                (hash-set! ht x (eval-helper y env))) (cadar proc) (cdr E))
            (eval-helper (caddar proc) (cons ht (cadr proc)))))
-        (else (raise "Error: undefined application operation"))
-        )))
+        (else (raise "Error: undefined application operation")))))
 
   ;here comes the pokemon master
   ( with-handlers 
@@ -139,8 +145,8 @@
 (define (look-up v env)
   (if (null? env) 
     (raise (~a "Error: " v " is undefined"))
-    (if (not (equal? (hash-ref (car env) v 'nil) 'nil))
-      (hash-ref (car env) v 'nil)
+    (if (hash-has-key? (car env) v)
+      (if (equal? (hash-ref (car env) v 'nil) 'UNDEF)
+        (raise (~a "Error: " v " is undefined"))
+        (hash-ref (car env) v 'UNDEF))
       (look-up v (cdr env)))))
-
-(myeval '(+ 3 3))
