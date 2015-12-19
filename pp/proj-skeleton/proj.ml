@@ -239,6 +239,9 @@ and look_up v env =
   | ht::tl -> 
       if (Hashtbl.mem ht v) && (Hashtbl.find ht v <> UNDEF) then
         Hashtbl.find ht v 
+        (match value with
+        | UNDEF -> raise (RUNTIME_EXCEPTION "undefined")
+        | _ -> value)
       else
         look_up v tl
 
