@@ -23,8 +23,7 @@
               ; LET, LETREC
               ((assign-op? type) (assign-eval type E env))
               ; LAMBDA
-              ((equal? type 'lambda)
-               (list (list 'lambda (cadr E) (caddr E)) env))
+              ((equal? type 'lambda) (lambda-eval E env))
               ;APPLICATION
               ((app-op? type E env) (app-eval type E env))
               (else (raise "unimplmented keyword"))
@@ -112,6 +111,14 @@
              (hash-set! ht (car x) (eval-helper (cadr x) (cons ht env)))) 
            (cadr E))))
          (eval-helper (caddr E) (cons ht env))))
+
+  (define (lambda-eval E env)
+    (define (has-dup l)
+      (cond  ((null? l) #f)
+             (else (or (member (car l) (cdr l)) (has-dup (cdr l))))))
+    (if (has-dup (cadr E))
+      (raise "duplicate argument name")
+      (list (list 'lambda (cadr E) (caddr E)) env)))
 
   (define (app-op? op E env)
     (cond
