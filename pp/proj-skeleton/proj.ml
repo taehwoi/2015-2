@@ -237,11 +237,8 @@ and look_up v env =
   match env with 
   | [] -> raise (RUNTIME_EXCEPTION e_msg_undef)
   | ht::tl -> 
-      if (Hashtbl.mem ht v) then
-        let value = Hashtbl.find ht v in
-        (match value with
-        | UNDEF -> raise (RUNTIME_EXCEPTION "undefined")
-        | _ -> value)
+      if (Hashtbl.mem ht v) && (Hashtbl.find ht v <> UNDEF) then
+        Hashtbl.find ht v 
       else
         look_up v tl
 
