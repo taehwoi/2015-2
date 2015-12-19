@@ -62,8 +62,7 @@ let rec myeval (exp_string: string): value_t =
   let hndl_env = [] in
   let table = Hashtbl.create 100 in
 
-  try (eval exp env hndl_env false table) with 
-  | EXCEPTION_HANDLER a -> a
+  (eval exp env hndl_env false table) 
 
 and eval (exp: exp_t) env hndl to_mem tbl: value_t =
     match exp with
@@ -202,17 +201,20 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
     | RAISE excptn ->  (*lookup handlers environment*)
         (exception_handler excptn env hndl to_mem tbl)
     | HANDLERS (hdl_list, exp) ->
+        (try 
         let add_to_hndl_env = 
           (fun (p, e) -> 
             ((eval p env hndl to_mem tbl), (eval e env hndl to_mem tbl))) in
         let h_list = 
           List.map add_to_hndl_env hdl_list in
-        (eval exp env (h_list::hndl) to_mem tbl)
+        (eval exp env (h_list::hndl) to_mem tbl) with
+        | EXCEPTION_HANDLER a -> a)
     | LAMBDA (vlist, exp) ->
         if has_dup vlist then
           raise (RUNTIME_EXCEPTION "duplicate argument name")
         else
-          CLOS (vlist, exp, env)
+          CLOS (vlist, exp, env) 
+
 
 and binary_eval exp =
   match exp with
@@ -291,6 +293,6 @@ and is_pure (exp) : bool =
 
   (*test like this: *)
 let exp1 =
-  "(with-handlers (((lambda (a) #t) (lambda (a) 1))) (raise 3))"
+  "(with-handlers (((lambda (x) (= x 5)) (lambda (x) (* x 2)))) (cons (+ 1 3) (- 2 (raise 5))))"
 let v = myeval_memo exp1
 let _ = print_endline (value_to_string v)
