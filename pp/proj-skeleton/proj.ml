@@ -252,14 +252,14 @@ and exception_handler excptn env hndls to_mem tbl=
   match hndls with 
   | [] -> raise UNCAUGHT_EXCEPTION
   | []::tl -> (exception_handler excptn env tl to_mem tbl)
-  | ((((CLOS ([v], e0, en)), (CLOS (_, e1, _))))::tail) :: tl ->
+  | ((((CLOS ([v], e0, en)), (CLOS ([x], e1, _))))::tail) :: tl ->
       (*closures in handlers only have one parameter*)
       let _ = Hashtbl.add ht v (eval excptn env hndls to_mem tbl) in
       if ( (eval e0 (ht::en) tl to_mem tbl) = BOOL true) then
         raise (EXCEPTION_HANDLER (eval e1 (ht::en) tl to_mem tbl))
       else
         exception_handler excptn env (tail::tl) to_mem tbl
-  | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_proc)
+  | _ ->  raise (RUNTIME_EXCEPTION "with-handlers expect proc. with 1 argument")
 
 and has_dup l =
   match l with
@@ -291,6 +291,6 @@ and is_pure (exp) : bool =
 
   (*test like this: *)
 let exp1 =
-  "(with-handlers (((lambda (x) (= x 1)) (lambda (x) (* x 3)))) (with-handlers (((lambda (x) (= x 2)) (lambda (x) (* x 3)))) (raise 1)))"
+  "(with-handlers (((lambda (a) #t) (lambda (a) 1))) (raise 3))"
 let v = myeval_memo exp1
 let _ = print_endline (value_to_string v)
