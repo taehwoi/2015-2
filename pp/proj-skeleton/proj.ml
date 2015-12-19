@@ -210,7 +210,11 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
         let h_list = 
           List.map add_to_hndl_env hdl_list in
         (eval exp env (h_list::hndl) to_mem tbl)
-    | LAMBDA (vlist, exp) -> CLOS (vlist, exp, env)
+    | LAMBDA (vlist, exp) -> 
+        if has_dup vlist then
+          raise (RUNTIME_EXCEPTION "duplicate argument name")
+        else
+        CLOS (vlist, exp, env)
     | _ -> raise NOT_IMPLEMENTED
 
 and binary_eval exp =
@@ -269,6 +273,12 @@ and exception_handler excptn env hndls to_mem tbl=
         exception_handler excptn env (tail::tl) to_mem tbl
   | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_proc)
 
+and has_dup l =
+  match l with
+  | [] -> false
+  | ht::tl ->
+      (List.mem ht tl) || (has_dup tl)
+
 
 let rec myeval_memo (exp_string: string): value_t =
   let lexbuf = Lexing.from_string exp_string in
@@ -293,6 +303,6 @@ and is_pure (exp) : bool =
 
 
   (*test like this: *)
-let exp1 = "(letrec ((x 1) (y (+ x 1))) (letrec ((x y) (y (+ x 2))) y))"
+let exp1 = "(lambda () x)"
 let v = myeval_memo exp1
 let _ = print_endline (value_to_string v)
