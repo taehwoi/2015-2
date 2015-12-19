@@ -213,7 +213,6 @@ and eval (exp: exp_t) env hndl to_mem tbl: value_t =
           raise (RUNTIME_EXCEPTION "duplicate argument name")
         else
           CLOS (vlist, exp, env)
-    | _ -> raise NOT_IMPLEMENTED
 
 and binary_eval exp =
   match exp with
@@ -252,7 +251,7 @@ and exception_handler excptn env hndls to_mem tbl=
   let ht = Hashtbl.create 1 in
   match hndls with 
   | [] -> raise UNCAUGHT_EXCEPTION
-  | []::tl -> raise UNCAUGHT_EXCEPTION
+  | []::tl -> (exception_handler excptn env tl to_mem tbl)
   | ((((CLOS ([v], e0, en)), (CLOS (_, e1, _))))::tail) :: tl ->
       (*closures in handlers only have one parameter*)
       let _ = Hashtbl.add ht v (eval excptn env hndls to_mem tbl) in
@@ -286,13 +285,12 @@ let rec myeval_memo (exp_string: string): value_t =
 
 (*checks if a function is pure*)
 and is_pure (exp) : bool =
-
   (*a function is pure if everything is *)
   false
 
 
   (*test like this: *)
 let exp1 =
-"(let ((p (mcons (mcons 1 2) (mcons 3 4)))) (let ((tmp1 (set-mcar! (mcar p) 5)) (tmp2 (set-mcdr! p (cons     6 7)))) (* (mcar (mcar p)) (car (mcdr p)))))"
+  "(with-handlers (((lambda (x) (= x 1)) (lambda (x) (* x 3)))) (with-handlers (((lambda (x) (= x 2)) (lambda (x) (* x 3)))) (raise 1)))"
 let v = myeval_memo exp1
 let _ = print_endline (value_to_string v)
