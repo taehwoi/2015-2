@@ -237,10 +237,10 @@ and look_up v env =
   match env with 
   | [] -> raise (RUNTIME_EXCEPTION e_msg_undef)
   | ht::tl -> 
-      if (Hashtbl.mem ht v) && (Hashtbl.find ht v <> UNDEF) then
-        Hashtbl.find ht v 
+      if (Hashtbl.mem ht v) then
+        let value = Hashtbl.find ht v in
         (match value with
-        | UNDEF -> raise (RUNTIME_EXCEPTION "undefined")
+        | UNDEF -> raise (RUNTIME_EXCEPTION e_msg_undef)
         | _ -> value)
       else
         look_up v tl
@@ -294,5 +294,5 @@ and is_pure (exp) : bool =
 
   (*test like this: *)
 let exp1 = "(letrec ((x 1) (y (+ x 1))) (letrec ((x y) (y (+ x 2))) y))"
-(*let v = myeval_memo exp1*)
-(*let _ = print_endline (value_to_string v)*)
+let v = myeval_memo exp1
+let _ = print_endline (value_to_string v)
