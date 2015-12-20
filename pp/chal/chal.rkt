@@ -146,8 +146,7 @@
     ( ((lambda (x) (string? x)) (lambda (x) (raise x))) 
       ;Error raised during parsing
       ((lambda (x) #t) (lambda (x) (raise "Error: Ill-formed-syntax"))) )
-    (eval-helper E '()) )
-  )
+    (eval-helper E '()) ))
 
 (define (look-up v env)
   (if (null? env) 
