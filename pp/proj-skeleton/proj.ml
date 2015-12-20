@@ -49,6 +49,8 @@ let e_msg_operand = "Number of operands doesn't match"
 let rev_3 = function
   (a, b, c) -> (c, b, a)
 
+let cnt = ref 0
+let slow = ref false
 let debug exp exp_string =
   let _ = print_string "input: " in
   let _ = print_endline exp_string in
@@ -59,7 +61,7 @@ let rec myeval (exp_string: string): value_t =
   let lexbuf = Lexing.from_string exp_string in
   let lexer () = Lexer.token lexbuf in
   let exp = Parser.parse lexer in
-  let _ = debug exp exp_string in
+  (*let _ = debug exp exp_string in*)
 
   let env = [] in 
   let hndl_env = [] in
@@ -288,7 +290,7 @@ let rec myeval_memo (exp_string: string): value_t =
   let exp = Parser.parse lexer in
 
   let table = Hashtbl.create 100 in
-  let _ = debug exp exp_string in
+  (*let _ = debug exp exp_string in*)
 
   if (can_memo exp) then (*check for purity*)
     (eval exp [] [] true table true)
@@ -298,19 +300,36 @@ let rec myeval_memo (exp_string: string): value_t =
 (*checks if a function is referentially transparent*)
 and can_memo exp : bool =
   let table = Hashtbl.create 100 in
+  let _ = cnt:= 0 in
+  let _ = slow:= false in
+  let _ = 
+    try (eval_cnt exp [] [])
+    with 
+    | (RUNTIME_EXCEPTION "too deep") -> 
+        let _ = slow:= true in UNDEF in
+
+  (*0th net: if function can be executed in reasonable time, no need to memoize*)
+  if (!slow = false) then
+    false
   (*1st net: a function can be memoized if everything is pure*)
-  if (all_pure exp) then
+  else if (all_pure exp) then
     true
-  (*2nd net: a function can be memoized if mutables don't matter to results*)
-  (*compare the results of doing mset!, and not doing it (whilst memoizing) *)
+  (*2nd net: a function can be memoized if mutables don't matter*)
   else if  
-    begin
-      let a = (eval exp [] [] true table true) in
-      let _ = Hashtbl.reset table in
-      let b = (eval exp [] [] true table false) in
-      let _ = Hashtbl.reset table in
-      a = b
-    end then false
+      begin
+      (*compare the results of doing mset!, and not doing it (whilst memoizing) *)
+        let a = (eval exp [] [] true table true) in
+        let _ = Hashtbl.reset table in
+        let b = 
+          begin
+            try (let c = (eval exp [] [] true table false) in c) with
+            | (RUNTIME_EXCEPTION a) -> UNDEF
+            | Stack_overflow -> UNDEF
+          end in
+        a=b
+      end
+  then true
+  (*don't memoize*)
   else
     false
 
@@ -318,8 +337,8 @@ and all_pure exp : bool =
   match exp with
   | CONST _ -> true
   | VAR _ -> true
-  | SETMCAR (_, e) | SETMCDR (_, e) -> 
-      (all_pure e)
+  | SETMCAR (MCONS _, e) | SETMCDR (MCONS _, e) -> true
+  | SETMCAR (_, e) | SETMCDR (_, e) -> false
   | ADD (e0, e1) -> (all_pure e0) && (all_pure e1)
   | SUB (e0, e1) -> (all_pure e0) && (all_pure e1)
   | MUL (e0, e1) -> (all_pure e0) && (all_pure e1)
@@ -345,20 +364,160 @@ and all_pure exp : bool =
       (all_pure exp) && 
       (List.fold_left (fun x (e0, e1) -> x && (all_pure e0) && (all_pure e1)) true hdl_list)
 
-(*test like this: *)
-let exp1 =
-  "(let ((k (mcons 0 0)))
-    (let ((tmp 
-        (letrec ( (fib (lambda (a)
-                         (if (= 1 a)
-                           1
-                           (if (= 2 a)
-                             1
-                             (let ((x (set-mcar! k (+ 1 (mcar k)))) )
-                               (+ (fib (- a 1)) (fib (- a 2))) ))) ) ) ) (fib 8))))
-                               (if (= (mcar k) 20)
-                                 #t
-                                 #f)))"
+and eval_cnt (exp: exp_t) env hndl : value_t =
+  if !cnt > 300000 then
+    raise (RUNTIME_EXCEPTION "too deep")
+  else
+  (match exp with
+  | CONST (CINT n) -> INT n
+  | CONST (CTRUE) -> BOOL true
+  | CONST (CFALSE) -> BOOL false
+  | CONST (CNULL) -> NULL
+  | VAR v -> (look_up v env)
+  | ADD (e0, e1) ->
+      (binary_eval
+        (rev_3 ((eval_cnt e1 env hndl ), (eval_cnt e0 env hndl ), '+')))
+  | SUB (e0, e1) -> 
+      (binary_eval
+        (rev_3 ((eval_cnt e1 env hndl ), (eval_cnt e0 env hndl ), '-')))
+  | MUL (e0, e1) -> 
+      (binary_eval
+        (rev_3 ((eval_cnt e1 env hndl ), (eval_cnt e0 env hndl ), '*')))
+  | EQ (e0, e1) -> 
+      (binary_eval
+        (rev_3 ((eval_cnt e1 env hndl ), (eval_cnt e0 env hndl ), '=')))
+  | LT (e0, e1) -> 
+      (binary_eval
+        (rev_3 ((eval_cnt e1 env hndl ), (eval_cnt e0 env hndl ), '<')))
+  | GT (e0, e1) -> 
+      (binary_eval
+        (rev_3 ((eval_cnt e1 env hndl ), (eval_cnt e0 env hndl ), '>')))
+  | CONS (e0, e1) -> 
+      (binary_eval
+        (rev_3 ((eval_cnt e1 env hndl ), (eval_cnt e0 env hndl ), 'p')))
+  | MCONS (e0, e1) -> 
+      (binary_eval
+        (rev_3 ((eval_cnt e1 env hndl ), (eval_cnt e0 env hndl ), 'm')))
+  | CAR p -> 
+      begin match (eval_cnt p env hndl) with
+      | PAIR (el, _) -> el
+      | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_pair)
+      end
+  | CDR p -> 
+      begin match (eval_cnt p env hndl) with
+      | PAIR (_, el) -> el
+      | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_pair)
+      end
+  | MCAR p -> 
+      begin match (eval_cnt p env hndl ) with
+      | MPAIR (el, _) -> !el
+      | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
+      end
+  | MCDR p -> 
+      begin match (eval_cnt p env hndl ) with
+      | MPAIR (_, er) -> !er
+      | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
+      end
+  | SETMCAR (e, el_new) ->
+      begin match (eval_cnt e env hndl) with
+      | MPAIR (el, _)  ->
+          let _ = el:= (eval_cnt el_new env hndl ) in
+          VOID
+      | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
+      end
+  | SETMCDR (e, er_new) ->
+      begin match (eval_cnt e env hndl ) with
+      | MPAIR (_, er)  ->
+          let _ = er:= (eval_cnt er_new env hndl ) in
+          VOID
+      | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_mpair)
+      end
+  | IF (b, e0, e1) -> 
+      begin match (eval_cnt b env hndl ) with
+      | BOOL true -> (eval_cnt e0 env hndl)
+      | BOOL false -> (eval_cnt e1 env hndl )
+      | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_bool)
+      end
+  | LET (blist, exp) -> 
+        let ht = Hashtbl.create (List.length blist) in
+        let add_to_env = 
+          (fun (v, e) -> 
+            if (Hashtbl.mem ht v ) && (Hashtbl.find ht v <> UNDEF) then
+              raise (RUNTIME_EXCEPTION "already defined")
+            else
+              Hashtbl.add ht v (eval_cnt e env hndl )) in
+        let _ = List.iter add_to_env blist in
+        (eval_cnt exp (ht::env) hndl )
+  | LETREC (blist, exp) -> 
+        let ht = Hashtbl.create (List.length blist) in
+        let _ = List.iter (fun (v, _) -> Hashtbl.add ht v UNDEF) blist in
+        let add_to_env_rec = 
+          (fun (v, e) -> 
+            if (Hashtbl.mem ht v ) && (Hashtbl.find ht v <> UNDEF) then
+              raise (RUNTIME_EXCEPTION "already defined")
+            else
+              Hashtbl.add ht v (eval_cnt e (ht::env) hndl )) in
+        let _ = List.iter add_to_env_rec blist in
+        (eval_cnt exp (ht::env) hndl )
+  (*FIXME: memoize lambda also?*)
+  | APP (LAMBDA (vlist, exp), elist) ->
+      let _ = (cnt := (!cnt + 1)) in
+      if has_dup vlist then
+        raise (RUNTIME_EXCEPTION "duplicate argument name")
+      else
+      (let ht = Hashtbl.create (List.length elist) in
+      let add_to_env = 
+        (fun v e ->
+          Hashtbl.add ht v (eval_cnt e env hndl )) in
+      let _ = 
+        try (let l = List.iter2 add_to_env vlist elist in l) with 
+        | Invalid_argument "List.iter2" -> 
+            raise (RUNTIME_EXCEPTION e_msg_operand) in
+      (eval_cnt exp (ht::env) hndl ) )
+  | APP (e, elist) ->
+      let _ = (cnt := (!cnt + 1)) in
+      let ht = Hashtbl.create (List.length elist) in
+      let f = (eval_cnt e env hndl ) in
+      let add_to_env =
+        (fun v e -> Hashtbl.add ht v (eval_cnt e env hndl )) in
+      begin match f with
+      | CLOS (vlist, exp, en) -> 
+          let _ = 
+            try (let l = List.iter2 add_to_env vlist elist in l) with 
+            | Invalid_argument "List.iter2" -> 
+                raise (RUNTIME_EXCEPTION e_msg_operand) in
+          (eval_cnt exp (ht::en) hndl )
+      | _ -> raise (RUNTIME_EXCEPTION e_msg_need_proc)
+      end
+  | RAISE excptn ->  (*lookup handlers environment*)
+      (dummy_exn_handler excptn env hndl)
+  | HANDLERS (hdl_list, exp) ->
+      begin
+        try 
+          let add_to_hndl_env = 
+            (fun (p, e) -> 
+              ((eval_cnt p env hndl ), (eval_cnt e env hndl ))) in
+          let h_list = 
+            List.map add_to_hndl_env hdl_list in
+          (eval_cnt exp env (h_list::hndl)) 
+        with EXCEPTION_HANDLER a -> a
+      end
+  | LAMBDA (vlist, exp) ->
+      if has_dup vlist then
+        raise (RUNTIME_EXCEPTION "duplicate argument name")
+      else
+        CLOS (vlist, exp, env))
 
-let v = myeval_memo exp1
-let _ = print_endline (value_to_string v)
+and dummy_exn_handler excptn env hndls=
+  let ht = Hashtbl.create 1 in
+  match hndls with 
+  | [] -> raise UNCAUGHT_EXCEPTION
+  | []::tl -> (dummy_exn_handler excptn env tl )
+  | ((((CLOS ([v], e0, en)), (CLOS ([x], e1, _))))::tail) :: tl ->
+      (*closures in handlers only have one parameter*)
+      let _ = Hashtbl.add ht v (eval_cnt excptn env hndls) in
+      if ( (eval_cnt e0 (ht::en) tl) = BOOL true) then
+        raise (EXCEPTION_HANDLER (eval_cnt e1 (ht::en) tl))
+      else
+        dummy_exn_handler excptn env (tail::tl)
+  | _ ->  raise (RUNTIME_EXCEPTION "with-handlers expect proc. with 1 argument")
