@@ -106,7 +106,7 @@ and parse_helper lexer =
                   (parse_IF lexer)
               | _ -> raise (PARSE_ERROR "expect a procedure") in
             Syn.APP (proc, (exp_to_list lexer []))
-        | PLUS | MINUS | TIMES | CONS | MCONS | EQ | LT | GT -> 
+        | PLUS | MINUS | TIMES | CONS | MCONS | EQ | LT | GT ->
             (parse_BINOP tok lexer)
         | SETMCAR | SETMCDR ->
             (parse_BINOP tok lexer)
@@ -120,7 +120,7 @@ and parse_helper lexer =
             (parse_LETS tok lexer)
         | HANDLERS -> 
             (parse_HNDL lexer)
-        | INT _ | TRUE | FALSE -> 
+        | INT _ | TRUE | FALSE ->
             raise ( PARSE_ERROR ("expected a procedure") )
         | RPAREN -> raise (PARSE_ERROR "empty parenthesis")
         | _ ->  raise (PARSE_ERROR
@@ -140,9 +140,9 @@ and parse_BINOP op lexer =
     | MCONS -> (fun x -> Syn.MCONS x)
     | EQ -> (fun x -> Syn.EQ x)
     | LT -> (fun x -> Syn.LT x)
-    | GT -> (fun x -> Syn.GT x) 
-    | SETMCAR -> (fun x -> Syn.SETMCAR x) 
-    | SETMCDR -> (fun x -> Syn.SETMCDR x) 
+    | GT -> (fun x -> Syn.GT x)
+    | SETMCAR -> (fun x -> Syn.SETMCAR x)
+    | SETMCDR -> (fun x -> Syn.SETMCDR x)
     | _ -> raise (PARSE_ERROR "undefined BINOP") in
 
   let ret = (exp (rev ((parse_helper lexer), (parse_helper lexer)))) in
@@ -203,7 +203,7 @@ and bind_to_list (lexer: unit -> token) (bl: Syntax.binding_t list) cnt :Syntax.
   | RPAREN -> 
       if (cnt = 1) then (*consume one more paren*)
         bl
-      else 
+      else
         (bind_to_list lexer bl (cnt-1))
   | _ -> raise (PARSE_ERROR "not a variable")
 
@@ -211,7 +211,7 @@ and exp_to_list (lexer: unit -> token) (el: Syntax.exp_t list) :Syntax.exp_t lis
   let exp =  
     try (parse_helper lexer) with
     | PARSE_ERROR ("missing operand") -> Syn.CONST Syn.CNULL in
-  match exp with 
+  match exp with
   | Syn.CONST Syn.CNULL -> (List.rev el)
   | _ -> (exp_to_list lexer (exp::el))
 
@@ -219,9 +219,9 @@ and hndls_to_list lexer hl :(Syn.exp_t * Syn.exp_t) list =
   let _ = lexer () in (*exhaust one left paren*)
   let token = lexer () in
   match token with
-  | LPAREN -> 
+  | LPAREN ->
       (hndls_to_list lexer (hl@[(rev ((parse_helper lexer), (parse_helper lexer)))]))
-  | RPAREN -> 
+  | RPAREN ->
       hl
   | _ -> raise (PARSE_ERROR "expected a procedure")
 
