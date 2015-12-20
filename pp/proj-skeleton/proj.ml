@@ -71,6 +71,9 @@ let rec myeval (exp_string: string): value_t =
   let _ = Hashtbl.reset table in ret
 
 and eval (exp: exp_t) env hndl to_mem tbl to_mut: value_t =
+  if !cnt > 300000 then
+    raise (RUNTIME_EXCEPTION "too deep")
+  else
     match exp with
     | CONST (CINT n) -> INT n
     | CONST (CTRUE) -> BOOL true
@@ -148,26 +151,26 @@ and eval (exp: exp_t) env hndl to_mem tbl to_mut: value_t =
         | _ ->  raise (RUNTIME_EXCEPTION e_msg_need_bool)
         end
     | LET (blist, exp) -> 
-          let ht = Hashtbl.create (List.length blist) in
-          let add_to_env = 
-            (fun (v, e) -> 
-              if (Hashtbl.mem ht v ) && (Hashtbl.find ht v <> UNDEF) then
-                raise (RUNTIME_EXCEPTION "already defined")
-              else
-                Hashtbl.add ht v (eval e env hndl to_mem tbl to_mut)) in
-          let _ = List.iter add_to_env blist in
-          (eval exp (ht::env) hndl to_mem tbl to_mut)
+        let ht = Hashtbl.create (List.length blist) in
+        let add_to_env = 
+          (fun (v, e) -> 
+            if (Hashtbl.mem ht v ) && (Hashtbl.find ht v <> UNDEF) then
+              raise (RUNTIME_EXCEPTION "already defined")
+            else
+              Hashtbl.add ht v (eval e env hndl to_mem tbl to_mut)) in
+        let _ = List.iter add_to_env blist in
+        (eval exp (ht::env) hndl to_mem tbl to_mut)
     | LETREC (blist, exp) -> 
-          let ht = Hashtbl.create (List.length blist) in
-          let _ = List.iter (fun (v, _) -> Hashtbl.add ht v UNDEF) blist in
-          let add_to_env_rec = 
-            (fun (v, e) -> 
-              if (Hashtbl.mem ht v ) && (Hashtbl.find ht v <> UNDEF) then
-                raise (RUNTIME_EXCEPTION "already defined")
-              else
-                Hashtbl.add ht v (eval e (ht::env) hndl to_mem tbl to_mut)) in
-          let _ = List.iter add_to_env_rec blist in
-          (eval exp (ht::env) hndl to_mem tbl to_mut)
+        let ht = Hashtbl.create (List.length blist) in
+        let _ = List.iter (fun (v, _) -> Hashtbl.add ht v UNDEF) blist in
+        let add_to_env_rec = 
+          (fun (v, e) -> 
+            if (Hashtbl.mem ht v ) && (Hashtbl.find ht v <> UNDEF) then
+              raise (RUNTIME_EXCEPTION "already defined")
+            else
+              Hashtbl.add ht v (eval e (ht::env) hndl to_mem tbl to_mut)) in
+        let _ = List.iter add_to_env_rec blist in
+        (eval exp (ht::env) hndl to_mem tbl to_mut)
     (*FIXME: memoize lambda also?*)
     | APP (LAMBDA (vlist, exp), elist) ->
         if has_dup vlist then
@@ -183,6 +186,10 @@ and eval (exp: exp_t) env hndl to_mem tbl to_mut: value_t =
               raise (RUNTIME_EXCEPTION e_msg_operand) in
         (eval exp (ht::env) hndl to_mem tbl to_mut) )
     | APP (e, elist) ->
+        let _ = (if (to_mut = false) then 
+                    let a = (cnt := !cnt+1) in a
+                else
+                    let b = (cnt := !cnt) in b) in
         let ht = Hashtbl.create (List.length elist) in
         let f = (eval e env hndl to_mem tbl to_mut) in
         let add_to_env =
@@ -308,6 +315,7 @@ and can_memo exp : bool =
     | (RUNTIME_EXCEPTION "too deep") -> 
         let _ = slow:= true in UNDEF in
 
+  let _ = cnt:= 0 in
   (*0th net: if function can be executed in reasonable time, no need to memoize*)
   if (!slow = false) then
     false
@@ -323,8 +331,9 @@ and can_memo exp : bool =
         let b = 
           begin
             try (let c = (eval exp [] [] true table false) in c) with
-            | (RUNTIME_EXCEPTION a) -> UNDEF
-            | Stack_overflow -> UNDEF
+            | (RUNTIME_EXCEPTION "too deep") -> a
+            | (RUNTIME_EXCEPTION _) -> UNDEF
+            | Stack_overflow -> a
           end in
         a=b
       end
